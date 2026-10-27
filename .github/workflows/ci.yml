@@ -59,6 +59,7 @@ jobs:
     needs: quality
     env:
       OGE_API_KEY: ci-${{ github.run_id }}
+      LLM_THREADS: "4"
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -70,7 +71,6 @@ jobs:
         env:
           LLM_REPO: unsloth/Qwen3.5-0.8B-GGUF
           LLM_QUANT: Q4_K_M
-          LLM_THREADS: "4"
         run: scripts/download_models.sh
       - name: Build platform image
         run: docker compose -f deploy/compose.yaml build knowledge-mcp
