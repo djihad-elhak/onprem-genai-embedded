@@ -34,7 +34,7 @@ knowledge = [
   "neo4j>=5.28",
   "mcp>=2.3,<3",
 ]
-gguf = ["gguf>=0.17"]
+bench = ["gguf>=0.17", "huggingface_hub>=0.30"]
 
 [project.scripts]
 oge = "onprem_genai.cli:app"

@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -174,13 +175,26 @@ class LlmJudge:
         return min(float(m.group()), 10.0) if m else 0.0
 
 
-def llm_reranked(ds: TraceDataset, base: Ranker, judge: LlmJudge, top_n: int = 10) -> Ranker:
+def llm_reranked(
+    ds: TraceDataset, base: Ranker, judge: LlmJudge, top_n: int = 10, max_workers: int = 8
+) -> Ranker:
+    """Rerank the head of ``base`` with LLM relevance scores (concurrent requests, memoised per requirement).
+
+    Within the head, ties on the LLM score keep the base order; everything below the head keeps its order.
+    """
+    cache: dict[str, np.ndarray] = {}
+
     def rank(rid: str) -> np.ndarray:
+        if rid in cache:
+            return cache[rid]
         s = base(rid).astype(np.float64)
-        top = np.argsort(-s, kind="stable")[:top_n]
-        out = s - s.max() - 1.0  # everything below the reranked head keeps its relative order
-        for pos, i in enumerate(top):
-            out[i] = 100.0 * judge.score(ds.req_text[rid], ds.cand_text[i]) + (top_n - pos) * 1e-3
+        top = [int(i) for i in np.argsort(-s, kind="stable")[:top_n]]
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            scores = list(pool.map(lambda i: judge.score(ds.req_text[rid], ds.cand_text[i]), top))
+        out = s - s.max() - 1.0
+        for pos, (i, llm) in enumerate(zip(top, scores, strict=True)):
+            out[i] = 100.0 * llm + (top_n - pos) * 1e-3
+        cache[rid] = out
         return out
 
     return rank

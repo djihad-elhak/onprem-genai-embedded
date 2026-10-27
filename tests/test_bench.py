@@ -85,3 +85,17 @@ def test_summarize_tpot() -> None:
     s = summarize("x", 1, rs, wall_s=1.5)
     assert s.tpot_p50_ms == pytest.approx(100.0)
     assert s.output_tps == pytest.approx(11 / 1.5, rel=1e-3)
+
+
+def test_run_blocking_inside_running_loop() -> None:
+    from onprem_genai.bench.loadgen import run_blocking  # noqa: PLC0415
+
+    async def value() -> int:
+        await asyncio.sleep(0)
+        return 7
+
+    async def outer() -> int:
+        return run_blocking(value())  # would fail with plain asyncio.run inside a loop
+
+    assert run_blocking(value()) == 7
+    assert asyncio.run(outer()) == 7

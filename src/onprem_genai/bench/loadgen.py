@@ -10,14 +10,17 @@ from __future__ import annotations
 import asyncio
 import json
 import statistics
+import threading
 import time
-from collections.abc import Sequence
+from collections.abc import Coroutine, Sequence
 from dataclasses import asdict, dataclass, field
-from typing import Any
+from typing import Any, TypeVar
 
 import httpx
 
 from onprem_genai.bench.profiles import Profile
+
+_T = TypeVar("_T")
 
 
 @dataclass
@@ -218,3 +221,25 @@ async def sweep(
             )
             out.append(summary)
         return out
+
+
+def run_blocking(coro: Coroutine[Any, Any, _T]) -> _T:
+    """Run a coroutine to completion, also from inside a running event loop (Jupyter / Kaggle kernels)."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    box: dict[str, Any] = {}
+
+    def target() -> None:
+        try:
+            box["value"] = asyncio.run(coro)
+        except BaseException as exc:  # re-raised in the caller's thread
+            box["error"] = exc
+
+    t = threading.Thread(target=target)
+    t.start()
+    t.join()
+    if "error" in box:
+        raise box["error"]
+    return box["value"]
