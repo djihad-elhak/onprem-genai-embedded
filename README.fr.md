@@ -1,0 +1,88 @@
+# onprem-genai-embedded
+
+**Implémentation de référence d'une plateforme d'IA générative sur site (on-premise) pour équipes logiciel
+embarqué / aéronautique — dimensionnée, mesurée et vérifiée en mode déconnecté (air gap), avec un graphe de
+connaissances code + exigences + tests exposé aux assistants via MCP.**
+
+[English](README.md) · [Architecture](docs/ARCHITECTURE.md) · [Décisions de conception](docs/DESIGN_DECISIONS.md) ·
+[Résultats](docs/results/README.md)
+
+Base de code cible : **NASA F´ (F Prime) v4.4.1** — framework logiciel de vol open source du JPL (embarqué sur
+l'hélicoptère martien Ingenuity), Apache-2.0, ≈ 207 000 lignes de C++. Récupéré à un commit figé, jamais copié
+dans le dépôt.
+
+---
+
+## Ce que fait la plateforme
+
+| Couche | Composant | État |
+|---|---|---|
+| **Dimensionnement** | `oge sizing` — mémoire GPU (poids + cache KV + état des couches à attention linéaire), débit (modèle roofline, trafic des experts MoE), planification de capacité par équipe ; chaque valeur constructeur est sourcée, toute valeur inconnue est refusée plutôt que devinée | ✅ calibration Kaggle (en cours) |
+| **Service des modèles** | Profils llama.cpp (CPU / CUDA) et vLLM en Docker Compose, clés d'API, ports liés à localhost ; générateur de charge `oge bench` (TTFT, TPOT, percentiles de débit) avec profils de trafic d'assistant de code | ✅ pile · ⏳ mesures 2×T4 |
+| **Connaissances** | Ingestion Tree-sitter du code, des tests unitaires, des tableaux d'exigences et des documents de conception dans un graphe typé (en mémoire ou **Neo4j**) ; recherche hybride BM25 + dense + graphe | ✅ |
+| **MCP** | Serveur de connaissances (SDK MCP v2, stdio ou HTTP) : `search`, `get_symbol`, `get_callers/callees`, `get_requirement`, `trace_requirement`, `coverage_gaps`, `module_overview` | ✅ |
+| **Assistants** | Configurations Continue, Aider et MCP générique pointant vers la plateforme | ✅ |
+| **Air gap** | Surcouche Compose sur réseau Docker interne + test de fumée qui **échoue si une seule connexion sortante aboutit** | ✅ (CI) |
+| **Agents & CI** | Agent de génération de tests à partir des exigences (LangGraph) compilant les tests unitaires F´, Jenkins via son plugin MCP | M2 |
+
+## Résultats
+
+### Recouvrement de la traçabilité exigence → test (F´)
+
+Vérité terrain : les 481 balises `REQUIREMENT("ID")` posées par les développeurs F´ dans les tests unitaires,
+reliant **151 exigences** aux tests qui les vérifient. Balises et identifiants sont masqués ; chaque méthode
+classe **les 3 261 cas de test** de la base pour chaque exigence. Moyenne sur les exigences, IC 95 % bootstrap.
+
+| Méthode | MAP | MRR | Rappel@1 | Rappel@10 |
+|---|---|---|---|---|
+| Graphe seul (module de l'exigence, appels) | 0,249 [0,220 ; 0,278] | 0,291 | 0,073 | 0,550 |
+| BM25 sur le code (tokenisation des identifiants) | 0,488 [0,427 ; 0,548] | 0,591 | 0,297 | 0,677 |
+| **BM25 contraint par le graphe (hybride)** | **0,569 [0,513 ; 0,626]** | **0,665** | **0,330** | **0,781** |
+| + dense (Qwen3-Embedding-0.6B), + reclassement LLM | ⏳ `kaggle/01_m1_benchmark` | | | |
+
+Aucun signal ne suffit seul : le graphe sait *où* chercher (les exigences sont allouées à des composants), le
+texte sait *quel* test. Source : [`docs/results/traceability_lexical.json`](docs/results/traceability_lexical.json).
+
+### Audit de traçabilité de F´ (automatique, depuis le graphe)
+
+- **288 exigences** dont le document de conception prévoit une vérification par test n'ont **aucune balise de
+  test explicite** — pas forcément non testées (le balisage n'est pas systématique dans F´), mais sans preuve
+  traçable ; chacune est accompagnée de tests candidats à examiner.
+- **12 identifiants d'exigences cités par des tests ne sont définis nulle part** (ex. `ISF-HTH-001…007` dans les
+  tests de `Svc/Health`, alors que le document de conception définit `HTH-001…007`).
+- **12 identifiants sont cités par les tests d'un autre composant** (ex. `PDB-*` de `Svc/PolyDb` dans les tests
+  de `Svc/PrmDb`) — probablement des copier-coller.
+
+### Graphe de connaissances
+
+1 250 fichiers · 206 656 lignes · 5 499 fonctions · 3 261 cas de test · 560 exigences (83 documents de
+conception) · 21 681 appels résolus (y compris les conventions de génération de code F´) — construit en ≈ 3 s
+sur le CPU d'un portable.
+
+## Démarrage rapide
+
+```bash
+uv sync --all-extras && scripts/fetch_fprime.sh
+uv run oge knowledge ingest                  # graphe de connaissances
+uv run oge knowledge trace-eval              # reproduit le tableau ci-dessus
+uv run oge mcp serve                         # serveur MCP (stdio) pour l'IDE
+uv run oge sizing plan qwen3.8-27b --scenario chat_agents --engineers 100
+
+cp deploy/.env.example deploy/.env && scripts/download_models.sh
+docker compose -f deploy/compose.yaml --profile cpu up -d                    # plateforme complète
+docker compose -f deploy/compose.yaml -f deploy/compose.offline.yaml \
+  --profile cpu --profile smoke up --abort-on-container-exit --exit-code-from smoke   # preuve air gap
+```
+
+Les mesures GPU s'exécutent en notebooks batch sur Kaggle (2× Tesla T4) : `kaggle/00_probe_t4x2` et
+`kaggle/01_m1_benchmark`.
+
+## Ingénierie
+
+Python ≥ 3.11, `uv`, ruff, pyright, pytest (tests unitaires, tests de contrat communs aux stockages mémoire et
+Neo4j, test d'intégration MCP sur HTTP réel) ; CI GitHub Actions : qualité → intégration F´ + Neo4j → test de
+déploiement déconnecté. Aucune API de modèle externe n'est appelée à l'exécution.
+
+## Licence
+
+Apache-2.0. F´ © Caltech/JPL, Apache-2.0, récupéré à la construction (voir [NOTICE](NOTICE)).

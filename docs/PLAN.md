@@ -1,6 +1,7 @@
 # Project plan — On-premise GenAI platform for embedded software engineering
 
-> Status: **draft for approval** · 2026-10-27 · Items marked ⏳ wait for your confirmation.
+> Status: **approved** 2026-10-27 — scope M1 + M2, target code base NASA F´, agent framework LangGraph,
+> repository `onprem-genai-embedded`, documentation in English and French.
 
 ## 1. Goal
 
