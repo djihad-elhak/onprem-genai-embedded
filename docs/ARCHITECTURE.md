@@ -5,6 +5,7 @@ sources:
   - src/onprem_genai/knowledge/
   - src/onprem_genai/mcp_server/
   - src/onprem_genai/platform/
+  - src/onprem_genai/evalsuite/
   - deploy/
   - kaggle/
 ---
@@ -26,6 +27,7 @@ the Model Context Protocol, and is sized from measurements rather than vendor cl
 | `bench` | Engine lifecycle (build llama.cpp, isolated vLLM, process groups, health, GPU sampling); closed-loop load generator; traffic profiles built from real code | `engines.py`, `loadgen.py`, `profiles.py` |
 | `knowledge` | F´ ingestion (tree-sitter C++, requirement tables, test tags, design docs); typed graph + snapshots; BM25 / dense / fusion retrieval; traceability benchmark and audit; in-memory and Neo4j stores | `fprime/`, `model.py`, `retrieval.py`, `traceability.py`, `store.py`, `neo4j_store.py` |
 | `mcp_server` | MCP server (SDK v2 `MCPServer`) over any `KnowledgeStore` | `server.py` |
+| `evalsuite` | 27 purpose-written embedded C tasks (not taken from public benchmarks) (generate, unit-test generation, refactor, document) scored by execution: strict compile, hidden tests, sanitizers, gcov, mutation testing, complexity, Doxygen; OpenAI-compatible runner with pass@k and CIs ([EVALSUITE.md](EVALSUITE.md)) | `tasks/`, `scoring.py`, `validate.py`, `runner.py` |
 | `platform` | Deployment verification: LLM, embeddings, MCP over HTTP, egress probe | `smoke.py` |
 | `deploy/` | Container image, Compose profiles, air-gap overlay, client configs | `Dockerfile`, `compose.yaml`, `compose.offline.yaml`, `clients/` |
 | `kaggle/` | GPU batch notebooks (2× T4) producing every hardware measurement | `00_probe_t4x2`, `01_m1_benchmark` |
