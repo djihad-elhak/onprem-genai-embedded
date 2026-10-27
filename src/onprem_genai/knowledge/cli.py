@@ -30,7 +30,12 @@ def make_embedder(spec: str | None, cache_dir: Path | None = None) -> Embedder |
     emb: Embedder
     if spec.startswith("openai:"):
         base, _, model = spec.removeprefix("openai:").partition("|")
-        emb = OpenAIEmbedder(base, model or "default", query_instruction=tr.QUERY_INSTRUCTION)
+        emb = OpenAIEmbedder(
+            base,
+            model or "default",
+            query_instruction=tr.QUERY_INSTRUCTION,
+            api_key=os.environ.get("OGE_API_KEY"),
+        )
     elif spec.startswith("st:"):
         from onprem_genai.knowledge.retrieval import SentenceTransformerEmbedder  # noqa: PLC0415
 
@@ -99,7 +104,7 @@ def trace_eval(
         rankers["graph+rrf(bm25,dense)"] = best = tr.graph_constrained(ds, tr.fused([bm25, dense]))
     if llm_base_url:
         extra = {"chat_template_kwargs": {"enable_thinking": False}} if disable_thinking else None
-        judge = tr.LlmJudge(llm_base_url, llm_model, extra_body=extra)
+        judge = tr.LlmJudge(llm_base_url, llm_model, extra_body=extra, api_key=os.environ.get("OGE_API_KEY"))
         rankers[f"{_last(rankers)}+llm-rerank@{llm_top_n}"] = tr.llm_reranked(ds, best, judge, llm_top_n)
 
     results: dict[str, Any] = {
@@ -177,9 +182,17 @@ def serve(
     transport: Annotated[str, typer.Option(help="stdio | streamable-http")] = "stdio",
     host: str = "127.0.0.1",
     port: int = 8765,
-    embedder: Annotated[str | None, typer.Option(help="Dense retrieval backend (optional)")] = None,
-    embed_cache: Path | None = None,
-    neo4j: Annotated[bool, typer.Option(help="Answer graph queries from Neo4j (NEO4J_* env vars)")] = False,
+    embedder: Annotated[
+        str | None, typer.Option(envvar="OGE_MCP_EMBEDDER", help="Dense retrieval backend (optional)")
+    ] = None,
+    embed_cache: Annotated[Path | None, typer.Option(envvar="OGE_MCP_EMBED_CACHE")] = None,
+    neo4j: Annotated[
+        bool, typer.Option(envvar="OGE_MCP_NEO4J", help="Answer graph queries from Neo4j (NEO4J_* env vars)")
+    ] = False,
+    allowed_host: Annotated[
+        list[str] | None,
+        typer.Option(help="Enable DNS-rebinding protection and accept only these Host headers (repeatable)"),
+    ] = None,
 ) -> None:
     """Start the knowledge MCP server."""
     from onprem_genai.knowledge.store import InMemoryStore, KnowledgeStore  # noqa: PLC0415
@@ -204,5 +217,11 @@ def serve(
         server.run("stdio")
     else:
         import anyio  # noqa: PLC0415
+        from mcp.server.transport_security import TransportSecuritySettings  # noqa: PLC0415
 
-        anyio.run(lambda: server.run_streamable_http_async(host=host, port=port))
+        security = (
+            TransportSecuritySettings(enable_dns_rebinding_protection=True, allowed_hosts=allowed_host)
+            if allowed_host
+            else None
+        )
+        anyio.run(lambda: server.run_streamable_http_async(host=host, port=port, transport_security=security))

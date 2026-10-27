@@ -52,3 +52,32 @@ jobs:
         run: scripts/fetch_fprime.sh
       - name: Integration tests (F´ ingestion, Neo4j store)
         run: uv run pytest -m "neo4j or fprime"
+
+  deploy-smoke:
+    # Builds the platform image and proves the stack works on an internal (no-egress) Docker network.
+    runs-on: ubuntu-latest
+    needs: quality
+    env:
+      OGE_API_KEY: ci-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install CLI
+        run: uv sync --extra bench
+      - name: Download small CI models
+        env:
+          LLM_REPO: unsloth/Qwen3.5-0.8B-GGUF
+          LLM_QUANT: Q4_K_M
+          LLM_THREADS: "4"
+        run: scripts/download_models.sh
+      - name: Build platform image
+        run: docker compose -f deploy/compose.yaml build knowledge-mcp
+      - name: Air-gapped smoke test (internal network + egress probe)
+        run: >-
+          docker compose -f deploy/compose.yaml -f deploy/compose.offline.yaml
+          --profile cpu --profile smoke up --abort-on-container-exit --exit-code-from smoke
+      - name: Logs on failure
+        if: failure()
+        run: docker compose -f deploy/compose.yaml -f deploy/compose.offline.yaml --profile cpu --profile smoke logs --tail 200

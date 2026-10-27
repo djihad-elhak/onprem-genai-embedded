@@ -77,6 +77,7 @@ async def stream_chat(
     max_tokens: int,
     extra_body: dict[str, Any] | None = None,
     timeout_s: float = 900.0,
+    headers: dict[str, str] | None = None,
 ) -> RequestResult:
     payload: dict[str, Any] = {
         "model": model,
@@ -94,7 +95,7 @@ async def stream_chat(
     chunks = 0
     try:
         async with client.stream(
-            "POST", f"{base_url}/v1/chat/completions", json=payload, timeout=timeout_s
+            "POST", f"{base_url}/v1/chat/completions", json=payload, timeout=timeout_s, headers=headers
         ) as resp:
             if resp.status_code != 200:
                 body = (await resp.aread()).decode(errors="replace")[:300]
@@ -174,6 +175,7 @@ async def run_level(
     n_requests: int,
     extra_body: dict[str, Any] | None = None,
     client: httpx.AsyncClient | None = None,
+    headers: dict[str, str] | None = None,
 ) -> tuple[LevelSummary, list[RequestResult]]:
     owns_client = client is None
     client = client or httpx.AsyncClient(limits=httpx.Limits(max_connections=concurrency * 2))
@@ -189,7 +191,9 @@ async def run_level(
             except asyncio.QueueEmpty:
                 return
             messages, max_tokens = profile.request(i)
-            results.append(await stream_chat(client, base_url, model, messages, max_tokens, extra_body))
+            results.append(
+                await stream_chat(client, base_url, model, messages, max_tokens, extra_body, headers=headers)
+            )
 
     t0 = time.perf_counter()
     try:
@@ -209,15 +213,16 @@ async def sweep(
     requests_per_level: int,
     extra_body: dict[str, Any] | None = None,
     warmup_requests: int = 2,
+    headers: dict[str, str] | None = None,
 ) -> list[LevelSummary]:
     """Run a warm-up, then each concurrency level in order."""
     async with httpx.AsyncClient(limits=httpx.Limits(max_connections=max(concurrencies) * 2)) as client:
         if warmup_requests:
-            await run_level(base_url, model, profile, 1, warmup_requests, extra_body, client)
+            await run_level(base_url, model, profile, 1, warmup_requests, extra_body, client, headers)
         out = []
         for c in concurrencies:
             summary, _ = await run_level(
-                base_url, model, profile, c, max(requests_per_level, c), extra_body, client
+                base_url, model, profile, c, max(requests_per_level, c), extra_body, client, headers
             )
             out.append(summary)
         return out

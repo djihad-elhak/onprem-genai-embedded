@@ -1,0 +1,38 @@
+# Air-gap verification overlay.
+#
+# Puts every service on an *internal* Docker network (no route to the outside world) and runs the platform
+# smoke test from inside it. The smoke test fails if the LLM, embeddings or knowledge MCP server do not
+# answer, or if ANY outbound connection succeeds.
+#
+#   docker compose -f deploy/compose.yaml -f deploy/compose.offline.yaml --profile cpu --profile smoke \
+#     up --abort-on-container-exit --exit-code-from smoke
+#
+# Host port publishing is disabled by Docker on internal networks; that is intended here.
+
+services:
+  smoke:
+    image: ${OGE_IMAGE:-onprem-genai/oge:0.1.0}
+    profiles: [smoke]
+    restart: "no"
+    environment:
+      OGE_API_KEY: ${OGE_API_KEY}
+    command:
+      - platform
+      - smoke
+      - --llm-url
+      - http://llm:8080
+      - --embed-url
+      - http://embeddings:8081
+      - --mcp-url
+      - http://knowledge-mcp:8765/mcp
+      - --expect-offline
+      - --wait
+      - "900"
+    depends_on:
+      knowledge-mcp:
+        condition: service_healthy
+    networks: [platform]
+
+networks:
+  platform:
+    internal: true

@@ -1,0 +1,8 @@
+# Aider (terminal pair-programmer) on the on-prem LLM. Copy to <repo>/.aider.conf.yml and export
+# OPENAI_API_KEY=<OGE_API_KEY> in the shell (the key is never stored in the repository).
+openai-api-base: http://localhost:8080/v1
+model: openai/default
+edit-format: diff
+auto-commits: false
+analytics-disable: true
+check-update: false

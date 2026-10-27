@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "engineering-knowledge": {
+      "type": "streamable-http",
+      "url": "http://localhost:8765/mcp"
+    },
+    "engineering-knowledge-local": {
+      "type": "stdio",
+      "command": "oge",
+      "args": ["mcp", "serve", "--graph", "artifacts/fprime_graph.jsonl.gz"]
+    }
+  }
+}

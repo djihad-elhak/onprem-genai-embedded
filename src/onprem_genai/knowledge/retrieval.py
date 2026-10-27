@@ -79,9 +79,15 @@ class OpenAIEmbedder:
     """Any OpenAI-compatible embeddings endpoint (llama.cpp ``--embedding``, vLLM, TEI...)."""
 
     def __init__(
-        self, base_url: str, model: str, query_instruction: str | None = None, batch: int = 32
+        self,
+        base_url: str,
+        model: str,
+        query_instruction: str | None = None,
+        batch: int = 32,
+        api_key: str | None = None,
     ) -> None:
         self.base_url, self.model, self.batch = base_url.rstrip("/"), model, batch
+        self.headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
         self.query_instruction = query_instruction
         self.name = f"openai:{model}"
 
@@ -90,7 +96,7 @@ class OpenAIEmbedder:
             f"Instruct: {self.query_instruction}\nQuery: " if (is_query and self.query_instruction) else ""
         )
         out: list[list[float]] = []
-        with httpx.Client(timeout=300) as client:
+        with httpx.Client(timeout=300, headers=self.headers) as client:
             for k in range(0, len(texts), self.batch):
                 chunk = [prefix + t for t in texts[k : k + self.batch]]
                 r = client.post(f"{self.base_url}/v1/embeddings", json={"model": self.model, "input": chunk})

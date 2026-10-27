@@ -1,0 +1,174 @@
+# On-prem GenAI platform — reference deployment.
+#
+#   cp deploy/.env.example deploy/.env           # set OGE_API_KEY / NEO4J_PASSWORD
+#   scripts/download_models.sh                    # models into deploy/models (connected machine)
+#   docker compose -f deploy/compose.yaml --profile cpu up -d            # laptop / CPU server
+#   docker compose -f deploy/compose.yaml --profile gpu up -d            # NVIDIA GPU server (llama.cpp CUDA)
+#   docker compose -f deploy/compose.yaml --profile vllm up -d           # multi-GPU server (vLLM)
+#   add  --profile neo4j  to persist the knowledge graph in Neo4j (Cypher, Neo4j Browser on :7474)
+#
+# Air-gap verification: deploy/compose.offline.yaml (internal network + smoke test with egress probe).
+
+name: onprem-genai
+
+x-llama-cpu: &llama-cpu
+  image: ${LLAMACPP_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
+  restart: unless-stopped
+  volumes:
+    - ./models:/models:ro
+  networks: [platform]
+
+services:
+  # ------------------------------------------------------------------------------------- generation
+  llm-cpu:
+    <<: *llama-cpu
+    profiles: [cpu]
+    command: >-
+      -m /models/llm.gguf --host 0.0.0.0 --port 8080
+      -c ${LLM_CTX_TOTAL:-16384} --parallel ${LLM_PARALLEL:-2} --threads ${LLM_THREADS:-8}
+      --jinja --metrics --api-key ${OGE_API_KEY:?set OGE_API_KEY in deploy/.env}
+    networks:
+      platform:
+        aliases: [llm]
+    ports: ["127.0.0.1:8080:8080"]
+    healthcheck: &llama-health
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 30s
+
+  llm-gpu:
+    image: ${LLAMACPP_CUDA_IMAGE:-ghcr.io/ggml-org/llama.cpp:server-cuda}
+    profiles: [gpu]
+    restart: unless-stopped
+    volumes: ["./models:/models:ro"]
+    command: >-
+      -m /models/llm.gguf --host 0.0.0.0 --port 8080 -ngl 999
+      -c ${LLM_CTX_TOTAL:-65536} --parallel ${LLM_PARALLEL:-8}
+      --jinja --metrics --api-key ${OGE_API_KEY:?set OGE_API_KEY in deploy/.env}
+    networks:
+      platform:
+        aliases: [llm]
+    ports: ["127.0.0.1:8080:8080"]
+    healthcheck: *llama-health
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+
+  llm-vllm:
+    image: ${VLLM_IMAGE:-vllm/vllm-openai:v0.27.1}
+    profiles: [vllm]
+    restart: unless-stopped
+    ipc: host
+    environment:
+      HF_HUB_OFFLINE: "1"
+      HF_HOME: /models/hf
+    volumes: ["./models:/models:ro"]
+    command: >-
+      --model ${VLLM_MODEL:-/models/vllm-model} --served-model-name default
+      --host 0.0.0.0 --port 8080 --tensor-parallel-size ${VLLM_TP:-2}
+      --max-model-len ${VLLM_MAX_MODEL_LEN:-32768} --gpu-memory-utilization 0.90
+      --enable-prefix-caching --api-key ${OGE_API_KEY:?set OGE_API_KEY in deploy/.env}
+    networks:
+      platform:
+        aliases: [llm]
+    ports: ["127.0.0.1:8080:8080"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 60
+      start_period: 120s
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+
+  # ------------------------------------------------------------------------------------- embeddings
+  embeddings:
+    <<: *llama-cpu
+    command: >-
+      -m /models/embed.gguf --host 0.0.0.0 --port 8081 --embedding --pooling last
+      -c 8192 -ub 8192 --api-key ${OGE_API_KEY:?set OGE_API_KEY in deploy/.env}
+    ports: ["127.0.0.1:8081:8081"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  # ------------------------------------------------------------------------------------- knowledge
+  knowledge-mcp:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: ${OGE_IMAGE:-onprem-genai/oge:0.1.0}
+    restart: unless-stopped
+    environment:
+      OGE_API_KEY: ${OGE_API_KEY}
+      OGE_MCP_NEO4J: ${OGE_MCP_NEO4J:-0}
+      # Dense retrieval (opt-in): first start embeds ~11k graph nodes, cached in the oge-cache volume.
+      OGE_MCP_EMBEDDER: ${OGE_MCP_EMBEDDER:-}
+      OGE_MCP_EMBED_CACHE: /cache
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-change-me-please}
+    command:
+      - mcp
+      - serve
+      - --graph
+      - /data/fprime_graph.jsonl.gz
+      - --transport
+      - streamable-http
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8765"
+    volumes:
+      - oge-cache:/cache
+    depends_on:
+      embeddings:
+        condition: service_healthy
+    networks: [platform]
+    ports: ["127.0.0.1:8765:8765"]
+
+  neo4j:
+    image: ${NEO4J_IMAGE:-neo4j:5.26-community}
+    profiles: [neo4j]
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-change-me-please}
+      NEO4J_server_memory_heap_max__size: 1G
+      NEO4J_server_memory_pagecache_size: 512M
+    volumes: ["neo4j-data:/data"]
+    networks: [platform]
+    ports: ["127.0.0.1:7474:7474", "127.0.0.1:7687:7687"]
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p \"$${NEO4J_AUTH#neo4j/}\" 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+
+  graph-loader:
+    image: ${OGE_IMAGE:-onprem-genai/oge:0.1.0}
+    profiles: [neo4j]
+    restart: "no"
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-change-me-please}
+    command: [knowledge, load-neo4j, --graph, /data/fprime_graph.jsonl.gz]
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    networks: [platform]
+
+networks:
+  platform: {}
+
+volumes:
+  neo4j-data: {}
+  oge-cache: {}

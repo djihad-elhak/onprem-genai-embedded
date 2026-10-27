@@ -151,10 +151,12 @@ class LlmJudge:
         model: str = "default",
         max_code_chars: int = 3500,
         extra_body: dict[str, Any] | None = None,
+        api_key: str | None = None,
     ) -> None:
         self.base_url, self.model, self.max_code_chars = base_url.rstrip("/"), model, max_code_chars
         self.extra_body = extra_body or {}
-        self.client = httpx.Client(timeout=300)
+        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        self.client = httpx.Client(timeout=300, headers=headers)
 
     def score(self, req_text: str, code: str) -> float:
         body = {

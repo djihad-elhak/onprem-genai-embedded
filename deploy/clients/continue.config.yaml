@@ -1,0 +1,41 @@
+# Continue (VS Code / JetBrains) pointed at the on-prem platform. Copy to ~/.continue/config.yaml.
+# Everything stays on the internal network: chat/edit/autocomplete on the local LLM, code/requirement
+# knowledge through the platform's MCP server.
+name: On-prem engineering assistant
+version: 0.1.0
+schema: v1
+
+models:
+  - name: On-prem coder
+    provider: openai
+    model: default
+    apiBase: http://localhost:8080/v1
+    apiKey: ${{ secrets.OGE_API_KEY }}
+    roles:
+      - chat
+      - edit
+      - apply
+    capabilities:
+      - tool_use
+    defaultCompletionOptions:
+      temperature: 0.2
+      maxTokens: 2048
+  - name: On-prem autocomplete
+    provider: openai
+    model: default
+    apiBase: http://localhost:8080/v1
+    apiKey: ${{ secrets.OGE_API_KEY }}
+    roles:
+      - autocomplete
+    autocompleteOptions:
+      debounceDelay: 250
+      maxPromptTokens: 1024
+
+mcpServers:
+  - name: Engineering knowledge (code, requirements, tests)
+    type: streamable-http
+    url: http://localhost:8765/mcp
+
+rules:
+  - Flight-software context. Cite requirement IDs and file:line locations from the knowledge server.
+  - Never invent requirement IDs; use trace_requirement / coverage_gaps to check traceability.
