@@ -1,0 +1,104 @@
+# GPU catalog for capacity planning.
+# fp16_dense_tflops: dense FP16 Tensor Core throughput. Where NVIDIA publishes the figure "with sparsity",
+# the dense value is half of it (NVIDIA footnote: "Shown with sparsity. Specifications 1/2 lower without sparsity").
+# Every value carries its source; nothing here is estimated unless marked `derived`.
+gpus:
+  t4:
+    name: NVIDIA Tesla T4
+    arch: Turing
+    compute_capability: "7.5"
+    memory_gb: 16
+    bandwidth_gbs: 300
+    fp16_dense_tflops: 65
+    tdp_w: 70
+    supports_bf16: false
+    supports_fp8: false
+    source: "NVIDIA T4 datasheet (nvidia.com/content/dam/en-zz/Solutions/Data-Center/tesla-t4/t4-tensor-core-datasheet-951643.pdf): 16 GB GDDR6, 300 GB/s, 65 TFLOPS mixed precision, 70 W"
+  l4:
+    name: NVIDIA L4
+    arch: Ada Lovelace
+    compute_capability: "8.9"
+    memory_gb: 24
+    bandwidth_gbs: 300
+    fp16_dense_tflops: 121
+    tdp_w: 72
+    supports_bf16: true
+    supports_fp8: true
+    source: "NVIDIA L4 datasheet (Cisco-hosted): 24 GB, 300 GB/s, FP16 242 TFLOPS with sparsity -> 121 dense (derived), 72 W"
+  l40s:
+    name: NVIDIA L40S
+    arch: Ada Lovelace
+    compute_capability: "8.9"
+    memory_gb: 48
+    bandwidth_gbs: 864
+    fp16_dense_tflops: 362
+    tdp_w: 350
+    supports_bf16: true
+    supports_fp8: true
+    source: "Vendor comparison of NVIDIA specs (naddod.com) and Univ. of Utah CHPC GPU table: 48 GB GDDR6, 864 GB/s, FP16 362 dense / 733 sparse, 350 W"
+  a100-80g-pcie:
+    name: NVIDIA A100 80GB PCIe
+    arch: Ampere
+    compute_capability: "8.0"
+    memory_gb: 80
+    bandwidth_gbs: 1935
+    fp16_dense_tflops: 312
+    tdp_w: 300
+    supports_bf16: true
+    supports_fp8: false
+    source: "Univ. of Utah CHPC GPU table: 80 GB HBM2e, 1.935 TB/s, FP16 624 TFLOPS with sparsity -> 312 dense (derived)"
+  a100-80g-sxm:
+    name: NVIDIA A100 80GB SXM
+    arch: Ampere
+    compute_capability: "8.0"
+    memory_gb: 80
+    bandwidth_gbs: 2039
+    fp16_dense_tflops: 312
+    tdp_w: 400
+    supports_bf16: true
+    supports_fp8: false
+    source: "Univ. of Utah CHPC GPU table and naddod.com: 80 GB HBM2e, 2.039 TB/s, FP16 624 with sparsity -> 312 dense (derived), 400 W"
+  rtx-pro-6000-server:
+    name: NVIDIA RTX PRO 6000 Blackwell Server Edition
+    arch: Blackwell
+    compute_capability: "12.0"
+    memory_gb: 96
+    bandwidth_gbs: 1597
+    fp16_dense_tflops: 500
+    tdp_w: 600
+    supports_bf16: true
+    supports_fp8: true
+    source: "NVIDIA datasheet (Akamai-hosted): 96 GB GDDR7, 1597 GB/s, up to 600 W; dense FP16 500 TFLOPS derived by flopper.io from NVIDIA's sparse figure"
+  h100-nvl:
+    name: NVIDIA H100 NVL
+    arch: Hopper
+    compute_capability: "9.0"
+    memory_gb: 94
+    bandwidth_gbs: 3900
+    fp16_dense_tflops: 835.5
+    tdp_w: 400
+    supports_bf16: true
+    supports_fp8: true
+    source: "nvidia.com/en-us/data-center/h100: 94 GB, 3.9 TB/s, FP16 1,671 TFLOPS with sparsity -> 835.5 dense (derived), 350-400 W"
+  h100-sxm:
+    name: NVIDIA H100 SXM
+    arch: Hopper
+    compute_capability: "9.0"
+    memory_gb: 80
+    bandwidth_gbs: 3350
+    fp16_dense_tflops: 989.5
+    tdp_w: 700
+    supports_bf16: true
+    supports_fp8: true
+    source: "nvidia.com/en-us/data-center/h100: 80 GB, 3.35 TB/s, FP16 1,979 TFLOPS with sparsity -> 989.5 dense (derived), up to 700 W"
+  h200:
+    name: NVIDIA H200
+    arch: Hopper
+    compute_capability: "9.0"
+    memory_gb: 141
+    bandwidth_gbs: 4800
+    fp16_dense_tflops: 989.5
+    tdp_w: 700
+    supports_bf16: true
+    supports_fp8: true
+    source: "Univ. of Utah CHPC GPU table and naddod.com: 141 GB HBM3e, 4.8 TB/s, FP16 1,979 with sparsity -> 989.5 dense (derived), 700 W"

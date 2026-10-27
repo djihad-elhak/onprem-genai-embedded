@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.pyright/
+.coverage
+htmlcov/
+
+# Third-party sources fetched by scripts/ (pinned, reproducible)
+third_party/
+
+# Generated artifacts (rebuildable from sources)
+artifacts/
+*.gguf
+*.safetensors
+
+# Local environment
+.env
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

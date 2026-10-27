@@ -1,0 +1,11 @@
+onprem-genai-embedded
+Copyright 2026 The onprem-genai-embedded authors
+
+This project analyses and builds against NASA F´ (F Prime) flight software, which is fetched at a pinned
+release by scripts/fetch_fprime.sh and is NOT redistributed in this repository:
+  F´ (https://github.com/nasa/fprime), v4.4.1
+  Copyright (c) 2026 California Institute of Technology ("Caltech"). U.S. Government sponsorship acknowledged.
+  Licensed under the Apache License, Version 2.0.
+Neither the name of Caltech nor its operating division, the Jet Propulsion Laboratory, endorses this project.
+
+Third-party open-weight models referenced in benchmarks are governed by their own licenses.

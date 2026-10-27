@@ -1,0 +1,25 @@
+# Team workload scenarios for capacity planning.
+# These are ASSUMPTIONS, stated explicitly so they can be challenged and replaced by pilot telemetry
+# (the pilot protocol in docs/ measures exactly these quantities). Rates are per *active* engineer
+# during the peak hour.
+defaults:
+  peak_active_fraction: 0.6        # share of the team using the assistant during the peak hour
+  min_decode_tps_per_sequence: 20  # SLO: streaming speed each user sees (~4x human reading speed)
+  headroom: 1.25                   # capacity margin for burstiness and failover
+
+scenarios:
+  chat:
+    description: IDE chat and Q&A over retrieved code/docs context
+    request_classes:
+      - {name: chat, requests_per_engineer_hour: 12, prompt_tokens: 3000, output_tokens: 400, cached_prefix_fraction: 0.0}
+  chat_agents:
+    description: Chat plus agentic tasks (test generation, CI triage); agents resend long, mostly cached contexts
+    request_classes:
+      - {name: chat, requests_per_engineer_hour: 12, prompt_tokens: 3000, output_tokens: 400, cached_prefix_fraction: 0.0}
+      - {name: agent_step, requests_per_engineer_hour: 30, prompt_tokens: 12000, output_tokens: 250, cached_prefix_fraction: 0.7}
+  full:
+    description: Chat, agents and inline code completion in the editor
+    request_classes:
+      - {name: chat, requests_per_engineer_hour: 12, prompt_tokens: 3000, output_tokens: 400, cached_prefix_fraction: 0.0}
+      - {name: agent_step, requests_per_engineer_hour: 30, prompt_tokens: 12000, output_tokens: 250, cached_prefix_fraction: 0.7}
+      - {name: completion, requests_per_engineer_hour: 120, prompt_tokens: 1500, output_tokens: 40, cached_prefix_fraction: 0.5}

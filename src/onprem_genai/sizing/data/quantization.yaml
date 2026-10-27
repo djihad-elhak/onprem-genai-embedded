@@ -1,0 +1,23 @@
+# Effective bits per weight used when no measured artifact size is available.
+# Measured artifact sizes (GGUF / safetensors) always take precedence in the calculator.
+weight_formats:
+  f16: {bits_per_weight: 16.0005, source: "llama.cpp tools/quantize/README.md, Llama-3.1-8B table"}
+  bf16: {bits_per_weight: 16.0, source: "definition"}
+  q8_0: {bits_per_weight: 8.5008, source: "llama.cpp tools/quantize/README.md, Llama-3.1-8B table"}
+  q6_k: {bits_per_weight: 6.5633, source: "llama.cpp tools/quantize/README.md, Llama-3.1-8B table"}
+  q5_k_m: {bits_per_weight: 5.7036, source: "llama.cpp tools/quantize/README.md, Llama-3.1-8B table"}
+  q4_k_m: {bits_per_weight: 4.8944, source: "llama.cpp tools/quantize/README.md, Llama-3.1-8B table"}
+  fp8: {bits_per_weight: 8.0, source: "definition (per-tensor/channel scales negligible)"}
+  awq_int4_g128:
+    bits_per_weight: 4.16
+    source: "derived: 4-bit weights + one FP16 scale and one 4-bit zero point per group of 128 -> 4 + 20/128"
+  gptq_int4_g128:
+    bits_per_weight: 4.16
+    source: "derived: same group layout as AWQ int4 g128"
+
+kv_cache_formats:
+  f16: {bytes_per_element: 2.0, source: "definition"}
+  bf16: {bytes_per_element: 2.0, source: "definition"}
+  fp8: {bytes_per_element: 1.0, source: "definition; requires FP8-capable GPU in vLLM"}
+  q8_0: {bytes_per_element: 1.0625, source: "llama.cpp q8_0 block: 32 int8 + 1 fp16 scale = 34 bytes / 32"}
+  q4_0: {bytes_per_element: 0.5625, source: "llama.cpp q4_0 block: 32 x 4-bit + 1 fp16 scale = 18 bytes / 32"}
