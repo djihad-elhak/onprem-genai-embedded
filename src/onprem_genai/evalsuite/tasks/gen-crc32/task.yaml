@@ -1,0 +1,9 @@
+id: gen-crc32
+category: generate
+title: CRC-32 (ISO-HDLC / IEEE 802.3)
+domain: integrity checks (file transfer, Ethernet)
+difficulty: easy
+description: |
+  Implement CRC-32/ISO-HDLC as used by Ethernet and zlib: reflected polynomial 0xEDB88320, initial value
+  0xFFFFFFFF, reflected input and output, final XOR 0xFFFFFFFF. Also implement the incremental update
+  declared in task.h. A 256-entry table is allowed but must be computed or written statically (no heap).

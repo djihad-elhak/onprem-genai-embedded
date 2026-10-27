@@ -1,0 +1,10 @@
+id: gen-lfsr-scrambler
+category: generate
+title: Additive scrambler x^7 + x^4 + 1 (IEEE 802.11 style)
+domain: radio physical layer
+difficulty: medium
+description: |
+  Implement the 7-bit additive scrambler exactly as defined in task.h (state layout, feedback taps, bit
+  order). The scrambler keeps state across calls, so scrambling a buffer in several chunks must give the
+  same output as in one call; applying it twice with the same seed restores the input. in and out may be
+  the same buffer.

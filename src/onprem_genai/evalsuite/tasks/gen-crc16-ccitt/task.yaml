@@ -1,0 +1,9 @@
+id: gen-crc16-ccitt
+category: generate
+title: CRC-16/CCITT-FALSE with incremental update
+domain: integrity checks (telecommand / telemetry frames)
+difficulty: easy
+description: |
+  Implement the two functions declared in task.h: CRC-16/CCITT-FALSE (polynomial 0x1021, initial value
+  0xFFFF, no input/output reflection, final XOR 0x0000), computed bitwise or with a table, plus an
+  incremental variant that continues a CRC over additional data. `data` may be NULL when `len` is 0.

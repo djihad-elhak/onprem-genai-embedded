@@ -1,0 +1,7 @@
+id: tst-fletcher16
+category: testgen
+title: Unit tests for Fletcher-16 checksum and frame check
+domain: integrity checks
+difficulty: medium
+description: |
+  Write a complete unit-test program (tests.c with a main function) for the implementation below, using the CHECK macros of oge_test.h and returning OGE_REPORT(). Tests must pass on this implementation and should detect any deviation from the specification in task.h.

@@ -1,0 +1,8 @@
+id: gen-conv-encoder
+category: generate
+title: Rate-1/2, K=3 convolutional encoder (generators 7, 5 octal)
+domain: radio channel coding
+difficulty: medium
+description: |
+  Implement the convolutional encoder exactly as specified in task.h: bit order of input and output,
+  generator polynomials, zero initial state, no tail bits. Unused bits of the last output byte must be 0.

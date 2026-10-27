@@ -1,0 +1,7 @@
+id: ref-mode-manager
+category: refactor
+title: Refactor a flag-soup mode manager into a state table
+domain: instrument modes
+difficulty: medium
+description: |
+  Refactor the code for readability and maintainability without changing its behaviour: replace magic numbers with named constants, remove duplication, reduce nesting and cyclomatic complexity (split into small static functions or use tables), never use goto. The public functions of task.h must keep their exact signatures and behaviour; hidden tests check it.

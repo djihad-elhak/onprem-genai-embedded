@@ -615,6 +615,19 @@ wheels = [
 ]
 
 [[package]]
+name = "lizard"
+version = "1.24.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pathspec" },
+    { name = "pygments" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3d/a8/0c0b1a46ad296d0f3ed7efafa94745e8c6beb779e7b42c80f905f1966d77/lizard-1.24.3.tar.gz", hash = "sha256:7d2570ca711288388de1cf0f25512e97fbbc5e189f551c87b4e20d11d028b297", size = 123500, upload-time = "2026-10-24T09:31:53.259Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/10/4f/00874924fcc0544f8e294d2bf6a8550ee69f7501a0e2c54149443f763bd3/lizard-1.24.3-py2.py3-none-any.whl", hash = "sha256:f7fccd909719170e323a240cc6927bfea65984d77a8f9c0e6405be582e9861db", size = 142701, upload-time = "2026-10-24T09:31:51.611Z" },
+]
+
+[[package]]
 name = "markdown-it-py"
 version = "4.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -897,6 +910,11 @@ bench = [
     { name = "gguf" },
     { name = "huggingface-hub" },
 ]
+eval = [
+    { name = "lizard" },
+    { name = "tree-sitter" },
+    { name = "tree-sitter-cpp" },
+]
 knowledge = [
     { name = "mcp" },
     { name = "neo4j" },
@@ -920,6 +938,7 @@ requires-dist = [
     { name = "gguf", marker = "extra == 'bench'", specifier = ">=0.17" },
     { name = "httpx", specifier = ">=0.28" },
     { name = "huggingface-hub", marker = "extra == 'bench'", specifier = ">=0.30" },
+    { name = "lizard", marker = "extra == 'eval'", specifier = ">=1.17" },
     { name = "mcp", marker = "extra == 'knowledge'", specifier = ">=2.3,<3" },
     { name = "neo4j", marker = "extra == 'knowledge'", specifier = ">=5.28" },
     { name = "networkx", marker = "extra == 'knowledge'", specifier = ">=3.4" },
@@ -927,11 +946,13 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.10" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "rich", specifier = ">=13.9" },
+    { name = "tree-sitter", marker = "extra == 'eval'", specifier = ">=0.25" },
     { name = "tree-sitter", marker = "extra == 'knowledge'", specifier = ">=0.25" },
+    { name = "tree-sitter-cpp", marker = "extra == 'eval'", specifier = ">=0.23" },
     { name = "tree-sitter-cpp", marker = "extra == 'knowledge'", specifier = ">=0.23" },
     { name = "typer", specifier = ">=0.15" },
 ]
-provides-extras = ["knowledge", "bench"]
+provides-extras = ["knowledge", "bench", "eval"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -961,6 +982,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7d/fa/3944b40b07da9ce895c0e6303a5ab7d53da063554f534556b134a54d6093/packaging-26.3.tar.gz", hash = "sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79", size = 313412, upload-time = "2026-08-04T18:15:28.737Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl", hash = "sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c", size = 129956, upload-time = "2026-08-04T18:15:27.159Z" },
+]
+
+[[package]]
+name = "pathspec"
+version = "1.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/82/42f767fc1c1143d6fd36efb827202a2d997a375e160a71eb2888a925aac1/pathspec-1.1.1.tar.gz", hash = "sha256:17db5ecd524104a120e173814c90367a96a98d07c45b2e10c2f3919fff91bf5a", size = 135180, upload-time = "2026-04-27T01:46:08.907Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c73ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl", hash = "sha256:a00ce642f577bf7f473932318056212bc4f8bfdf53128c78bbd5af0b9b20b189", size = 57328, upload-time = "2026-04-27T01:46:07.06Z" },
 ]
 
 [[package]]

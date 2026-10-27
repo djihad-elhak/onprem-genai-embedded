@@ -1,0 +1,8 @@
+id: gen-tick-elapsed
+category: generate
+title: Wraparound-safe timeout on a 32-bit tick counter
+domain: RTOS timers / watchdogs
+difficulty: easy
+description: |
+  A free-running 32-bit millisecond counter wraps around every ~49.7 days. Implement the timeout helpers in
+  task.h so they stay correct across wraparound (assume the true elapsed time is always < 2^31 ms).

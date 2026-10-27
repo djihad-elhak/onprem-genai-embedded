@@ -1,0 +1,9 @@
+id: gen-hamming74
+category: generate
+title: Hamming(7,4) encoder / single-error-correcting decoder
+domain: forward error correction
+difficulty: medium
+description: |
+  Implement Hamming(7,4) with the bit layout documented in task.h (classic positions 1..7 =
+  p1 p2 d1 p3 d2 d3 d4, position 1 stored in bit 6). The decoder corrects any single-bit error and reports
+  whether it corrected one.

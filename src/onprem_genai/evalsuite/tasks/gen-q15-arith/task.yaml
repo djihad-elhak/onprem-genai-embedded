@@ -1,0 +1,9 @@
+id: gen-q15-arith
+category: generate
+title: Q15 fixed-point multiply and saturating add
+domain: fixed-point DSP (filters, AGC)
+difficulty: medium
+description: |
+  Implement saturating Q15 addition and Q15 multiplication with round-half-up and saturation, exactly as
+  specified in task.h. Avoid undefined behaviour (signed overflow) in every case, including
+  -32768 * -32768.

@@ -1,0 +1,9 @@
+id: gen-ring-buffer
+category: generate
+title: Fixed-capacity byte ring buffer
+domain: UART / radio driver buffering
+difficulty: easy
+description: |
+  Implement the FIFO byte ring buffer declared in task.h using only the fields of ring_buffer_t (no heap,
+  capacity RB_CAPACITY, not necessarily a power of two). A push on a full buffer must fail without
+  overwriting; a pop on an empty buffer must fail without writing *out.

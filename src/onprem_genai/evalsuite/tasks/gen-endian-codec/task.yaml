@@ -1,0 +1,8 @@
+id: gen-endian-codec
+category: generate
+title: Portable big/little-endian field codec
+domain: protocol encoding
+difficulty: easy
+description: |
+  Implement byte-order helpers that work on any host endianness and on unaligned pointers, without
+  undefined behaviour (beware integer promotion of uint8_t << 24).

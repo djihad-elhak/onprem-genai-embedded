@@ -35,6 +35,7 @@ knowledge = [
   "mcp>=2.3,<3",
 ]
 bench = ["gguf>=0.17", "huggingface_hub>=0.30"]
+eval = ["lizard>=1.17", "tree-sitter>=0.25", "tree-sitter-cpp>=0.23"]
 
 [project.scripts]
 oge = "onprem_genai.cli:app"
@@ -64,6 +65,7 @@ ignore = ["PLR0913", "PLR0917", "PLR2004", "PLR0911", "PLR0912", "RUF001", "RUF0
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["PLR2004", "S101"]
 "src/**" = ["PT018"]
+"scripts/evalsuite/**" = ["E501"]  # embedded C sources keep their own line lengths
 "kaggle/**" = ["E402", "E501", "E741", "PLC0415", "BLE001", "PLW0603", "PLW1510", "SIM105", "SIM115", "T201", "PLR0915"]
 
 [tool.pyright]

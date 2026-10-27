@@ -1,0 +1,7 @@
+id: tst-saturating-arith
+category: testgen
+title: Unit tests for saturating 16-bit arithmetic
+domain: fixed-point DSP
+difficulty: medium
+description: |
+  Write a complete unit-test program (tests.c with a main function) for the implementation below, using the CHECK macros of oge_test.h and returning OGE_REPORT(). Tests must pass on this implementation and should detect any deviation from the specification in task.h.

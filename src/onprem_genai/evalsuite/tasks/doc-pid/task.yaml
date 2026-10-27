@@ -1,0 +1,7 @@
+id: doc-pid
+category: document
+title: Document a fixed-point PID controller
+domain: control loops
+difficulty: easy
+description: |
+  Add Doxygen documentation to every function of the code below: a block comment `/** ... */` immediately above each function with @brief, one @param per parameter (using the exact parameter name) and @return for non-void functions; describe units, ranges, error codes and preconditions. Do not change any code: only comments may be added.

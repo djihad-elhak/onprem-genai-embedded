@@ -1,0 +1,10 @@
+id: gen-cobs
+category: generate
+title: COBS framing (Consistent Overhead Byte Stuffing)
+domain: serial / radio link framing
+difficulty: medium
+description: |
+  Implement COBS encoding and decoding as specified by Cheshire & Baker (the variant used by most embedded
+  stacks, without a trailing 0x00 delimiter in the output). Encoding never emits a zero byte; a block of
+  254 non-zero bytes is emitted with code 0xFF. Decoding returns 0 for malformed input: empty input, a
+  zero byte inside the frame, or a code byte pointing past the end of the input.

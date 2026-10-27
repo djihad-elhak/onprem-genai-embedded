@@ -1,0 +1,9 @@
+id: gen-debounce
+category: generate
+title: Switch / discrete-input debouncer
+domain: discrete I/O
+difficulty: easy
+description: |
+  Implement a sample-based debouncer: the debounced output only changes after DEBOUNCE_SAMPLES
+  consecutive raw samples that all differ from the current output. Any sample equal to the current output
+  resets the count.
