@@ -1,0 +1,3170 @@
+[
+  {
+    "requirement": "AF-001",
+    "module": "module:Svc/AssertFatalAdapter",
+    "verification": "Unit test",
+    "text": "The Svc::AssertFatalAdapter component shall convert all calls to FW_ASSERT to FATAL events",
+    "suggested_tests": [
+      "fn:Svc/AssertFatalAdapter/test/ut/main.cpp#TEST(Nominal, NominalInit)@3",
+      "fn:Svc/AssertFatalAdapter/test/ut/main.cpp#TEST(Nominal, FilePathTruncation)@7",
+      "fn:Svc/AssertFatalAdapter/test/ut/AssertFatalAdapterTester.cpp#Svc::AssertFatalAdapterTester::testAsserts@54"
+    ]
+  },
+  {
+    "requirement": "AP-001",
+    "module": "module:Svc/ActivePhaser",
+    "verification": "Inspection, Unit test",
+    "text": "The Svc::ActivePhaser component shall be active and will be woken up by an input asynchronous port call",
+    "suggested_tests": [
+      "fn:Svc/ActivePhaser/test/ut/ActivePhaserTester.cpp#Svc::ActivePhaserTester::check_cycle@144",
+      "fn:Svc/ActivePhaser/test/ut/ActivePhaserTester.cpp#Svc::ActivePhaserTester::test_rollover@282",
+      "fn:Svc/ActivePhaser/test/ut/ActivePhaserTestMain.cpp#TEST(Stress, Rollover)@46"
+    ]
+  },
+  {
+    "requirement": "AP-002",
+    "module": "module:Svc/ActivePhaser",
+    "verification": "Unit Test",
+    "text": "The Svc::ActivePhaser component shall invoke its output ports in the order of port call registrations",
+    "suggested_tests": [
+      "fn:Svc/ActivePhaser/test/ut/ActivePhaserTester.cpp#Svc::ActivePhaserTester::check_cycle@144",
+      "fn:Svc/ActivePhaser/test/ut/ActivePhaserTester.cpp#Svc::ActivePhaserTester::test_rollover@282",
+      "fn:Svc/ActivePhaser/test/ut/ActivePhaserTestMain.cpp#TEST(Stress, Rollover)@46"
+    ]
+  },
+  {
+    "requirement": "AP-003",
+    "module": "module:Svc/ActivePhaser",
+    "verification": "Unit Test",
+    "text": "The Svc::ActivePhaser component shall report a MissedDeadline warning event when a port call overruns its specified length",
+    "suggested_tests": [
+      "fn:Svc/ActivePhaser/test/ut/ActivePhaserTester.cpp#Svc::ActivePhaserTester::test_lethargic_children@242",
+      "fn:Svc/ActivePhaser/test/ut/ActivePhaserTester.cpp#Svc::ActivePhaserTester::test_lethargic_child@220",
+      "fn:Svc/ActivePhaser/test/ut/ActivePhaserTester.cpp#Svc::ActivePhaserTester::test_nominal_child@171"
+    ]
+  },
+  {
+    "requirement": "CD-005",
+    "module": "module:Svc/CmdDispatcher",
+    "verification": "Unit Test",
+    "text": "The Svc::CmdDispatcher component shall drop incoming commands to avert a queue overflow (DOS attack).",
+    "suggested_tests": [
+      "fn:Svc/CmdDispatcher/test/ut/CommandDispatcherTester.cpp#Svc::CommandDispatcherTester::runConcurrentQueueOverflow@794",
+      "fn:Svc/CmdDispatcher/test/ut/CommandDispatcherTestMain.cpp#TEST(CmdDispTestOffNominal, ConcurrentQueueOverflow)@250",
+      "fn:Svc/CmdDispatcher/test/ut/CommandDispatcherTester.cpp#Svc::CommandDispatcherTester::runCommandQueueOverflow@830"
+    ]
+  },
+  {
+    "requirement": "CD-006",
+    "module": "module:Svc/CmdDispatcher",
+    "verification": "Unit Test",
+    "text": "The Svc::CmdDispatcher component shall count every dropped command, including drops occurring concurrently on multiple caller threads, and report the count in the CommandsDropped telemetry channel.",
+    "suggested_tests": [
+      "fn:Svc/CmdDispatcher/test/ut/CommandDispatcherTester.cpp#Svc::CommandDispatcherTester::runConcurrentQueueOverflow@794",
+      "fn:Svc/CmdDispatcher/test/ut/CommandDispatcherTestMain.cpp#TEST(CmdDispTestOffNominal, ConcurrentQueueOverflow)@250",
+      "fn:Svc/CmdDispatcher/test/ut/CommandDispatcherTester.cpp#Svc::CommandDispatcherTester::runCommandQueueOverflow@830"
+    ]
+  },
+  {
+    "requirement": "CD-007",
+    "module": "module:Svc/CmdDispatcher",
+    "verification": "Unit Test",
+    "text": "The Svc::CmdDispatcher component shall not dispatch a command that it cannot track in the pending command table, unless configured to do so, in which case it shall dispatch the command and report that the command is untracked.",
+    "suggested_tests": [
+      "fn:Svc/CmdDispatcher/test/ut/CommandDispatcherTester.cpp#Svc::CommandDispatcherTester::runClearCommandTracking@681",
+      "fn:Svc/CmdDispatcher/test/ut/CommandDispatcherTester.cpp#Svc::CommandDispatcherTester::runOverflowCommands@570",
+      "fn:Svc/CmdDispatcher/test/ut/CommandDispatcherTestMain.cpp#TEST(CmdDispTestOffNominal, CommandOverflowExecuteUntracked)@196"
+    ]
+  },
+  {
+    "requirement": "CFDP-001",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test, System Test",
+    "text": "CfdpManager shall support CFDP Class 1 (unacknowledged) file transfers",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testTxFileTransferStartedEvent@135",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Event, TxFileTransferStarted)@395",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTester.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testClass2TxPortBased@1307"
+    ]
+  },
+  {
+    "requirement": "CFDP-002",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test, System Test",
+    "text": "CfdpManager shall support CFDP Class 2 (acknowledged) file transfers with automatic retransmission",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTester.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testClass2TxPortBasedNack@1316",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/PduTester.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testNakPdu@943",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testTxFileTransferStartedEvent@135"
+    ]
+  },
+  {
+    "requirement": "CFDP-003",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test",
+    "text": "CfdpManager shall detect missing file segments using gap tracking and request retransmission via NAK PDUs",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/PduTester.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testNakPdu@943",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testTxInvalidSegmentRequestsEvent@1494",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/PduTester.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::verifyNakPdu@389"
+    ]
+  },
+  {
+    "requirement": "CFDP-004",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test",
+    "text": "CfdpManager shall verify file integrity using CRC checksums and reject files with checksum mismatches",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testRxCrcMismatchEvent@644",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/PduTester.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::verifyEofPdu@236",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Event, RxCrcMismatch)@425"
+    ]
+  },
+  {
+    "requirement": "CFDP-005",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test, System Test",
+    "text": "CfdpManager shall support multiple simultaneous file transfers across configurable channels",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testTxFileTransferStartedEvent@135",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Event, TxFileTransferStarted)@395",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testRxEofCancelReceivedEvent@789"
+    ]
+  },
+  {
+    "requirement": "CFDP-006",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test",
+    "text": "CfdpManager shall support directory playback operations to transfer all files from a specified directory",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Command, PlaybackDirectoryNominal)@140",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Command, PlaybackDirectoryInvalidChannel)@145",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Command, PlaybackDirectoryOpenFailed)@150"
+    ]
+  },
+  {
+    "requirement": "CFDP-007",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test",
+    "text": "CfdpManager shall support directory polling operations to automatically detect and transfer new files at configurable intervals",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Command, PollDirectoryInvalidInterval)@170",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerCommandTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testPollDirectoryInvalidInterval@525",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerCommandTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testPollDirectoryNominal@389"
+    ]
+  },
+  {
+    "requirement": "CFDP-008",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test",
+    "text": "CfdpManager shall enforce configurable ACK and NAK retry limits and abandon transactions that exceed these limits",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testTxAckLimitReachedEvent@1631",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testRxAckLimitReachedEvent@1093",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testRxNakLimitReachedEvent@1159"
+    ]
+  },
+  {
+    "requirement": "CFDP-009",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test",
+    "text": "CfdpManager shall detect transaction inactivity using configurable timeout values and abandon inactive transactions",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testRxInactivityTimeoutEvent@1050",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testTxInactivityTimeoutEvent@1572",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Event, RxInactivityTimeout)@511"
+    ]
+  },
+  {
+    "requirement": "CFDP-010",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test",
+    "text": "CfdpManager shall support configurable file archiving to move completed files instead of deletion",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Event, FailKeepFileMove)@636",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Event, FailPollFileMove)@646",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testFailKeepFileMoveEvent@2577"
+    ]
+  },
+  {
+    "requirement": "CFDP-011",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test, System Test",
+    "text": "CfdpManager shall support both command-initiated and port-initiated file transfers",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTester.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testClass2TxPortBasedNack@1316",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTester.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testClass2TxPortBased@1307",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerCommandTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testPollDirectoryNominal@389"
+    ]
+  },
+  {
+    "requirement": "CFDP-012",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test",
+    "text": "CfdpManager shall support flow control to freeze and resume channel operations",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Command, SetChannelFlowInvalidChannel)@185",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerCommandTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testSetChannelFlowNominal@645",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Command, SuspendResumeTransactionInvalidChannel)@195"
+    ]
+  },
+  {
+    "requirement": "CFDP-013",
+    "module": "module:Svc/Ccsds/CfdpManager",
+    "verification": "Unit Test",
+    "text": "CfdpManager shall process malformed or degenerate received PDUs, including zero-length FileData segments, without raising a FATAL assertion",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTester.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testClass2RxZeroLengthFileData@1260",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTestMain.cpp#TEST(Transaction, Class2RxZeroLengthFileData)@105",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerTester.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testClass2RxZeroLengthFile@1106"
+    ]
+  },
+  {
+    "requirement": "DRV-ASYNC-BSB-ADAPTER-001",
+    "module": "module:Drv/AsyncByteStreamBufferAdapter",
+    "verification": "Unit Test",
+    "text": "The component shall adapt the AsyncByteStreamDriver interface to the PassiveBufferDriver interface",
+    "suggested_tests": [
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTester.cpp#Drv::AsyncByteStreamBufferAdapterTester::test_byte_stream_return@126",
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTester.cpp#Drv::AsyncByteStreamBufferAdapterTester::test_byte_stream_out@53",
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTester.cpp#Drv::AsyncByteStreamBufferAdapterTester::test_byte_stream_in@91"
+    ]
+  },
+  {
+    "requirement": "DRV-ASYNC-BSB-ADAPTER-002",
+    "module": "module:Drv/AsyncByteStreamBufferAdapter",
+    "verification": "Unit Test",
+    "text": "The component shall handle buffer ownership transfers between the two interfaces",
+    "suggested_tests": [
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTester.cpp#Drv::AsyncByteStreamBufferAdapterTester::test_byte_stream_in@91",
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTester.cpp#Drv::AsyncByteStreamBufferAdapterTester::test_byte_stream_out@53",
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTester.cpp#Drv::AsyncByteStreamBufferAdapterTester::test_byte_stream_return@126"
+    ]
+  },
+  {
+    "requirement": "DRV-ASYNC-BSB-ADAPTER-003",
+    "module": "module:Drv/AsyncByteStreamBufferAdapter",
+    "verification": "Unit Test",
+    "text": "The component shall monitor the AsyncByteStreamDriver readiness state",
+    "suggested_tests": [
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTester.cpp#Drv::AsyncByteStreamBufferAdapterTester::test_byte_stream_return@126",
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTester.cpp#Drv::AsyncByteStreamBufferAdapterTester::test_byte_stream_out@53",
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTester.cpp#Drv::AsyncByteStreamBufferAdapterTester::test_byte_stream_in@91"
+    ]
+  },
+  {
+    "requirement": "DRV-ASYNC-BSB-ADAPTER-004",
+    "module": "module:Drv/AsyncByteStreamBufferAdapter",
+    "verification": "Unit Test",
+    "text": "The component shall emit events on error conditions",
+    "suggested_tests": [
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTester.cpp#Drv::AsyncByteStreamBufferAdapterTester::test_byte_stream_out@53",
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTester.cpp#Drv::AsyncByteStreamBufferAdapterTester::test_byte_stream_in@91",
+      "fn:Drv/AsyncByteStreamBufferAdapter/test/ut/AsyncByteStreamBufferAdapterTestMain.cpp#TEST(Nominal, Test_Stream_Return)@19"
+    ]
+  },
+  {
+    "requirement": "DRV-BSB-ADAPTER-001",
+    "module": "module:Drv/ByteStreamBufferAdapter",
+    "verification": "Unit Test",
+    "text": "The component shall adapt the ByteStreamDriver interface to the PassiveBufferDriver interface",
+    "suggested_tests": [
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTester.cpp#Drv::ByteStreamBufferAdapterTester::test_byte_stream_out@52",
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTestMain.cpp#TEST(Nominal, Test_Driver_Ready_State)@25",
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTester.cpp#Drv::ByteStreamBufferAdapterTester::test_byte_stream_in@104"
+    ]
+  },
+  {
+    "requirement": "DRV-BSB-ADAPTER-002",
+    "module": "module:Drv/ByteStreamBufferAdapter",
+    "verification": "Unit Test",
+    "text": "The component shall handle buffer ownership transfers between the two interfaces",
+    "suggested_tests": [
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTester.cpp#Drv::ByteStreamBufferAdapterTester::test_driver_ready_state@161",
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTester.cpp#Drv::ByteStreamBufferAdapterTester::test_byte_stream_return@143",
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTester.cpp#Drv::ByteStreamBufferAdapterTester::test_byte_stream_in@104"
+    ]
+  },
+  {
+    "requirement": "DRV-BSB-ADAPTER-003",
+    "module": "module:Drv/ByteStreamBufferAdapter",
+    "verification": "Unit Test",
+    "text": "The component shall monitor the ByteStreamDriver readiness state",
+    "suggested_tests": [
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTestMain.cpp#TEST(Nominal, Test_Driver_Ready_State)@25",
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTester.cpp#Drv::ByteStreamBufferAdapterTester::test_driver_ready_state@161",
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTester.cpp#Drv::ByteStreamBufferAdapterTester::test_byte_stream_in@104"
+    ]
+  },
+  {
+    "requirement": "DRV-BSB-ADAPTER-004",
+    "module": "module:Drv/ByteStreamBufferAdapter",
+    "verification": "Unit Test",
+    "text": "The component shall emit events on error conditions",
+    "suggested_tests": [
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTester.cpp#Drv::ByteStreamBufferAdapterTester::test_byte_stream_out@52",
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTester.cpp#Drv::ByteStreamBufferAdapterTester::test_byte_stream_in@104",
+      "fn:Drv/ByteStreamBufferAdapter/test/ut/ByteStreamBufferAdapterTester.cpp#Drv::ByteStreamBufferAdapterTester::test_driver_ready_state@161"
+    ]
+  },
+  {
+    "requirement": "FD-001",
+    "module": "module:Svc/FileDownlink",
+    "verification": "Test",
+    "text": "FileDownlink shall queue up a list of files to downlink",
+    "suggested_tests": [
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, Downlink)@7",
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, CancelDownlink)@17",
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, DownlinkPartial)@27"
+    ]
+  },
+  {
+    "requirement": "FD-002",
+    "module": "module:Svc/FileDownlink",
+    "verification": "Test",
+    "text": "FileDownlink shall read a file from non-volatile storage, partition the file into packets, and send out the packets.",
+    "suggested_tests": [
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, SendDataPacketRejectsExhaustedRange)@37",
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, SourceOutOfSandbox)@47",
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, SendFilePort)@42"
+    ]
+  },
+  {
+    "requirement": "FD-003",
+    "module": "module:Svc/FileDownlink",
+    "verification": "Test",
+    "text": "FileDownlink shall wait for a cooldown after completing a file downlink before starting another file downlink",
+    "suggested_tests": [
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, Downlink)@7",
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, CancelDownlink)@17",
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, DownlinkPartial)@27"
+    ]
+  },
+  {
+    "requirement": "FD-004",
+    "module": "module:Svc/FileDownlink",
+    "verification": "Test",
+    "text": "FileDownlink shall issue a warning if a file with zero size is encountered",
+    "suggested_tests": [
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, Downlink)@7",
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, CancelDownlink)@17",
+      "fn:Svc/FileDownlink/test/ut/FileDownlinkMain.cpp#TEST(FileDownlink, DownlinkPartial)@27"
+    ]
+  },
+  {
+    "requirement": "FH-001",
+    "module": "module:Svc/FatalHandler",
+    "verification": "Unit Test",
+    "text": "The Svc::FatalHandler component shall handle FATAL notifications",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, RapidNotificationStress)@1803",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, RapidSendAfterBlock)@1156",
+      "fn:Svc/Types/EventSeverityFilter/test/ut/EventSeverityFilterTestMain.cpp#TEST(EventSeverityFilter, FatalNeverFiltered)@53"
+    ]
+  },
+  {
+    "requirement": "FH-002",
+    "module": "module:Svc/FatalHandler",
+    "verification": "Unit Test",
+    "text": "The Svc::FatalHandler component shall shut down the Unix process",
+    "suggested_tests": [
+      "fn:Svc/EventManager/test/ut/EventManagerTestMain.cpp#TEST(EventManagerTest, FatalTesting)@145",
+      "fn:Svc/TlmChan/test/ut/TlmChanMain.cpp#TEST(TlmChanTest, ProcGuardTest)@59",
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::nominalCmd@483"
+    ]
+  },
+  {
+    "requirement": "FPRIME-FDISP-001",
+    "module": "module:Svc/FileDispatcher",
+    "verification": "Unit Test/System Test",
+    "text": "File dispatcher will provide a way to dispatch files to other components",
+    "suggested_tests": [
+      "fn:Svc/FileDispatcher/test/ut/FileDispatcherTestMain.cpp#TEST(Nominal, DispatchTest)@9",
+      "fn:Svc/FileDispatcher/test/ut/FileDispatcherTestMain.cpp#TEST(Nominal, DispatchAllDisabledTest)@19",
+      "fn:Svc/FileDispatcher/test/ut/FileDispatcherTestMain.cpp#TEST(Nominal, DispatchPingTest)@34"
+    ]
+  },
+  {
+    "requirement": "FPRIME-FDISP-002",
+    "module": "module:Svc/FileDispatcher",
+    "verification": "Unit Test/System Test",
+    "text": "File dispatcher will provide user configuration to map file types to output ports",
+    "suggested_tests": [
+      "fn:Svc/FileDispatcher/test/ut/FileDispatcherTestMain.cpp#TEST(Nominal, DispatchTest)@9",
+      "fn:Svc/FileDispatcher/test/ut/FileDispatcherTestMain.cpp#TEST(Nominal, DispatchAllDisabledTest)@19",
+      "fn:Svc/FileDispatcher/test/ut/FileDispatcherTestMain.cpp#TEST(Nominal, DispatchPingTest)@34"
+    ]
+  },
+  {
+    "requirement": "FPRIME-FDISP-003",
+    "module": "module:Svc/FileDispatcher",
+    "verification": "Unit Test/System Test",
+    "text": "File dispatcher will dispatch to specified output ports based on the supplied table",
+    "suggested_tests": [
+      "fn:Svc/FileDispatcher/test/ut/FileDispatcherTestMain.cpp#TEST(Nominal, DispatchTest)@9",
+      "fn:Svc/FileDispatcher/test/ut/FileDispatcherTestMain.cpp#TEST(Nominal, DispatchAllDisabledTest)@19",
+      "fn:Svc/FileDispatcher/test/ut/FileDispatcherTestMain.cpp#TEST(Nominal, DispatchPingTest)@34"
+    ]
+  },
+  {
+    "requirement": "FPRIME-FU-001",
+    "module": "module:Svc/FileUplink",
+    "verification": "Unit Test, System Test",
+    "text": "FileUplink shall receive file packets, assemble them into files, and store the files in the on-board non-volatile storage.",
+    "suggested_tests": [
+      "fn:Svc/FileUplink/test/ut/FileUplinkMain.cpp#TEST(FileUplink, PacketDuplicated)@52",
+      "fn:Svc/FileUplink/test/ut/FileUplinkMain.cpp#TEST(FileUplink, PacketOutOfBounds)@42",
+      "fn:Svc/FileUplink/test/ut/FileUplinkMain.cpp#TEST(FileUplink, PacketOutOfOrder)@47"
+    ]
+  },
+  {
+    "requirement": "FPRIME-FU-002",
+    "module": "module:Svc/FileUplink",
+    "verification": "Unit Test, System Test",
+    "text": "FileUplink shall announce the completion of uplinked files.",
+    "suggested_tests": [
+      "fn:Svc/FileUplink/test/ut/FileUplinkMain.cpp#TEST(FileUplink, SendFile)@7",
+      "fn:Svc/FileUplink/test/ut/FileUplinkMain.cpp#TEST(FileUplink, BadChecksum)@12",
+      "fn:Svc/FileUplink/test/ut/FileUplinkMain.cpp#TEST(FileUplink, PacketDuplicated)@52"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-001",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support branching on conditionals.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, readBytes)@3428",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, stackOp)@393"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-002",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support arithmetic and logical operations on 64bit signed, unsigned, and floating point numbers.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, fadd_underflow)@1382",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, stackOp)@393",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, add_arithmetic_underflow)@1480"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-003",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support accessing telemetry.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_noOp_directiveHandler@530",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_get_m_tlm_ptr@713",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, loadAbs)@2338"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-004",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support accessing the parameter database.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_noOp_directiveHandler@530",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, loadAbs)@2338",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, storeAbsConstOffset)@2428"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-005",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support calling subroutines with arguments and a single return value.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, CrcHardcodedValue_SingleByte)@5561",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, CrcHardcodedValue_Incremental)@5570",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_call_directiveHandler@615"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-006",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support scoped variables.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_get_m_sequenceFilePath@737",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, readBytes)@3428",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-007",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support executing directives at relative times.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_pushTime_directiveHandler@651",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_pushTlmValAndTime_directiveHandler@564"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-008",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support executing directives at absolute times.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_pushTime_directiveHandler@651",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_pushTlmValAndTime_directiveHandler@564"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-009",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support sequence-local variables.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_get_m_sequenceFilePath@737",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, readBytes)@3428",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-010",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support dispatching commands with dynamic and constant arguments.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, cmd_VALIDATE_ARGS_zero_length_arg_name)@2943",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, cmd_VALIDATE_ARGS_zero_length_type_name)@2970"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-011",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support running sequences with arguments.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, cmd_RUN_ARGS)@2656",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, seqRunInArgs)@4349",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, cmd_VALIDATE_ARGS)@2835"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-012",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall read a binary-encoded sequence file of the format produced by the fprime-fpyc compiler (in the fprime-gds package)",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, or_underflow)@1241",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, readBody)@3324",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, readFooter)@3404"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-013",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support sending commands for dispatch.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, cmd_STEP)@3168",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, cmd_BREAK)@3111",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-014",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support parameterized sequences.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, readBytes)@3428",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_get_m_sequenceObj_ptr@802"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-015",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support conversions between F Prime signed, unsigned, and floating-point primitive types and their equivalent 64-bit types.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, stackOp)@393",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_op_itrunc_64_16@951",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_op_itrunc_64_32@954"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-016",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support exiting the sequence execution with a specified exit code.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, exit)@1662",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestSequences.cpp#TEST_F(FpySequencerTester, NotTrueSeq)@114",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestSequences.cpp#TEST_F(FpySequencerTester, ComplexControlFlow)@24"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-017",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support looping constructs.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, readBytes)@3428",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, stackOp)@393"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-018",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support NO OP functionality.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, readBytes)@3428",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, stackOp)@393"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-019",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support working with complex modeled data structures (Arrays, Serializables).",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestSequences.cpp#TEST_F(FpySequencerTester, ComplexControlFlow)@24",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, popSerializable_success)@5590",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_popSerializable_directiveHandler@687"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-020",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support setting flags as described in the [Flags](#flags) section via command and sequence directive.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, cmd)@336",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, exit)@1662"
+    ]
+  },
+  {
+    "requirement": "FPY-SEQ-021",
+    "module": "module:Svc/FpySequencer",
+    "verification": "Unit Test",
+    "text": "The sequencer shall support the directives described in the [Directives](#directives) section.",
+    "suggested_tests": [
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, stackOp)@393",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTestMain.cpp#TEST_F(FpySequencerTester, dispatchStatement)@3710",
+      "fn:Svc/FpySequencer/test/ut/FpySequencerTester.cpp#Svc::FpySequencerTester::tester_if_directiveHandler@550"
+    ]
+  },
+  {
+    "requirement": "FileWorker-001",
+    "module": "module:Svc/FileWorker",
+    "verification": "Unit Test",
+    "text": "FileWorker shall provide an async interface to read contents from a file and return the data in a client-provided buffer",
+    "suggested_tests": [
+      "fn:Svc/FileWorker/test/ut/FileWorkerErrTester.cpp#Svc::FileWorkerTester::testReadErrStatusReported@94",
+      "fn:Svc/FileWorker/test/ut/FileWorkerErrTester.cpp#Svc::FileWorkerTester::testReadErr@31",
+      "fn:Svc/FileWorker/test/ut/FileWorkerTester.cpp#Svc::FileWorkerTester::testReadFile@36"
+    ]
+  },
+  {
+    "requirement": "FileWorker-002",
+    "module": "module:Svc/FileWorker",
+    "verification": "Unit Test",
+    "text": "FileWorker shall provide an interface to write contents to a file passed in from a client-provided buffer",
+    "suggested_tests": [
+      "fn:Svc/FileWorker/test/ut/FileWorkerErrTester.cpp#Svc::FileWorkerTester::testReadErrStatusReported@94",
+      "fn:Svc/FileWorker/test/ut/FileWorkerTester.cpp#Svc::FileWorkerTester::testWriteZeroLength@511",
+      "fn:Svc/FileWorker/test/ut/FileWorkerErrTester.cpp#Svc::FileWorkerTester::testWriteErrStatusReported@193"
+    ]
+  },
+  {
+    "requirement": "FileWorker-003",
+    "module": "module:Svc/FileWorker",
+    "verification": "Unit Test",
+    "text": "FileWorker shall handle receiving read-done signals while in improper state",
+    "suggested_tests": [
+      "fn:Svc/FileWorker/test/ut/FileWorkerErrTester.cpp#Svc::FileWorkerTester::testReadInvalidInput@281",
+      "fn:Svc/FileWorker/test/ut/FileWorkerTester.cpp#Svc::FileWorkerTester::testReadFile@36",
+      "fn:Svc/FileWorker/test/ut/FileWorkerErrTester.cpp#Svc::FileWorkerTester::testReadErrStatusReported@94"
+    ]
+  },
+  {
+    "requirement": "FileWorker-004",
+    "module": "module:Svc/FileWorker",
+    "verification": "Unit Test",
+    "text": "FileWorker shall handle cancel for reads",
+    "suggested_tests": [
+      "fn:Svc/FileWorker/test/ut/FileWorkerTester.cpp#Svc::FileWorkerTester::testCancel@92",
+      "fn:Svc/FileWorker/test/ut/FileWorkerErrTester.cpp#Svc::FileWorkerTester::testReadErrStatusReported@94",
+      "fn:Svc/FileWorker/test/ut/FileWorkerTestMain.cpp#TEST(Nominal, testCancel)@14"
+    ]
+  },
+  {
+    "requirement": "FileWorker-005",
+    "module": "module:Svc/FileWorker",
+    "verification": "Unit Test",
+    "text": "FileWorker shall validate the inputs to its read, write, and verify port handlers and report malformed inputs via an event and a failure status rather than asserting",
+    "suggested_tests": [
+      "fn:Svc/FileWorker/test/ut/FileWorkerErrTester.cpp#Svc::FileWorkerTester::testReadInvalidInput@281",
+      "fn:Svc/FileWorker/test/ut/FileWorkerTester.cpp#Svc::FileWorkerTester::testPathTooLong@565",
+      "fn:Svc/FileWorker/test/ut/FileWorkerErrTester.cpp#Svc::FileWorkerTester::testWriteErrStatusReported@193"
+    ]
+  },
+  {
+    "requirement": "GENHUB-001",
+    "module": "module:Svc/GenericHub",
+    "verification": "Unit test",
+    "text": "The GenericHub shall receive incoming port and buffer calls.",
+    "suggested_tests": [
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_buffer_io@57",
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_in_out@47",
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_invalid_deserialization_paths@265"
+    ]
+  },
+  {
+    "requirement": "GENHUB-002",
+    "module": "module:Svc/GenericHub",
+    "verification": "Unit test",
+    "text": "The GenericHub shall serialize incoming port and buffer calls to an output buffer-driver port.",
+    "suggested_tests": [
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_invalid_deserialization_paths@265",
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_buffer_io@57",
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_in_out@47"
+    ]
+  },
+  {
+    "requirement": "GENHUB-003",
+    "module": "module:Svc/GenericHub",
+    "verification": "Unit test",
+    "text": "The GenericHub shall deserialize incoming transport buffers to output port and buffer calls.",
+    "suggested_tests": [
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_invalid_deserialization_paths@265",
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_buffer_io@57",
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_in_out@47"
+    ]
+  },
+  {
+    "requirement": "GENHUB-004",
+    "module": "module:Svc/GenericHub",
+    "verification": "Unit test",
+    "text": "The GenericHub shall work with another GenericHub to send port and buffer calls.",
+    "suggested_tests": [
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_buffer_io@57",
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_invalid_deserialization_paths@265",
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_in_out@47"
+    ]
+  },
+  {
+    "requirement": "GENHUB-005",
+    "module": "module:Svc/GenericHub",
+    "verification": "Unit test",
+    "text": "The GenericHub shall forward command dispatches and command responses between deployments.",
+    "suggested_tests": [
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_commands@201",
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_commands_nonzero_port@207",
+      "fn:Svc/GenericHub/test/ut/GenericHubTester.cpp#Svc::GenericHubTester::test_command_response@189"
+    ]
+  },
+  {
+    "requirement": "HTH-001",
+    "module": "module:Svc/Health",
+    "verification": "Unit Test",
+    "text": "The Svc::Health component shall ping each output port specified in the provided table.",
+    "suggested_tests": [
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::nominalTlm@140",
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::faultTlm@203",
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::updatePingTimeout@426"
+    ]
+  },
+  {
+    "requirement": "HTH-002",
+    "module": "module:Svc/Health",
+    "verification": "Unit Test",
+    "text": "The Svc::Health component shall track the timeout cycles for each component.",
+    "suggested_tests": [
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::warningTlm@173",
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::updatePingTimeout@426",
+      "fn:Svc/Health/test/ut/HealthTestMain.cpp#TEST(Test, EqualWarnFatalCycles)@22"
+    ]
+  },
+  {
+    "requirement": "HTH-003",
+    "module": "module:Svc/Health",
+    "verification": "Unit Test",
+    "text": "The Svc::Health component shall issue a FATAL event if a component fails to return a ping by the specified timeout",
+    "suggested_tests": [
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::faultTlm@203",
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::updatePingTimeout@426",
+      "fn:Svc/Health/test/ut/HealthTestMain.cpp#TEST(Test, UpdatePingTimeout)@37"
+    ]
+  },
+  {
+    "requirement": "HTH-004",
+    "module": "module:Svc/Health",
+    "verification": "Unit Test",
+    "text": "The Svc::Health component shall have a command to enable or disable all monitoring",
+    "suggested_tests": [
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::disableOneMonitoring@365",
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::disableAllMonitoring@277",
+      "fn:Svc/Health/test/ut/HealthTestMain.cpp#TEST(Test, DisableAllMonitoring)@27"
+    ]
+  },
+  {
+    "requirement": "HTH-005",
+    "module": "module:Svc/Health",
+    "verification": "Unit Test",
+    "text": "The Svc::Health component shall have a command to enable or disable monitoring for a particular port.",
+    "suggested_tests": [
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::disableOneMonitoring@365",
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::disableAllMonitoring@277",
+      "fn:Svc/Health/test/ut/HealthTestMain.cpp#TEST(Test, DisableAllMonitoring)@27"
+    ]
+  },
+  {
+    "requirement": "HTH-006",
+    "module": "module:Svc/Health",
+    "verification": "Unit Test",
+    "text": "The Svc::Health component shall have a command to update ping timeout values for a port",
+    "suggested_tests": [
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::updatePingTimeout@426",
+      "fn:Svc/Health/test/ut/HealthTestMain.cpp#TEST(Test, UpdatePingTimeout)@37",
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::warningTlm@173"
+    ]
+  },
+  {
+    "requirement": "HTH-007",
+    "module": "module:Svc/Health",
+    "verification": "Unit Test",
+    "text": "The Svc::Health component shall stroke a watchdog port while all ping replies are within their limit and health checks pass",
+    "suggested_tests": [
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::watchdogCheck@461",
+      "fn:Svc/Health/test/ut/HealthTestMain.cpp#TEST(Test, WatchdogCheck)@42",
+      "fn:Svc/Health/test/ut/HealthTester.cpp#Svc::HealthTester::faultTlm@203"
+    ]
+  },
+  {
+    "requirement": "ISF-ATL-001",
+    "module": "module:Svc/ActiveTextLogger",
+    "verification": "Unit Test; Inspection",
+    "text": "The Svc::ActiveTextLogger component shall print received log texts to standard output.",
+    "suggested_tests": [
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::runNominalTest@34",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTestMain.cpp#TEST(Nominal, Logging)@9",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::testSeverityFilter@367"
+    ]
+  },
+  {
+    "requirement": "ISF-ATL-002",
+    "module": "module:Svc/ActiveTextLogger",
+    "verification": "Unit Test",
+    "text": "The Svc::ActiveTextLogger component shall write received log texts to an optionally supplied file.",
+    "suggested_tests": [
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTestMain.cpp#TEST(Nominal, Logging)@9",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::testWorkstationTimestamp@329",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::testSeverityFilterDiagnosticDisabled@418"
+    ]
+  },
+  {
+    "requirement": "ISF-ATL-004",
+    "module": "module:Svc/ActiveTextLogger",
+    "verification": "Unit Test",
+    "text": "The Svc::ActiveTextLogger component shall stop writing to the optional file if it would exceed its max size.",
+    "suggested_tests": [
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::runNominalTest@34",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::testWorkstationTimestamp@329",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::runOffNominalTest@153"
+    ]
+  },
+  {
+    "requirement": "ISF-ATL-005",
+    "module": "module:Svc/ActiveTextLogger",
+    "verification": "Unit Test",
+    "text": "The Svc::ActiveTextLogger component shall provide a public method to supply the filename to write to and max size.",
+    "suggested_tests": [
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTestMain.cpp#TEST(Nominal, Logging)@9",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTestMain.cpp#TEST(Filtering, SeverityFilter)@24",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTestMain.cpp#TEST(Nominal, WorkstationTime)@14"
+    ]
+  },
+  {
+    "requirement": "ISF-ATL-006",
+    "module": "module:Svc/ActiveTextLogger",
+    "verification": "Unit Test",
+    "text": "The Svc::ActiveTextLogger component shall attempt to create a new file to write to if the supplied one already exists.  It will try up to ten times, by adding an integer suffix to the filename, ie \"file\",\"file0\",\"file1\"...\"file9\". After the last possible attempt is failed, the initial file shall be overwritten; ie if \"file9\" already exists, the \"file\" shall be truncated and used as a log file.",
+    "suggested_tests": [
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::runOffNominalTest@153",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::testWorkstationTimestamp@329",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::testSeverityFilterDiagnosticDisabled@418"
+    ]
+  },
+  {
+    "requirement": "ISF-ATL-007",
+    "module": "module:Svc/ActiveTextLogger",
+    "verification": "Unit Test",
+    "text": "The Svc::ActiveTextLogger component shall support per-severity event filtering via a public setSeverityFilter() method.",
+    "suggested_tests": [
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::testSeverityFilterDiagnosticDisabled@418",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::testSeverityFilter@367",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTestMain.cpp#TEST(Filtering, SeverityFilter)@24"
+    ]
+  },
+  {
+    "requirement": "ISF-ATL-008",
+    "module": "module:Svc/ActiveTextLogger",
+    "verification": "Unit Test",
+    "text": "The Svc::ActiveTextLogger component shall never filter FATAL events regardless of filter configuration.",
+    "suggested_tests": [
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::testSeverityFilterDiagnosticDisabled@418",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTester.cpp#Svc::ActiveTextLoggerTester::testSeverityFilter@367",
+      "fn:Svc/ActiveTextLogger/test/ut/ActiveTextLoggerTestMain.cpp#TEST(Filtering, SeverityFilter)@24"
+    ]
+  },
+  {
+    "requirement": "ISF-PTL-002",
+    "module": "module:Svc/PassiveConsoleTextLogger",
+    "verification": "Unit Test",
+    "text": "The Svc::PassiveConsoleTextLogger component shall support per-severity event filtering via a public setSeverityFilter() method.",
+    "suggested_tests": [
+      "fn:Svc/PassiveConsoleTextLogger/test/ut/PassiveConsoleTextLoggerTester.cpp#Svc::PassiveConsoleTextLoggerTester::testSeverityFilterFatalNeverFiltered@91",
+      "fn:Svc/PassiveConsoleTextLogger/test/ut/PassiveConsoleTextLoggerTestMain.cpp#TEST(Filtering, SeverityFilter)@3",
+      "fn:Svc/PassiveConsoleTextLogger/test/ut/PassiveConsoleTextLoggerTester.cpp#Svc::PassiveConsoleTextLoggerTester::testSeverityFilterDisableAll@125"
+    ]
+  },
+  {
+    "requirement": "ISF-PTL-003",
+    "module": "module:Svc/PassiveConsoleTextLogger",
+    "verification": "Unit Test",
+    "text": "The Svc::PassiveConsoleTextLogger component shall never filter FATAL events regardless of filter configuration.",
+    "suggested_tests": [
+      "fn:Svc/PassiveConsoleTextLogger/test/ut/PassiveConsoleTextLoggerTestMain.cpp#TEST(Filtering, FatalNeverFiltered)@8",
+      "fn:Svc/PassiveConsoleTextLogger/test/ut/PassiveConsoleTextLoggerTester.cpp#Svc::PassiveConsoleTextLoggerTester::testSeverityFilterFatalNeverFiltered@91",
+      "fn:Svc/PassiveConsoleTextLogger/test/ut/PassiveConsoleTextLoggerTestMain.cpp#TEST(Filtering, SeverityFilter)@3"
+    ]
+  },
+  {
+    "requirement": "OS-LOCKLESSQUEUE-001",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "All memory is allocated exactly once during create through the registered Fw::MemAllocator. No allocation occurs during send, receive, getMessagesAvailable, or getMessageHighWaterMark.",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, HighWaterMarkConcurrent)@2153",
+      "fn:Os/Generic/test/ut/LocklessPriorityQueueTests.cpp#TEST(LocklessLifetime, MessagesAvailableTracksReceivableCount)@353",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#Ref::Test::PriorityMemQueue::Tester::verify@368"
+    ]
+  },
+  {
+    "requirement": "OS-LOCKLESSQUEUE-002",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test, Inspection",
+    "text": "All non-blocking control paths terminate in bounded time proportional to the configured queue depth.",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/LocklessPriorityQueueTsanTests.cpp#TEST(Adversarial, BlockingPathStress)@359",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, SparsePriorityBounds)@2127",
+      "fn:Os/Generic/test/ut/LocklessPriorityQueueTests.cpp#TEST(LocklessConcurrent, PriorityOrderSingleProducer)@232"
+    ]
+  },
+  {
+    "requirement": "OS-LOCKLESSQUEUE-004",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "Consumers receive the highest-priority message. Equal-priority messages are delivered in FIFO order, matching the ordering contract of Os::Generic::PriorityQueue.",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/LocklessPriorityQueueTsanTests.cpp#TEST(Adversarial, BatchedPriorityDrain)@527",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, FIFOWithinPriority)@1228",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, ConcurrentMultiPriority)@1713"
+    ]
+  },
+  {
+    "requirement": "OS-LOCKLESSQUEUE-005",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test (TSan stress)",
+    "text": "A successful send followed by any number of receive calls delivers each message exactly once. No message is dropped, duplicated, or corrupted under concurrent producers and consumers.",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/LocklessPriorityQueueTests.cpp#TEST(LocklessConcurrent, MultiProducerMultiConsumer)@106",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, ConcurrentMultiPriority)@1713",
+      "fn:Os/Generic/test/ut/LocklessPriorityQueueTsanTests.cpp#run_concurrent@151"
+    ]
+  },
+  {
+    "requirement": "OS-LOCKLESSQUEUE-006",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The public surface conforms to Os::QueueInterface and is selectable as the default Os::Queue implementation through register_fprime_implementation in CMake.",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, RapidSendAfterBlock)@1156",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, RapidNotificationStress)@1803",
+      "fn:Os/Generic/test/ut/LocklessPriorityQueueTsanTests.cpp#TEST(Adversarial, SingleSlotPingPong)@278"
+    ]
+  },
+  {
+    "requirement": "PMQ-001",
+    "module": "module:Os/Generic",
+    "verification": "Inspection, Unit Test",
+    "text": "The PriorityMemQueue shall implement the Os::QueueInterface for compatibility with F\u00b4 components",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, MultipleQueues)@500",
+      "fn:Os/Generic/test/ut/PriorityMemQueueInputValidationTests.cpp#TEST_F(PriorityMemQueueInputValidation, UninitializedOperations)@82",
+      "fn:Os/Generic/test/ut/PriorityMemQueueInputValidationTests.cpp#TEST_F(PriorityMemQueueInputValidation, RequiredSizing)@136"
+    ]
+  },
+  {
+    "requirement": "PMQ-002",
+    "module": "module:Os/Generic",
+    "verification": "Inspection, Unit Test",
+    "text": "The PriorityMemQueue shall support up to 32 priority levels",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, OptionalPrioritySizingAssertion)@662",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, DoubleConfigAssertion)@788",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, TeardownWithPendingMessages)@1389"
+    ]
+  },
+  {
+    "requirement": "PMQ-003",
+    "module": "module:Os/Generic",
+    "verification": "Inspection, Unit Test",
+    "text": "The PriorityMemQueue shall allocate memory pools only for configured priority levels (sparse allocation)",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, SparsePriorityAllocation)@689",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, SparsePriorityBounds)@2127",
+      "fn:Os/Generic/test/ut/PriorityMemQueueInputValidationTests.cpp#TEST_F(PriorityMemQueueInputValidation, RequiredSizing)@136"
+    ]
+  },
+  {
+    "requirement": "PMQ-004",
+    "module": "module:Os/Generic",
+    "verification": "Inspection, Unit Test",
+    "text": "The PriorityMemQueue shall support per-priority configuration of message size and depth",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, SemaphoreCountTracking)@1341",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, DoubleCreateAssertion)@2112",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, TeardownWithPendingMessages)@1389"
+    ]
+  },
+  {
+    "requirement": "PMQ-005",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityMemQueue shall support blocking and non-blocking send operations",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueInputValidationTests.cpp#TEST_F(PriorityMemQueueInputValidation, UninitializedOperations)@82",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, OptionalPrioritySizingAssertion)@662",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST(PriorityMemQueueRandom, RandomOperations)@1683"
+    ]
+  },
+  {
+    "requirement": "PMQ-006",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityMemQueue shall support blocking and non-blocking receive operations",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueInputValidationTests.cpp#TEST_F(PriorityMemQueueInputValidation, UninitializedOperations)@82",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST(PriorityMemQueueRandom, RandomOperations)@1683",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, OptionalPrioritySizingAssertion)@662"
+    ]
+  },
+  {
+    "requirement": "PMQ-007",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityMemQueue shall dequeue messages in priority order, with the highest enabled priority serviced first",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, PriorityOrdering)@525",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, MultipleConcurrentReceivers)@1461",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, FIFOWithinPriority)@1228"
+    ]
+  },
+  {
+    "requirement": "PMQ-008",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityMemQueue shall support dynamic enable/disable of individual priority levels",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_P(PriorityMemQueueBasicRuleTest, RuleExecution)@1547",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, EnableDisableRaceCondition)@1922",
+      "fn:Os/Generic/test/ut/PriorityMemQueueInputValidationTests.cpp#TEST_F(PriorityMemQueueInputValidation, PriorityEnableDisable)@98"
+    ]
+  },
+  {
+    "requirement": "PMQ-010",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityMemQueue shall track high water marks for message queue depth",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#Ref::Test::PriorityMemQueue::Tester::verify@368",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, HighWaterMarkConcurrent)@2153",
+      "fn:Os/Generic/test/ut/LocklessPriorityQueueTests.cpp#TEST(LocklessLifetime, MessagesAvailableTracksReceivableCount)@353"
+    ]
+  },
+  {
+    "requirement": "PMQ-011",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityMemQueue shall validate message sizes against priority-specific limits",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, OptionalPrioritySizingAssertion)@662",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, RequiredPrioritySizingFallback)@628",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, PriorityOrdering)@525"
+    ]
+  },
+  {
+    "requirement": "PMQ-013",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityMemQueue shall return appropriate error codes for queue full, empty, and invalid priority conditions",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST(PriorityMemQueueRandom, RandomOperations)@1683",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, DeterministicPrioritySelection)@1620",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, QueueFull)@1593"
+    ]
+  },
+  {
+    "requirement": "PQ-001",
+    "module": "module:Os/Generic",
+    "verification": "Inspection, Unit Test",
+    "text": "The PriorityQueue shall implement the Os::QueueInterface for compatibility with F\u00b4 components",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, ZeroQueues)@566",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, PriorityEnableDisable)@807",
+      "fn:Os/Generic/test/ut/PriorityMemQueueInputValidationTests.cpp#TEST_F(PriorityMemQueueInputValidation, PriorityEnableDisable)@98"
+    ]
+  },
+  {
+    "requirement": "PQ-002",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityQueue shall support message prioritization with higher priority messages dequeued before lower priority messages",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, PriorityInversion)@1865",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, DeterministicPrioritySelection)@1620",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, RequiredPrioritySizingFallback)@628"
+    ]
+  },
+  {
+    "requirement": "PQ-005",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityQueue shall support blocking and non-blocking send operations",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueInputValidationTests.cpp#TEST_F(PriorityMemQueueInputValidation, UninitializedOperations)@82",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, OptionalPrioritySizingAssertion)@662",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST(PriorityMemQueueRandom, RandomOperations)@1683"
+    ]
+  },
+  {
+    "requirement": "PQ-006",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityQueue shall support blocking and non-blocking receive operations",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueInputValidationTests.cpp#TEST_F(PriorityMemQueueInputValidation, UninitializedOperations)@82",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, OptionalPrioritySizingAssertion)@662",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST(PriorityMemQueueRandom, RandomOperations)@1683"
+    ]
+  },
+  {
+    "requirement": "PQ-008",
+    "module": "module:Os/Generic",
+    "verification": "Inspection, Unit Test",
+    "text": "The PriorityQueue shall use Os::ConditionVariable to implement blocking send/receive",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, BlockingReceive)@980",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, DisableDuringBlockingReceive)@1982",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, BlockingSend)@1082"
+    ]
+  },
+  {
+    "requirement": "PQ-009",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityQueue shall track high water marks for message queue depth",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/LocklessPriorityQueueTests.cpp#TEST(LocklessLifetime, MessagesAvailableTracksReceivableCount)@353",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#Ref::Test::PriorityMemQueue::Tester::verify@368",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, HighWaterMarkConcurrent)@2153"
+    ]
+  },
+  {
+    "requirement": "PQ-010",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityQueue shall validate message sizes against the configured maximum",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueInputValidationTests.cpp#TEST_F(PriorityMemQueueInputValidation, RequiredSizing)@136",
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST_F(PriorityMemQueueTestFixture, RequiredPrioritySizingFallback)@628",
+      "fn:Os/Generic/test/ut/LocklessPriorityQueueTests.cpp#TEST(LocklessLifetime, DestructWithoutCreate)@271"
+    ]
+  },
+  {
+    "requirement": "PQ-012",
+    "module": "module:Os/Generic",
+    "verification": "Unit Test",
+    "text": "The PriorityQueue shall return appropriate error codes for queue full, empty, and size mismatch conditions",
+    "suggested_tests": [
+      "fn:Os/Generic/test/ut/PriorityMemQueueTests.cpp#TEST(PriorityMemQueueRandom, RandomOperations)@1683",
+      "fn:Os/Generic/test/ut/PriorityQueueTests.cpp#TEST(PriorityQueue, ReceiveTooSmallReportsSizeMismatch)@16",
+      "fn:Os/Generic/test/ut/LocklessPriorityQueueTests.cpp#TEST(LocklessLifetime, OversizedSendRejected)@309"
+    ]
+  },
+  {
+    "requirement": "PRMDB-001",
+    "module": "module:Svc/PrmDb",
+    "verification": "Unit Test",
+    "text": "The Svc::PrmDb component shall load parameter values from a file",
+    "suggested_tests": [
+      "fn:Svc/PrmDb/test/ut/PrmDbTestMain.cpp#TEST(ParameterDbTest, NominalFileLoadTest)@82",
+      "fn:Svc/PrmDb/test/ut/PrmDbTestMain.cpp#TEST(ParameterDbTest, PrmDbFileLoadNominal)@217",
+      "fn:Svc/PrmDb/test/ut/PrmDbTestMain.cpp#TEST(ParameterDbTest, PrmDbFileLoadWithErrors)@234"
+    ]
+  },
+  {
+    "requirement": "PRMDB-002",
+    "module": "module:Svc/PrmDb",
+    "verification": "Inspection, Unit Test",
+    "text": "The Svc::PrmDb component shall provide an interface to read parameter values",
+    "suggested_tests": [
+      "fn:Svc/PrmDb/test/ut/PrmDbTestMain.cpp#TEST(ParameterDbTest, NominalFileLoadTest)@82",
+      "fn:Svc/PrmDb/test/ut/PrmDbTestMain.cpp#TEST(ParameterDbTest, PrmFileReadError)@124",
+      "fn:Svc/PrmDb/test/ut/PrmDbTestMain.cpp#TEST(ParameterDbTest, PrmMissingExtraParamsTest)@103"
+    ]
+  },
+  {
+    "requirement": "PRMDB-003",
+    "module": "module:Svc/PrmDb",
+    "verification": "Inspection, Unit Test",
+    "text": "The Svc::PrmDb component shall provide an interface to update parameter values",
+    "suggested_tests": [
+      "fn:Svc/PrmDb/test/ut/PrmDbTester.cpp#Svc::PrmDbTester::runDbCopyTest@670",
+      "fn:Svc/PrmDb/test/ut/PrmDbTester.cpp#Svc::PrmDbTester::runPrmFileLoadWithErrors@1019",
+      "fn:Svc/PrmDb/test/ut/PrmDbTester.cpp#Svc::PrmDbTester::runPrmFileLoadIllegal@1213"
+    ]
+  },
+  {
+    "requirement": "PRMDB-004",
+    "module": "module:Svc/PrmDb",
+    "verification": "Inspection, Unit Test",
+    "text": "The Svc::PrmDb component shall provide a command to save the current parameter values",
+    "suggested_tests": [
+      "fn:Svc/PrmDb/test/ut/PrmDbTestMain.cpp#TEST(ParameterDbTest, NominalFileSaveTest)@61",
+      "fn:Svc/PrmDb/test/ut/PrmDbTestMain.cpp#TEST(ParameterDbTest, PrmShorterSaveDoesNotCorrupt)@301",
+      "fn:Svc/PrmDb/test/ut/PrmDbTester.cpp#Svc::PrmDbTester::runShorterSaveDoesNotCorrupt@1422"
+    ]
+  },
+  {
+    "requirement": "PRMDB-005",
+    "module": "module:Svc/PrmDb",
+    "verification": "Unit Test, Integration Test",
+    "text": "The Svc::PrmDb component shall reject a PRM_LOAD_FILE command with an empty file name with a VALIDATION_ERROR response and a PrmDbFileLoadFailed event, without asserting or altering the staging database",
+    "suggested_tests": [
+      "fn:Svc/PrmDb/test/ut/PrmDbTester.cpp#Svc::PrmDbTester::runPrmFileLoadEmptyFileName@1101",
+      "fn:Svc/PrmDb/test/ut/PrmDbTester.cpp#Svc::PrmDbTester::runDbCommitTest@777",
+      "fn:Svc/PrmDb/test/ut/PrmDbTester.cpp#Svc::PrmDbTester::runPrmFileLoadWithErrors@1019"
+    ]
+  },
+  {
+    "requirement": "SPF-001",
+    "module": "module:Svc/Ccsds/SpacePacketFramer",
+    "verification": "Inspection, Unit Test",
+    "text": "The SpacePacketFramer shall implement the Svc.FramerInterface.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTestMain.cpp#TEST(SpacePacketFramer, testDataReturnPassthrough)@15",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTestMain.cpp#TEST(SpacePacketFramer, testNominalFraming)@20",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTestMain.cpp#TEST(SpacePacketFramer, testComStatusPassthrough)@10"
+    ]
+  },
+  {
+    "requirement": "SPF-002",
+    "module": "module:Svc/Ccsds/SpacePacketFramer",
+    "verification": "Unit Test, Inspection",
+    "text": "The SpacePacketFramer shall construct CCSDS Space Packets compliant with the CCSDS 133.0-B-2 standard.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTestMain.cpp#TEST(SpacePacketFramer, testDataReturnPassthrough)@15",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTestMain.cpp#TEST(SpacePacketFramer, testNominalFraming)@20",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTestMain.cpp#TEST(SpacePacketFramer, testComStatusPassthrough)@10"
+    ]
+  },
+  {
+    "requirement": "SPF-003",
+    "module": "module:Svc/Ccsds/SpacePacketFramer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketFramer shall accept user data to be framed via its dataIn port.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTestMain.cpp#TEST(SpacePacketFramer, testNominalFraming)@20",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testNominalFraming@57",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testDataReturnPassthrough@46"
+    ]
+  },
+  {
+    "requirement": "SPF-004",
+    "module": "module:Svc/Ccsds/SpacePacketFramer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketFramer shall output the constructed Space Packet via its dataOut port.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testDataReturnPassthrough@46",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testNominalFraming@57",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testComStatusPassthrough@33"
+    ]
+  },
+  {
+    "requirement": "SPF-005",
+    "module": "module:Svc/Ccsds/SpacePacketFramer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketFramer shall use the bufferAllocate port to request memory buffers for outgoing Space Packets.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testOversizedAllocatorBufferIsTrimmed@128",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testUndersizedAllocationEmitsComStatus@175",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testDataReturnPassthrough@46"
+    ]
+  },
+  {
+    "requirement": "SPF-006",
+    "module": "module:Svc/Ccsds/SpacePacketFramer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketFramer shall use the bufferDeallocate port to return ownership of buffers after transmission.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testDataReturnPassthrough@46",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testUndersizedAllocationEmitsComStatus@175",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testInvalidAllocationEmitsComStatus@156"
+    ]
+  },
+  {
+    "requirement": "SPF-007",
+    "module": "module:Svc/Ccsds/SpacePacketFramer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketFramer shall utilize the getApidSeqCount port to obtain the correct sequence count for the configured APID before framing a packet.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testNominalFraming@57",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTestMain.cpp#TEST(SpacePacketFramer, testNominalFraming)@20",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testOversizedAllocatorBufferIsTrimmed@128"
+    ]
+  },
+  {
+    "requirement": "SPF-008",
+    "module": "module:Svc/Ccsds/SpacePacketFramer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketFramer shall correctly populate all mandatory fields of the Space Packet Primary Header, including Version Number, Packet Type, Secondary Header Flag, APID, Sequence Flags, Packet Sequence Count, and Packet Data Length.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testNominalFraming@57",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testOversizedAllocatorBufferIsTrimmed@128",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTestMain.cpp#TEST(SpacePacketFramer, testDataReturnPassthrough)@15"
+    ]
+  },
+  {
+    "requirement": "SPF-009",
+    "module": "module:Svc/Ccsds/SpacePacketFramer",
+    "verification": "Inspection, Unit Test",
+    "text": "The SpacePacketFramer shall be configurable with an Application Process Identifier (APID) to be used in the Space Packet Header.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testNominalFraming@57",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testOversizedAllocatorBufferIsTrimmed@128",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTestMain.cpp#TEST(SpacePacketFramer, testDataReturnPassthrough)@15"
+    ]
+  },
+  {
+    "requirement": "SPF-010",
+    "module": "module:Svc/Ccsds/SpacePacketFramer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketFramer shall accurately calculate and set the Packet Data Length field in the Space Packet header based on the length of the user data.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testNominalFraming@57",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testOversizedAllocatorBufferIsTrimmed@128",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTestMain.cpp#TEST(SpacePacketFramer, testDataReturnPassthrough)@15"
+    ]
+  },
+  {
+    "requirement": "SPF-011",
+    "module": "module:Svc/Ccsds/SpacePacketFramer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketFramer shall emit exactly one Fw::Success::SUCCESS on comStatusOut when a packet received on dataIn produces no Space Packet because a buffer could not be allocated, per the [Framer Status Protocol](../../../../docs/reference/communication-adapter-interface.md#framer-status-protocol).",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testInvalidAllocationEmitsComStatus@156",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testUndersizedAllocationEmitsComStatus@175",
+      "fn:Svc/Ccsds/SpacePacketFramer/test/ut/SpacePacketFramerTester.cpp#Svc::Ccsds::SpacePacketFramerTester::testComStatusPassthrough@33"
+    ]
+  },
+  {
+    "requirement": "STAMEM-001",
+    "module": "module:Svc/StaticMemory",
+    "verification": "unit test",
+    "text": "The static memory shall allocate a fixed block per port index",
+    "suggested_tests": [
+      "fn:Svc/StaticMemory/test/ut/StaticMemoryTester.cpp#Svc::StaticMemoryTester::test_allocate@35",
+      "fn:Svc/StaticMemory/test/ut/StaticMemoryMain.cpp#TEST(Nominal, BasicAllocation)@8",
+      "fn:Fw/Types/test/ut/TypesTest.cpp#TEST(AllocatorTest, MallocCheckedAllocate)@1662"
+    ]
+  },
+  {
+    "requirement": "STAMEM-002",
+    "module": "module:Svc/StaticMemory",
+    "verification": "unit test",
+    "text": "The static memory shall define allocate and deallocate ports shadowing Svc::BufferManager",
+    "suggested_tests": [
+      "fn:Svc/StaticMemory/test/ut/StaticMemoryTester.cpp#Svc::StaticMemoryTester::test_allocate@35",
+      "fn:Svc/StaticMemory/test/ut/StaticMemoryMain.cpp#TEST(Nominal, BasicAllocation)@8",
+      "fn:Fw/Types/test/ut/TypesTest.cpp#TEST(AllocatorTest, MallocCheckedAllocate)@1662"
+    ]
+  },
+  {
+    "requirement": "SVC-BUFFERLOGGER-001",
+    "module": "module:Svc/BufferLogger",
+    "verification": "unit test",
+    "text": "The BufferLogger component shall log the contents of buffers received on its bufferSendIn port",
+    "suggested_tests": [
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestLogging, BufferSendIn)@38",
+      "fn:Svc/BufferLogger/test/ut/Logging.cpp#Svc::Logging::OnOffTester::testLoggingOff@210",
+      "fn:Svc/BufferLogger/test/ut/Logging.cpp#Svc::Logging::OnOffTester::testLoggingOn@202"
+    ]
+  },
+  {
+    "requirement": "SVC-BUFFERLOGGER-002",
+    "module": "module:Svc/BufferLogger",
+    "verification": "unit test",
+    "text": "The BufferLogger component shall log the contents of Com buffers received on its comIn port",
+    "suggested_tests": [
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestLogging, ComIn)@48",
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestLogging, BufferSendIn)@38",
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestLogging, OnOff)@53"
+    ]
+  },
+  {
+    "requirement": "SVC-BUFFERLOGGER-003",
+    "module": "module:Svc/BufferLogger",
+    "verification": "unit test",
+    "text": "The BufferLogger component shall forward buffers received on bufferSendIn to bufferSendOut regardless of logging state",
+    "suggested_tests": [
+      "fn:Svc/BufferLogger/test/ut/Logging.cpp#Svc::Logging::OnOffTester::testLoggingOff@210",
+      "fn:Svc/BufferLogger/test/ut/Logging.cpp#Svc::Logging::OnOffTester::testLoggingOn@202",
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestLogging, BufferSendIn)@38"
+    ]
+  },
+  {
+    "requirement": "SVC-BUFFERLOGGER-004",
+    "module": "module:Svc/BufferLogger",
+    "verification": "unit test",
+    "text": "The BufferLogger component shall prefix each logged buffer with a configurable-width size field",
+    "suggested_tests": [
+      "fn:Svc/BufferLogger/test/ut/Logging.cpp#Svc::Logging::SendBuffersTester::test@75",
+      "fn:Svc/BufferLogger/test/ut/Logging.cpp#Svc::Logging::OnOffTester::testLoggingOff@210",
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestLogging, BufferSendIn)@38"
+    ]
+  },
+  {
+    "requirement": "SVC-BUFFERLOGGER-005",
+    "module": "module:Svc/BufferLogger",
+    "verification": "unit test",
+    "text": "The BufferLogger component shall open a new log file when the configured maximum file size would be exceeded",
+    "suggested_tests": [
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestErrors, LogFileOpen)@19",
+      "fn:Svc/BufferLogger/test/ut/Logging.cpp#Svc::Logging::SendBuffersTester::test@75",
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerTester.cpp#Svc::BufferLoggerTester::checkLogFileIntegrity@174"
+    ]
+  },
+  {
+    "requirement": "SVC-BUFFERLOGGER-006",
+    "module": "module:Svc/BufferLogger",
+    "verification": "unit test",
+    "text": "The BufferLogger component shall provide commands to open a log file, close the log file, flush the log file, and enable or disable logging",
+    "suggested_tests": [
+      "fn:Svc/BufferLogger/test/ut/Logging.cpp#Svc::Logging::CloseFileTester::test@49",
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestLogging, CloseFile)@43",
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestErrors, LogFileOpen)@19"
+    ]
+  },
+  {
+    "requirement": "SVC-BUFFERLOGGER-007",
+    "module": "module:Svc/BufferLogger",
+    "verification": "unit test",
+    "text": "The BufferLogger component shall write a hash (validation) file when closing each log file",
+    "suggested_tests": [
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestErrors, LogFileValidation)@29",
+      "fn:Svc/BufferLogger/test/ut/Logging.cpp#Svc::Logging::SendBuffersTester::test@75",
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestErrors, LogFileWrite)@24"
+    ]
+  },
+  {
+    "requirement": "SVC-BUFFERLOGGER-008",
+    "module": "module:Svc/BufferLogger",
+    "verification": "unit test",
+    "text": "The BufferLogger component shall report file errors via events",
+    "suggested_tests": [
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestErrors, LogFileOpen)@19",
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestErrors, LogFileValidation)@29",
+      "fn:Svc/BufferLogger/test/ut/BufferLoggerMain.cpp#TEST(TestErrors, LogFileWrite)@24"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-SDLS-SA-ROUTER-009",
+    "module": "module:Svc/Ccsds/SdlsSaRouter",
+    "verification": "Unit Test",
+    "text": "The SdlsSaRouter shall accept a replacement SA-to-port map via configure(), applied before any frame is routed, so that the uplink and downlink instances may hold distinct tables as required for simplex security associations (CCSDS 355.0-B-2 \u00a72.3.1.1).",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SdlsSaRouter/test/ut/SdlsSaRouterTester.cpp#Svc::Ccsds::SdlsSaRouterTester::testTableFullDataIn@146",
+      "fn:Svc/Ccsds/SdlsSaRouter/test/ut/SdlsSaRouterTestMain.cpp#TEST(SdlsSaRouter, TableFullDataIn)@68",
+      "fn:Svc/Ccsds/SdlsSaRouter/test/ut/SdlsSaRouterTester.cpp#Svc::Ccsds::SdlsSaRouterTester::testTableFullSaDataIn@186"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-SPD-001",
+    "module": "module:Svc/Ccsds/SpacePacketDeframer",
+    "verification": "Unit Test, Inspection",
+    "text": "The SpacePacketDeframer shall deframe CCSDS Space Packets according to the CCSDS 133.0-B-2 standard.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testBufferExactlyHeaderSize@150",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testInvalidPacketIdentificationControlFields@199",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testBufferSmallerThanHeaderSize@165"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-SPD-002",
+    "module": "module:Svc/Ccsds/SpacePacketDeframer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketDeframer shall extract the user data field from valid Space Packets.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTestMain.cpp#TEST(SpacePacketDeframer, testInvalidPacketIdentificationControlFields)@49",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testInvalidPacketIdentificationControlFields@199",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testCommandPacketTypeAccepted@219"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-SPD-003",
+    "module": "module:Svc/Ccsds/SpacePacketDeframer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketDeframer shall validate the packet length of a Space Packet Primary Header.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTestMain.cpp#TEST(SpacePacketDeframer, testSecondaryHeaderFlagAccepted)@59",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTestMain.cpp#TEST(SpacePacketDeframer, testBufferExactlyHeaderSize)@34",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTestMain.cpp#TEST(SpacePacketDeframer, testBufferSmallerThanHeaderSize)@39"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-SPD-004",
+    "module": "module:Svc/Ccsds/SpacePacketDeframer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketDeframer shall receive incoming data containing Space Packets via the dataIn port.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testDataReturnPassthrough@33",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testBufferExactlyHeaderSize@150",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTestMain.cpp#TEST(SpacePacketDeframer, testDataReturnPassthrough)@10"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-SPD-005",
+    "module": "module:Svc/Ccsds/SpacePacketDeframer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketDeframer shall output the extracted Space Packet user data via the dataOut port.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testDataReturnPassthrough@33",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testBufferExactlyHeaderSize@150",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testNominalDeframing@45"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-SPD-006",
+    "module": "module:Svc/Ccsds/SpacePacketDeframer",
+    "verification": "Unit Test, Inspection",
+    "text": "The SpacePacketDeframer shall manage buffer ownership using the dataReturnIn and dataReturnOut ports.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testDataReturnPassthrough@33",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testBufferExactlyHeaderSize@150",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testBufferSmallerThanHeaderSize@165"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-SPD-007",
+    "module": "module:Svc/Ccsds/SpacePacketDeframer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketDeframer shall delegate sequence count validation to another component through the validateApidSeqCount port.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testControlFieldAccepted@235",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testNominalDeframing@45",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testInvalidPacketIdentificationControlFields@199"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-SPD-008",
+    "module": "module:Svc/Ccsds/SpacePacketDeframer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketDeframer shall perform sequence count validation for APIDs registered via validateApidSeqCount.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testControlFieldAccepted@235",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testNominalDeframing@45",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testInvalidPacketIdentificationControlFields@199"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-SPD-009",
+    "module": "module:Svc/Ccsds/SpacePacketDeframer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketDeframer shall emit an InvalidLength event if the packet length token in the header is cannot fit in the received data, and drop the received packet.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testDeframingIncorrectLength@86",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testBufferSmallerThanHeaderSize@165",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testPacketDataLengthMaxU16Overflow@117"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-SPD-010",
+    "module": "module:Svc/Ccsds/SpacePacketDeframer",
+    "verification": "Unit Test",
+    "text": "The SpacePacketDeframer shall validate the Packet Version Number field and reject packets whose Packet Version Number does not match the CCSDS Space Packet Protocol, emitting InvalidPacket and returning the buffer.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testInvalidPacketIdentificationControlFields@199",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTestMain.cpp#TEST(SpacePacketDeframer, testInvalidPacketIdentificationControlFields)@49",
+      "fn:Svc/Ccsds/SpacePacketDeframer/test/ut/SpacePacketDeframerTester.cpp#Svc::Ccsds::SpacePacketDeframerTester::testDeframingIncorrectLength@86"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-TC-DEFRAMER-001",
+    "module": "module:Svc/Ccsds/TcDeframer",
+    "verification": "Unit Test, Inspection",
+    "text": "The TcDeframer shall deframe Telecommand (TC) Transfer Frames according to the CCSDS Space Data Link Protocol standard for Type-BD frames.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidLengthToken@123",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidCrc@149",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testDataReturn@33"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-TC-DEFRAMER-002",
+    "module": "module:Svc/Ccsds/TcDeframer",
+    "verification": "Unit Test",
+    "text": "The TcDeframer shall perform Frame Validation Check Procedures, including Spacecraft ID, Virtual Channel ID, Frame Length, and CRC.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testNominalDeframing@45",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidScId@75",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidCrc@149"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-TC-DEFRAMER-003",
+    "module": "module:Svc/Ccsds/TcDeframer",
+    "verification": "Unit Test, Inspection",
+    "text": "The TcDeframer shall be configurable for a specific Spacecraft ID.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidScId@75",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTestMain.cpp#TEST(TcDeframer, testInvalidScId)@20",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTestMain.cpp#TEST(TcDeframer, testInvalidVcId)@25"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-TC-DEFRAMER-004",
+    "module": "module:Svc/Ccsds/TcDeframer",
+    "verification": "Unit Test, Inspection",
+    "text": "The TcDeframer shall be configurable with a specific Virtual Channel ID (VCID) OR to accept all VCIDs.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidVcId@100",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testNominalDeframing@45",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTestMain.cpp#TEST(TcDeframer, testInvalidScId)@20"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-TC-DEFRAMER-005",
+    "module": "module:Svc/Ccsds/TcDeframer",
+    "verification": "Unit Test",
+    "text": "The TcDeframer shall log an InvalidSpacecraftId event if a frame with an unexpected Spacecraft ID is received.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidScId@75",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidVcId@100",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidLengthToken@123"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-TC-DEFRAMER-006",
+    "module": "module:Svc/Ccsds/TcDeframer",
+    "verification": "Unit Test",
+    "text": "The TcDeframer shall log an InvalidFrameLength event if a frame with an invalid length is received.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidLengthToken@123",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidCrc@149",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidScId@75"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-TC-DEFRAMER-007",
+    "module": "module:Svc/Ccsds/TcDeframer",
+    "verification": "Unit Test",
+    "text": "The TcDeframer shall log an InvalidVcId event if a frame with an unexpected VCID is received (when not configured to accept all VCIDs).",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidVcId@100",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTestMain.cpp#TEST(TcDeframer, testInvalidVcId)@25",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testNominalDeframing@45"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-TC-DEFRAMER-008",
+    "module": "module:Svc/Ccsds/TcDeframer",
+    "verification": "Unit Test",
+    "text": "The TcDeframer shall log an InvalidCrc event if a frame fails the CRC check.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidCrc@149",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTestMain.cpp#TEST(TcDeframer, testInvalidCrc)@35",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidLengthToken@123"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-TC-DEFRAMER-009",
+    "module": "module:Svc/Ccsds/TcDeframer",
+    "verification": "Unit Test",
+    "text": "The TcDeframer shall provide an input port (dataIn) to receive framed data, and emit deframed data packets on its dataOut output port.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testNominalDeframing@45",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTestMain.cpp#TEST(TcDeframer, testNominalDeframing)@15",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidCrc@149"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-TC-DEFRAMER-010",
+    "module": "module:Svc/Ccsds/TcDeframer",
+    "verification": "Unit Test",
+    "text": "The TcDeframer shall emit notifications on its errorNotify port when deframing errors occur.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTestMain.cpp#TEST(TcDeframer, testNominalDeframing)@15",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidVcId@100",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidScId@75"
+    ]
+  },
+  {
+    "requirement": "SVC-CCSDS-TC-DEFRAMER-011",
+    "module": "module:Svc/Ccsds/TcDeframer",
+    "verification": "Unit Test",
+    "text": "The TcDeframer shall record the received frame's Virtual Channel ID in the vcId field of the ComCfg.FrameContext emitted on dataOut.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testNominalDeframing@45",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidVcId@100",
+      "fn:Svc/Ccsds/TcDeframer/test/ut/TcDeframerTester.cpp#Svc::Ccsds::TcDeframerTester::testInvalidScId@75"
+    ]
+  },
+  {
+    "requirement": "SVC-COMLOGGER-001",
+    "module": "module:Svc/ComLogger",
+    "verification": "unit test",
+    "text": "The ComLogger component shall log the contents of Com buffers received on its comIn port",
+    "suggested_tests": [
+      "fn:Svc/ComLogger/test/ut/ComLoggerMain.cpp#TEST(Test, testLogging)@9",
+      "fn:Svc/ComLogger/test/ut/ComLoggerMain.cpp#TEST(Test, testLoggingNoLength)@14",
+      "fn:Svc/ComLogger/test/ut/ComLoggerMain.cpp#TEST(Test, testLoggingWithInit)@34"
+    ]
+  },
+  {
+    "requirement": "SVC-COMLOGGER-006",
+    "module": "module:Svc/ComLogger",
+    "verification": "unit test",
+    "text": "The ComLogger component shall provide a command to close the currently open file",
+    "suggested_tests": [
+      "fn:Svc/ComLogger/test/ut/ComLoggerMain.cpp#TEST(Test, closeFileCommand)@29",
+      "fn:Svc/ComLogger/test/ut/ComLoggerMain.cpp#TEST(Test, openError)@19",
+      "fn:Svc/ComLogger/test/ut/ComLoggerTester.cpp#Svc::ComLoggerTester::testLoggingNoLength@238"
+    ]
+  },
+  {
+    "requirement": "SVC-COMLOGGER-007",
+    "module": "module:Svc/ComLogger",
+    "verification": "unit test",
+    "text": "The ComLogger component shall report file errors via events",
+    "suggested_tests": [
+      "fn:Svc/ComLogger/test/ut/ComLoggerMain.cpp#TEST(Test, noInitError)@39",
+      "fn:Svc/ComLogger/test/ut/ComLoggerMain.cpp#TEST(Test, openError)@19",
+      "fn:Svc/ComLogger/test/ut/ComLoggerMain.cpp#TEST(Test, writeError)@24"
+    ]
+  },
+  {
+    "requirement": "SVC-COMQUEUE-001",
+    "module": "module:Svc/ComQueue",
+    "verification": "Unit Test",
+    "text": "Svc::ComQueue shall queue Fw::Buffer and Fw::ComBuffer received on incoming ports.",
+    "suggested_tests": [
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testQueueSend@82",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testQueueFlush@104",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testQueueFlushAll@132"
+    ]
+  },
+  {
+    "requirement": "SVC-COMQUEUE-002",
+    "module": "module:Svc/ComQueue",
+    "verification": "Unit Test",
+    "text": "Svc::ComQueue shall output exactly one Fw::Buffer (wrapping the queued data units) on a received Fw::Success::SUCCESS signal. Fw::Success::SUCCESS is valid at start-up (to initiate flow), in response to a sent message, or after a previous Fw::Success::FAILURE (to indicate recovery).",
+    "suggested_tests": [
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testPrioritySend@197",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testQueueFlushInvalidIndex@946",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testQueuePause@165"
+    ]
+  },
+  {
+    "requirement": "SVC-COMQUEUE-003",
+    "module": "module:Svc/ComQueue",
+    "verification": "Unit Test",
+    "text": "Svc::ComQueue shall pause sending on Fw::Success::FAILURE and resume on the next Fw::Success::SUCCESS signal.",
+    "suggested_tests": [
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testQueuePause@165",
+      "fn:Svc/ComQueue/test/ut/ComQueueTestMain.cpp#TEST(Nominal, Pause)@27",
+      "fn:Svc/ComQueue/test/ut/ComQueueTestMain.cpp#TEST(Nominal, Send)@7"
+    ]
+  },
+  {
+    "requirement": "SVC-COMQUEUE-005",
+    "module": "module:Svc/ComQueue",
+    "verification": "Unit test",
+    "text": "Svc::ComQueue shall select and send the next priority Fw::Buffer and Fw::ComBuffer message in response to Fw::Success::SUCCESS.",
+    "suggested_tests": [
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testSetQueuePriorityInvalidPriority@1055",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testSetQueuePriorityInvalidBufferIndex@1014",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testSetQueuePriorityNegativePriority@1074"
+    ]
+  },
+  {
+    "requirement": "SVC-COMQUEUE-006",
+    "module": "module:Svc/ComQueue",
+    "verification": "Unit Test",
+    "text": "Svc::ComQueue shall periodically telemeter the number of queued messages per-port in response to a run port invocation.",
+    "suggested_tests": [
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testInternalQueueOverflow@396",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testExternalQueueOverflow@244",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testDepthZeroQueue@321"
+    ]
+  },
+  {
+    "requirement": "SVC-COMQUEUE-007",
+    "module": "module:Svc/ComQueue",
+    "verification": "Unit Test",
+    "text": "Svc::ComQueue shall emit a queue overflow event for a given port when the configured depth is exceeded. Messages shall be discarded.",
+    "suggested_tests": [
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testExternalQueueOverflow@244",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testDepthZeroQueue@321",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testDropNewestMode@586"
+    ]
+  },
+  {
+    "requirement": "SVC-COMQUEUE-008",
+    "module": "module:Svc/ComQueue",
+    "verification": "Unit Test",
+    "text": "Svc::ComQueue shall implement a round robin approach to balance between ports of the same priority.",
+    "suggested_tests": [
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testPrioritySend@197",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testSetQueuePriorityInvalidIndex@986",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testSetQueuePriorityInvalidPriority@1055"
+    ]
+  },
+  {
+    "requirement": "SVC-COMQUEUE-009",
+    "module": "module:Svc/ComQueue",
+    "verification": "Unit test",
+    "text": "Svc::ComQueue shall keep track and throttle queue overflow events per port.",
+    "suggested_tests": [
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testExternalQueueOverflow@244",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testDepthZeroQueue@321",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testInternalQueueOverflow@396"
+    ]
+  },
+  {
+    "requirement": "SVC-COMQUEUE-010",
+    "module": "module:Svc/ComQueue",
+    "verification": "Unit test",
+    "text": "Svc::ComQueue shall return ownership of incoming buffers once they have been enqueued.",
+    "suggested_tests": [
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testPrioritySend@197",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testBufferQueueDropOldestMode@851",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testQueueFlush@104"
+    ]
+  },
+  {
+    "requirement": "SVC-COMQUEUE-011",
+    "module": "module:Svc/ComQueue",
+    "verification": "Unit test",
+    "text": "Svc::ComQueue shall provide a command to flush queued items.",
+    "suggested_tests": [
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testQueueFlushInvalidIndex@946",
+      "fn:Svc/ComQueue/test/ut/ComQueueTestMain.cpp#TEST(Nominal, Flush)@12",
+      "fn:Svc/ComQueue/test/ut/ComQueueTestMain.cpp#TEST(Nominal, FlushAll)@22"
+    ]
+  },
+  {
+    "requirement": "SVC-COMQUEUE-012",
+    "module": "module:Svc/ComQueue",
+    "verification": "Unit test",
+    "text": "Svc::ComQueue shall accept a configured depth of 0 for a port, allocating no storage for that queue and treating any message received on that port as an overflow.",
+    "suggested_tests": [
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testExternalQueueOverflow@244",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testDepthZeroQueue@321",
+      "fn:Svc/ComQueue/test/ut/ComQueueTester.cpp#Svc::ComQueueTester::testInternalQueueOverflow@396"
+    ]
+  },
+  {
+    "requirement": "SVC-COMRETRY-001",
+    "module": "module:Svc/ComRetry",
+    "verification": "Unit Test",
+    "text": "Svc::ComRetry shall accept incoming downlink data as Fw::Buffer and pass them to an Svc.ComDataWithContext port",
+    "suggested_tests": [
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetryTillFailure@106",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetry@77",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferSend@54"
+    ]
+  },
+  {
+    "requirement": "SVC-COMRETRY-002",
+    "module": "module:Svc/ComRetry",
+    "verification": "Unit test",
+    "text": "Svc::ComRetry shall store Fw::Buffer and its context on receiving buffer ownership through dataReturnIn",
+    "suggested_tests": [
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetryTillFailure@106",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetry@77",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferSend@54"
+    ]
+  },
+  {
+    "requirement": "SVC-COMRETRY-003",
+    "module": "module:Svc/ComRetry",
+    "verification": "Unit test",
+    "text": "Svc::ComRetry shall pause delivery on receiving Fw::Success::FAILURE",
+    "suggested_tests": [
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetry@77",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetryTillFailure@106",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testNullBuffer@44"
+    ]
+  },
+  {
+    "requirement": "SVC-COMRETRY-004",
+    "module": "module:Svc/ComRetry",
+    "verification": "Unit test",
+    "text": "Svc::ComRetry shall resend Fw::Buffer on receiving Fw::Success::SUCCESS after prior failure if retries are available",
+    "suggested_tests": [
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetryTillFailure@106",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testNullBuffer@44",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetry@77"
+    ]
+  },
+  {
+    "requirement": "SVC-COMRETRY-005",
+    "module": "module:Svc/ComRetry",
+    "verification": "Unit test",
+    "text": "Svc::ComRetry shall pass through the initial start-up Fw::Success::SUCCESS and any non-data statuses upstream when no buffer is pending",
+    "suggested_tests": [
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetryTillFailure@106",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetry@77",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferSend@54"
+    ]
+  },
+  {
+    "requirement": "SVC-COMRETRY-007",
+    "module": "module:Svc/ComRetry",
+    "verification": "Unit Test",
+    "text": "Svc::ComRetry shall return buffer ownership to the upstream component on receiving Fw::Success::SUCCESS or after all retry attempts fail",
+    "suggested_tests": [
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetryTillFailure@106",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testNullBuffer@44",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetry@77"
+    ]
+  },
+  {
+    "requirement": "SVC-COMRETRY-008",
+    "module": "module:Svc/ComRetry",
+    "verification": "Unit Test",
+    "text": "Svc::ComRetry shall send ComStatus upstream on successful delivery or after all retry attempts fail",
+    "suggested_tests": [
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferRetry@77",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testBufferSend@54",
+      "fn:Svc/ComRetry/test/ut/ComRetryTester.cpp#Svc::ComRetryTester::testNullBuffer@44"
+    ]
+  },
+  {
+    "requirement": "SVC-COMSPLITTER-001",
+    "module": "module:Svc/ComSplitter",
+    "verification": "unit test",
+    "text": "The ComSplitter component shall forward each Com buffer received on comIn to every connected comOut port",
+    "suggested_tests": [
+      "fn:Svc/ComSplitter/test/ut/ComSplitterTester.cpp#Svc::ComSplitterTester::test_nominal@34",
+      "fn:Svc/ComSplitter/test/ut/ComSplitterMain.cpp#TEST(TestNominal, Nominal)@14",
+      "fn:Svc/CmdSplitter/test/ut/CmdSplitterTester.cpp#Svc::CmdSplitterTester::test_response_forwarding@109"
+    ]
+  },
+  {
+    "requirement": "SVC-COMSPLITTER-002",
+    "module": "module:Svc/ComSplitter",
+    "verification": "unit test",
+    "text": "The ComSplitter component shall pass a copy of the buffer to each output so that consumers cannot affect one another",
+    "suggested_tests": [
+      "fn:Svc/ComSplitter/test/ut/ComSplitterTester.cpp#Svc::ComSplitterTester::test_nominal@34",
+      "fn:Svc/ComSplitter/test/ut/ComSplitterMain.cpp#TEST(TestNominal, Nominal)@14",
+      "fn:Fw/Cmd/test/ut/CmdPacketTest.cpp#TEST(FwCmdPacketTest, DeserializeArgsExceedMax)@146"
+    ]
+  },
+  {
+    "requirement": "SVC-COMSTUB-001",
+    "module": "module:Svc/ComStub",
+    "verification": "Unit Test",
+    "text": "Svc::ComStub shall accept Fw::Buffer for transmission and  pass them to a Drv::ByteStreamSend port",
+    "suggested_tests": [
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_basic@50",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_fail@77",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_retry_reset_sync@148"
+    ]
+  },
+  {
+    "requirement": "SVC-COMSTUB-002",
+    "module": "module:Svc/ComStub",
+    "verification": "Unit Test",
+    "text": "Svc::ComStub shall send a Fw::Success::SUCCESS signal via comStatusOut on Drv::ByteStreamSend success (in response to data received on dataIn)",
+    "suggested_tests": [
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_retry_reset_sync@148",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_basic@50",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_fail@77"
+    ]
+  },
+  {
+    "requirement": "SVC-COMSTUB-003",
+    "module": "module:Svc/ComStub",
+    "verification": "Unit Test",
+    "text": "Svc::ComStub shall send a Fw::Success::FAILURE signal via comStatusOut on Drv::ByteStreamSend failure",
+    "suggested_tests": [
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_retry_sync@130",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_retry_reset_sync@148",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_basic@50"
+    ]
+  },
+  {
+    "requirement": "SVC-COMSTUB-004",
+    "module": "module:Svc/ComStub",
+    "verification": "Unit Test",
+    "text": "Svc::ComStub shall retry sending to Drv::ByteStreamSend on Drv::ByteStreamSend retry",
+    "suggested_tests": [
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_retry_reset_sync@148",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_retry_sync@130",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_retry_async@101"
+    ]
+  },
+  {
+    "requirement": "SVC-COMSTUB-005",
+    "module": "module:Svc/ComStub",
+    "verification": "Unit Test",
+    "text": "Svc::ComStub shall pass-through Fw::Buffer from a  Drv::ByteStreamRead on Drv::ByteStreamSend success",
+    "suggested_tests": [
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_basic@50",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_retry_reset_sync@148",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_retry_sync@130"
+    ]
+  },
+  {
+    "requirement": "SVC-COMSTUB-006",
+    "module": "module:Svc/ComStub",
+    "verification": "Unit Test",
+    "text": "Svc::ComStub shall emit exactly one Fw::Success::SUCCESS via comStatusOut on start-up / driver connection to initiate data flow",
+    "suggested_tests": [
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_retry_reset_sync@148",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_initial@42",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_basic@50"
+    ]
+  },
+  {
+    "requirement": "SVC-COMSTUB-007",
+    "module": "module:Svc/ComStub",
+    "verification": "Unit Test",
+    "text": "Svc::ComStub shall emit exactly one Fw::Success::SUCCESS via comStatusOut after a driver reconnection following a previous failure to indicate recovery",
+    "suggested_tests": [
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_retry_sync@130",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_initial@42",
+      "fn:Svc/ComStub/test/ut/ComStubTester.cpp#Svc::ComStubTester::test_fail@77"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-APID-MANAGER-001",
+    "module": "module:Svc/Ccsds/ApidManager",
+    "verification": "Unit Test",
+    "text": "The ApidManager shall track a 14-bit sequence count for each APID.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, GetSequenceCounts)@20",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, ValidateSequenceCounts)@30",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, RandomizedTesting)@41"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-APID-MANAGER-002",
+    "module": "module:Svc/Ccsds/ApidManager",
+    "verification": "Unit Test",
+    "text": "The ApidManager shall provide the current sequence count for a given APID.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, GetSequenceCounts)@20",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, ValidateSequenceCounts)@30",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, RandomizedTesting)@41"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-APID-MANAGER-003",
+    "module": "module:Svc/Ccsds/ApidManager",
+    "verification": "Unit Test",
+    "text": "The ApidManager shall increment the sequence count for each APID on request.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, GetSequenceCounts)@20",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, ValidateSequenceCounts)@30",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, RandomizedTesting)@41"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-APID-MANAGER-004",
+    "module": "module:Svc/Ccsds/ApidManager",
+    "verification": "Unit Test",
+    "text": "The ApidManager shall provide validation of a received sequence counts for each APID.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, GetSequenceCounts)@20",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, ValidateSequenceCounts)@30",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, RandomizedTesting)@41"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-APID-MANAGER-005",
+    "module": "module:Svc/Ccsds/ApidManager",
+    "verification": "Unit Test",
+    "text": "The ApidManager shall emit an event if an unexpected sequence count is received.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, ValidateSequenceCounts)@30",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, GetSequenceCounts)@20",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, RandomizedTesting)@41"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-APID-MANAGER-007",
+    "module": "module:Svc/Ccsds/ApidManager",
+    "verification": "Unit Test",
+    "text": "The ApidManager shall synchronize the onboard sequence count if a mismatch is detected.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, ValidateSequenceCounts)@30",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, GetSequenceCounts)@20",
+      "fn:Svc/Ccsds/ApidManager/test/ut/ApidManagerTestMain.cpp#TEST(ApidManager, RandomizedTesting)@41"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-001",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Inspection, Unit Test",
+    "text": "The TmFramer shall implement the Svc.FramerInterface.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTestMain.cpp#TEST(TmFramer, testDataReturn)@14",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTestMain.cpp#TEST(TmFramer, testNominalFraming)@19",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTestMain.cpp#TEST(TmFramer, testBufferOwnershipState)@34"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-002",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test, Inspection",
+    "text": "The TmFramer shall construct CCSDS Telemetry (TM) Transfer Frames compliant with the CCSDS 132.0-B-3 standard.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testFirstHeaderPointerFromContext@148",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testDataReturn@122",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testBufferOwnershipState@136"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-003",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test",
+    "text": "The TmFramer shall accept a complete frame data field of exactly Svc.Ccsds.TmDataFieldSize bytes to be framed via its dataIn port, and shall assert on any other size.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testNominalFraming@52",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testPartialDataFieldAsserts@179",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testFirstHeaderPointerFromContext@148"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-004",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test",
+    "text": "The TmFramer shall output the constructed TM Transfer Frame via its dataOut port.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testFirstHeaderPointerFromContext@148",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testNominalFraming@52",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testSeqCountWrapAround@88"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-005",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test",
+    "text": "The TmFramer shall return ownership of the input buffer via the dataReturnOut port after the framing process is complete.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testFirstHeaderPointerFromContext@148",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testNominalFraming@52",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testSeqCountWrapAround@88"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-006",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test",
+    "text": "The TmFramer shall accept returned buffers (previously sent via dataOut) through the dataReturnIn port for deallocation or reuse.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testFirstHeaderPointerFromContext@148",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testSeqCountWrapAround@88",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testNominalFraming@52"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-007",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test, Integration Test",
+    "text": "The TmFramer shall receive communication status from downstream components via the comStatusIn port and pass it through to comStatusOut, including the initial start-up Fw::Success::SUCCESS, per-message statuses, and any recovery Fw::Success::SUCCESS after a Fw::Success::FAILURE, per the [Framer Status Protocol](../../../../docs/reference/communication-adapter-interface.md#framer-status-protocol)",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testComStatusPassthrough@32",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testFirstHeaderPointerFromContext@148",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTestMain.cpp#TEST(TmFramer, testComStatusPassthrough)@9"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-008",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test, Integration Test",
+    "text": "The TmFramer shall use exactly one Virtual Channel.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testPartialDataFieldAsserts@179",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testNominalFraming@52",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testSeqCountWrapAround@88"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-009",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test, Inspection",
+    "text": "The TmFramer shall correctly populate all mandatory fields of the TM Transfer Frame Primary Header, including Transfer Frame Version Number, Spacecraft Identifier, Virtual Channel Identifier, Operational Control Field Flag, Master Channel Frame Count, Virtual Channel Frame Count, Transfer Frame Secondary Header Flag, Synchronization Flag, Packet Order Flag, Segment Length Identifier, and First Header Pointer.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testFirstHeaderPointerFromContext@148",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testNominalFraming@52",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testSeqCountWrapAround@88"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-010",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Inspection, Unit Test",
+    "text": "The TmFramer shall be configurable with a Spacecraft Identifier.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTestMain.cpp#TEST(TmFramer, testDataReturn)@14",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTestMain.cpp#TEST(TmFramer, testNominalFraming)@19",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTestMain.cpp#TEST(TmFramer, testBufferOwnershipState)@34"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-011",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test",
+    "text": "The TmFramer shall use the Virtual Channel Identifier passed in the context object on dataIn.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testSeqCountWrapAround@88",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testNominalFraming@52",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testBufferOwnershipState@136"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-012",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test",
+    "text": "The TmFramer shall manage Master Channel Frame Count and Virtual Channel Frame Count.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testSeqCountWrapAround@88",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testNominalFraming@52",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTestMain.cpp#TEST(TmFramer, testSeqCountWrapAround)@24"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-013",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test",
+    "text": "The TmFramer shall fill the data field of the TM Transfer Frame with the payload data received on dataIn, unchanged.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testPartialDataFieldAsserts@179",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testSeqCountWrapAround@88",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testNominalFraming@52"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-014",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test",
+    "text": "The TmFramer shall assert that payload data received on dataIn fills the data field exactly.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testPartialDataFieldAsserts@179",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTestMain.cpp#TEST(TmFramer, testPartialDataFieldAsserts)@44",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testNominalFraming@52"
+    ]
+  },
+  {
+    "requirement": "SVC-Ccsds-TM-FRAMER-015",
+    "module": "module:Svc/Ccsds/TmFramer",
+    "verification": "Unit Test",
+    "text": "The TmFramer shall assert that the First Header Pointer received in the dataIn context fits within the 11-bit First Header Pointer field.",
+    "suggested_tests": [
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testFirstHeaderPointerFromContext@148",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTestMain.cpp#TEST(TmFramer, testFirstHeaderPointerFromContext)@39",
+      "fn:Svc/Ccsds/TmFramer/test/ut/TmFramerTester.cpp#Svc::Ccsds::TmFramerTester::testPartialDataFieldAsserts@179"
+    ]
+  },
+  {
+    "requirement": "SVC-DEFRAMER-001",
+    "module": "module:Svc/FprimeDeframer",
+    "verification": "Unit test",
+    "text": "Svc::FprimeDeframer shall extract the payload field from input buffers that represent a valid F Prime frame as specified by the [F Prime Protocol](../../FprimeProtocol/docs/sdd.md)",
+    "suggested_tests": [
+      "fn:Svc/FprimeDeframer/test/ut/FprimeDeframerTester.cpp#Svc::FprimeDeframerTester::testNominalFrame@29",
+      "fn:Svc/FprimeDeframer/test/ut/FprimeDeframerTester.cpp#Svc::FprimeDeframerTester::testNominalFrameApid@53",
+      "fn:Svc/FprimeDeframer/test/ut/FprimeDeframerTester.cpp#Svc::FprimeDeframerTester::testZeroSizeFrame@124"
+    ]
+  },
+  {
+    "requirement": "SVC-DEFRAMER-002",
+    "module": "module:Svc/FprimeDeframer",
+    "verification": "Unit test",
+    "text": "Svc::FprimeDeframer shall return ownership of input buffers that are not a valid F Prime frame as specified by the [F Prime Protocol](../../FprimeProtocol/docs/sdd.md)",
+    "suggested_tests": [
+      "fn:Svc/FprimeDeframer/test/ut/FprimeDeframerTester.cpp#Svc::FprimeDeframerTester::testNominalFrame@29",
+      "fn:Svc/FprimeDeframer/test/ut/FprimeDeframerTester.cpp#Svc::FprimeDeframerTester::testZeroSizeFrame@124",
+      "fn:Svc/FprimeDeframer/test/ut/FprimeDeframerTester.cpp#Svc::FprimeDeframerTester::testTruncatedFrame@113"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-001",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall read a set of directories and build a catalog of data products.",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StaleFileDoneAfterStopBuild@804",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_TruncatedDpRejected@1196",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_MalformedFile@1158"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-002",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall sort data products first based on the internally recorded priority where the highest priority is represented by the lowest number.",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::testTree@55",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_TreeTestRandomPriority@567",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_TreeTestManual3@496"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-003",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall sort data products second based on the internally recorded time with oldest products as higher priority.",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::testTree@55",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_TreeTestRandomTime@592",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_TreeTestRandomPrioIdTime@642"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-004",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall sort data products third based on the internally recorded product ID with the lowest as higher priority.",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_TreeTestManual3@496",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_TreeTestManual2@474",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::testTree@55"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-005",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall update the data product metadata once download is complete",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StartAfterStopResumesInFlight@1034",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StaleFileDoneAfterStopBuild@804",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_LateFileDoneNotAppliedToNewSend@914"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-006",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall implement a command and port to build the catalog.",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StaleFileDoneAfterStopBuild@804",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_MalformedFile@1158",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTestMain.cpp#TEST(NominalManual, StaleFileDoneAfterStopBuild)@308"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-007",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall implement a command and port to start downloading the catalog.",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StartAfterStopResumesInFlight@1034",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_XmitBeforeInit@718",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTestMain.cpp#TEST(NominalManual, StartAfterStopResumesInFlight)@328"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-008",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall have filters for the download based on container ID, priority, and data size limit.",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_TruncatedDpRejected@1196",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_BadHeaderHashRejected@1311",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_TreeTestManual3@496"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-009",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall implement a way to insert newly-generated data products into the catalog after the catalog is built",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StartAfterStopResumesInFlight@1034",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StaleFileDoneAfterStopBuild@804",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StaleFileDoneAfterClear@863"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-010",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall implement commands to modify the priority of existing data products",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StartAfterStopResumesInFlight@1034",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StaleFileDoneAfterStopBuild@804",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_MalformedFile@1158"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-011",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall implement commands to delete data products",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StartAfterStopResumesInFlight@1034",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StaleFileDoneAfterStopBuild@804",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StaleFileDoneAfterClear@863"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-012",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall implement a catalog data product that is a listing of existing data products and their metadata",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StartAfterStopResumesInFlight@1034",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StaleFileDoneAfterStopBuild@804",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_StaleFileDoneAfterClear@863"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCAT-013",
+    "module": "module:Svc/DpCatalog",
+    "verification": "Test",
+    "text": "DpCatalog shall have filters for the catalog data product for priority, container ID, and time range",
+    "suggested_tests": [
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_TruncatedDpRejected@1196",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTestMain.cpp#TEST(NominalManual, TreeTestRandom)@38",
+      "fn:Svc/DpCatalog/test/ut/DpCatalogTester.cpp#Svc::DpCatalogTester::test_BadHeaderHashRejected@1311"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCOMPRESSPROC-001",
+    "module": "module:Svc/DpCompressProc",
+    "verification": "Unit Test",
+    "text": "Svc::DpCompressProc shall return the passed Fw::Buffer as either a valid compressed data product or the original uncompressed data product. However the data checksum for the container does not need to be valid in the returned product",
+    "suggested_tests": [
+      "fn:Svc/DpCompressProc/test/ut/DpCompressProcTester.cpp#Svc::DpCompressProcTester::test_chunks_helper@166",
+      "fn:Svc/DpCompressProc/test/ut/DpCompressProcTester.cpp#Svc::DpCompressProcTester::test_chunks_disabled@302",
+      "fn:Svc/DpCompressProc/test/ut/DpCompressProcTester.cpp#Svc::DpCompressProcTester::test_oversized_buffer@267"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCOMPRESSPROC-002",
+    "module": "module:Svc/DpCompressProc",
+    "verification": "Unit Test",
+    "text": "Svc::DpCompressProc shall not allocate additional memory when processing the container. This does not apply to any downstream compressor which is allow to allocate memory",
+    "suggested_tests": [
+      "fn:Svc/DpCompressProc/test/ut/DpCompressProcTester.cpp#Svc::DpCompressProcTester::test_oversized_buffer@267",
+      "fn:Svc/DpCompressProc/test/ut/DpCompressProcTester.cpp#Svc::DpCompressProcTester::test_undersized_buffer@228",
+      "fn:Svc/DpCompressProc/test/ut/DpCompressProcTester.cpp#Svc::DpCompressProcTester::test_chunks@158"
+    ]
+  },
+  {
+    "requirement": "SVC-DPCOMPRESSPROC-003",
+    "module": "module:Svc/DpCompressProc",
+    "verification": "Unit Test",
+    "text": "Svc::DpCompressProc shall support a user modifiable chunking size",
+    "suggested_tests": [
+      "fn:Svc/DpCompressProc/test/ut/DpCompressProcTester.cpp#Svc::DpCompressProcTester::test_chunks@158",
+      "fn:Svc/DpCompressProc/test/ut/DpCompressProcTester.cpp#Svc::DpCompressProcTester::test_chunks_disabled@302",
+      "fn:Svc/DpCompressProc/test/ut/DpCompressProcTestMain.cpp#TEST(Nominal, Compressible)@20"
+    ]
+  },
+  {
+    "requirement": "SVC-DPWRITER-002",
+    "module": "module:Svc/DpWriter",
+    "verification": "Unit Test",
+    "text": "Svc::DpWriter shall provide an array of ports for sending Fw::Buffer objects for processing.",
+    "suggested_tests": [
+      "fn:Svc/DpWriter/test/ut/DpWriterTestMain.cpp#TEST(BufferSendIn, OKProcShrink)@81",
+      "fn:Svc/DpWriter/test/ut/DpWriterTestMain.cpp#TEST(BufferSendIn, RoutingPorts)@91",
+      "fn:Svc/DpWriter/test/ut/Rules/BufferSendIn.cpp#Svc::TestState::testRoutingPorts@496"
+    ]
+  },
+  {
+    "requirement": "SVC-DPWRITER-003",
+    "module": "module:Svc/DpWriter",
+    "verification": "Unit Test",
+    "text": "On receiving a data product container _C_, Svc::DpWriter shall use the processing type field of the header of _C_ to select zero or more processing ports to invoke, in port order.",
+    "suggested_tests": [
+      "fn:Svc/DpWriter/test/ut/DpWriterTester.cpp#Svc::DpWriterTester::checkProcTypes@95",
+      "fn:Svc/DpWriter/test/ut/DpWriterTestMain.cpp#TEST(BufferSendIn, BufferTooSmallForPacket)@21",
+      "fn:Svc/DpWriter/test/ut/DpWriterTestMain.cpp#TEST(BufferSendIn, InvalidHeader)@56"
+    ]
+  },
+  {
+    "requirement": "SVC-DPWRITER-004",
+    "module": "module:Svc/DpWriter",
+    "verification": "Unit Test",
+    "text": "On receiving an Fw::Buffer _B_, and after performing any requested processing on _B_, Svc::DpWriter shall write _B_ to disk.",
+    "suggested_tests": [
+      "fn:Svc/DpWriter/test/ut/DpWriterTester.cpp#Svc::DpWriterTester::checkTelemetry@107",
+      "fn:Svc/DpWriter/test/ut/DpWriterTestMain.cpp#TEST(BufferSendIn, OKProcShrink)@81",
+      "fn:Svc/DpWriter/test/ut/DpWriterTestMain.cpp#TEST(BufferSendIn, FileWriteError)@42"
+    ]
+  },
+  {
+    "requirement": "SVC-DPWRITER-006",
+    "module": "module:Svc/DpWriter",
+    "verification": "Unit test",
+    "text": "Svc::DpWriter shall provide telemetry that reports the number of buffers received, the number of data products written, the number of bytes written, the number of failed writes, and the number of errors.",
+    "suggested_tests": [
+      "fn:Svc/DpWriter/test/ut/DpWriterTester.cpp#Svc::DpWriterTester::checkTelemetry@107",
+      "fn:Svc/DpWriter/test/ut/DpWriterTestMain.cpp#TEST(BufferSendIn, FileWriteError)@42",
+      "fn:Svc/DpWriter/test/ut/Rules/BufferSendIn.cpp#Svc::TestState::testRoutingPorts@496"
+    ]
+  },
+  {
+    "requirement": "SVC-DPWRITER-007",
+    "module": "module:Svc/DpWriter",
+    "verification": "Unit Test",
+    "text": "On receiving an Fw::Buffer _B_, and after performing any requested processing on _B_, Svc::DpWriter shall re-parse the container header and shrink the size of the product.",
+    "suggested_tests": [
+      "fn:Svc/DpWriter/test/ut/DpWriterTestMain.cpp#TEST(BufferSendIn, OKProcShrink)@81",
+      "fn:Svc/DpWriter/test/ut/DpWriterTester.cpp#Svc::DpWriterTester::checkProcTypes@95",
+      "fn:Svc/DpWriter/test/ut/DpWriterTestMain.cpp#TEST(BufferSendIn, InvalidHeader)@56"
+    ]
+  },
+  {
+    "requirement": "SVC-DPZLIBCOMPRESSOR-001",
+    "module": "module:Svc/DpZLibCompressor",
+    "verification": "Unit Test",
+    "text": "Svc::DpZLibCompressor shall attempt to compress incoming data chunks per the protocol defined by DpCompressProc",
+    "suggested_tests": [
+      "fn:Svc/DpZLibCompressor/test/ut/DpZLibCompressorTestMain.cpp#TEST(Nominal, RegularData)@30",
+      "fn:Svc/DpZLibCompressor/test/ut/DpZLibCompressorTestMain.cpp#TEST(Uncompressed, AboveMinSize)@59",
+      "fn:Svc/DpZLibCompressor/test/ut/DpZLibCompressorTestMain.cpp#TEST(Nominal, Zeros)@14"
+    ]
+  },
+  {
+    "requirement": "SVC-DPZLIBCOMPRESSOR-002",
+    "module": "module:Svc/DpZLibCompressor",
+    "verification": "Unit Test",
+    "text": "Svc::DpZLibCompressor shall either return Svc::CompressionAlgorithm::UNCOMPRESSED or Svc::CompressionAlgorithm::ZLIB_DEFLATE from the compressChunk input port",
+    "suggested_tests": [
+      "fn:Svc/DpZLibCompressor/test/ut/DpZLibCompressorTestMain.cpp#TEST(Nominal, Zeros)@14",
+      "fn:Svc/DpZLibCompressor/test/ut/DpZLibCompressorTestMain.cpp#TEST(Nominal, Zeros_L9)@22",
+      "fn:Svc/DpZLibCompressor/test/ut/DpZLibCompressorTestMain.cpp#TEST(Nominal, RegularData)@30"
+    ]
+  },
+  {
+    "requirement": "SVC-FPRIME_FRAMER-001",
+    "module": "module:Svc/FprimeFramer",
+    "verification": "Unit Test",
+    "text": "Svc::FprimeFramer shall accept data buffers (packets) stored in Fw::Buffer through its dataIn input port",
+    "suggested_tests": [
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testComStatusPassThrough@38",
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTestMain.cpp#TEST(Nominal, testComStatusPassThrough)@9",
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testUndersizedAllocationEmitsComStatus@152"
+    ]
+  },
+  {
+    "requirement": "SVC-FPRIME_FRAMER-002",
+    "module": "module:Svc/FprimeFramer",
+    "verification": "Unit Test",
+    "text": "Svc::FprimeFramer shall emit one F Prime frame on its dataOut output port for each packet received on dataIn input port",
+    "suggested_tests": [
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testNominalFraming@50",
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testInvalidAllocationEmitsComStatus@133",
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testUndersizedAllocationEmitsComStatus@152"
+    ]
+  },
+  {
+    "requirement": "SVC-FPRIME_FRAMER-003",
+    "module": "module:Svc/FprimeFramer",
+    "verification": "Unit Test",
+    "text": "Svc::FprimeFramer shall emit F Prime frames that conforms to the [F\u00b4 frame specification](../../FprimeProtocol/docs/sdd.md)",
+    "suggested_tests": [
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testNominalFraming@50",
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testOversizedAllocatorBufferIsTrimmed@107",
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testInvalidAllocationEmitsComStatus@133"
+    ]
+  },
+  {
+    "requirement": "SVC-FPRIME_FRAMER-004",
+    "module": "module:Svc/FprimeFramer",
+    "verification": "Unit Test",
+    "text": "Svc::FprimeFramer shall pass through all Fw.SuccessCondition received on comStatusIn to comStatusOut, including the initial start-up Fw::Success::SUCCESS, per-message statuses, and any recovery Fw::Success::SUCCESS after a Fw::Success::FAILURE, per the [Framer Status Protocol](../../../docs/reference/communication-adapter-interface.md#framer-status-protocol)",
+    "suggested_tests": [
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testComStatusPassThrough@38",
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTestMain.cpp#TEST(Nominal, testComStatusPassThrough)@9",
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testInvalidAllocationEmitsComStatus@133"
+    ]
+  },
+  {
+    "requirement": "SVC-FPRIME_FRAMER-005",
+    "module": "module:Svc/FprimeFramer",
+    "verification": "Unit Test",
+    "text": "Svc::FprimeFramer shall emit exactly one Fw::Success::SUCCESS on comStatusOut when a packet received on dataIn produces no frame because a frame buffer could not be allocated, per the [Framer Status Protocol](../../../docs/reference/communication-adapter-interface.md#framer-status-protocol)",
+    "suggested_tests": [
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testInvalidAllocationEmitsComStatus@133",
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testUndersizedAllocationEmitsComStatus@152",
+      "fn:Svc/FprimeFramer/test/ut/FprimeFramerTester.cpp#Svc::FprimeFramerTester::testNominalFraming@50"
+    ]
+  },
+  {
+    "requirement": "SVC-FRAME-ACCUMULATOR-001",
+    "module": "module:Svc/FrameAccumulator",
+    "verification": "Unit test",
+    "text": "Svc::FrameAccumulator shall accumulate a sequence of byte buffers until a full frame is received",
+    "suggested_tests": [
+      "fn:Svc/FrameAccumulator/test/ut/FrameAccumulatorTester.cpp#Svc::FrameAccumulatorTester::testAccumulateBuffersEmitManyFrames@131",
+      "fn:Svc/FrameAccumulator/test/ut/FrameAccumulatorTester.cpp#Svc::FrameAccumulatorTester::testAccumulateBuffersEmitFrame@120",
+      "fn:Svc/FrameAccumulator/test/ut/FrameAccumulatorTestMain.cpp#TEST(FrameAccumulator, testAccumulateBuffersEmitFrame)@35"
+    ]
+  },
+  {
+    "requirement": "SVC-FRAME-ACCUMULATOR-002",
+    "module": "module:Svc/FrameAccumulator",
+    "verification": "Unit test",
+    "text": "Svc::FrameAccumulator shall detect once the accumulated buffers form a full frame and emit said frame",
+    "suggested_tests": [
+      "fn:Svc/FrameAccumulator/test/ut/FrameAccumulatorTester.cpp#Svc::FrameAccumulatorTester::testAccumulateBuffersEmitFrame@120",
+      "fn:Svc/FrameAccumulator/test/ut/FrameAccumulatorTester.cpp#Svc::FrameAccumulatorTester::testAccumulateBuffersEmitManyFrames@131",
+      "fn:Svc/FrameAccumulator/test/ut/FrameAccumulatorTester.cpp#Svc::FrameAccumulatorTester::testNoFrameDetected@67"
+    ]
+  },
+  {
+    "requirement": "SVC-FRAME-ACCUMULATOR-003",
+    "module": "module:Svc/FrameAccumulator",
+    "verification": "Unit test",
+    "text": "Svc::FrameAccumulator shall accept byte buffers containing frames that are not aligned on a buffer boundary.",
+    "suggested_tests": [
+      "fn:Svc/FrameAccumulator/test/ut/FrameAccumulatorTestMain.cpp#TEST(FrameAccumulator, testBufferReturnDeallocation)@45",
+      "fn:Svc/FrameAccumulator/test/ut/FrameAccumulatorTestMain.cpp#TEST(FrameAccumulator, testAccumulateBuffersEmitFrame)@35",
+      "fn:Svc/FrameAccumulator/test/ut/FrameAccumulatorTestMain.cpp#TEST(FrameAccumulator, testAccumulateBuffersEmitManyFrames)@40"
+    ]
+  },
+  {
+    "requirement": "SVC-FRAME-ACCUMULATOR-004",
+    "module": "module:Svc/FrameAccumulator",
+    "verification": "Unit test",
+    "text": "Svc::FrameAccumulator shall accept byte buffers containing frames that span one or more buffers.",
+    "suggested_tests": [
+      "fn:Svc/FrameAccumulator/test/ut/detectors/CcsdsTcFrameDetectorTestMain.cpp#TEST_F(CcsdsFrameDetectorTest, TestMoreDataNeeded)@130",
+      "fn:Svc/FrameAccumulator/test/ut/FrameAccumulatorTester.cpp#Svc::FrameAccumulatorTester::testMoreDataNeeded@51",
+      "fn:Svc/FrameAccumulator/test/ut/FrameAccumulatorTestMain.cpp#TEST(FrameAccumulator, TestMoreDataNeeded)@15"
+    ]
+  },
+  {
+    "requirement": "SVC-LINUXTIMER-002",
+    "module": "module:Svc/LinuxTimer",
+    "verification": "unit test",
+    "text": "The LinuxTimer component shall invoke its CycleOut port at a caller-specified fixed interval",
+    "suggested_tests": [
+      "fn:Svc/LinuxTimer/test/ut/LinuxTimerTester.cpp#Svc::LinuxTimerTester::runCycles@36",
+      "fn:Svc/LinuxTimer/test/ut/main.cpp#TEST(Nominal, InitTest)@8",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerCommandTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testPollDirectoryTimerExpiry@562"
+    ]
+  },
+  {
+    "requirement": "SVC-LINUXTIMER-004",
+    "module": "module:Svc/LinuxTimer",
+    "verification": "unit test",
+    "text": "The LinuxTimer component shall stop ticking when quit() is called",
+    "suggested_tests": [
+      "fn:Svc/LinuxTimer/test/ut/LinuxTimerTester.cpp#Svc::LinuxTimerTester::runCycles@36",
+      "fn:Svc/LinuxTimer/test/ut/main.cpp#TEST(Nominal, InitTest)@8",
+      "fn:Svc/Ccsds/CfdpManager/test/ut/CfdpManagerEventTests.cpp#Svc::Ccsds::Cfdp::CfdpManagerTester::testTxAckLimitReachedEvent@1631"
+    ]
+  },
+  {
+    "requirement": "SVC-OS-TIME-001",
+    "module": "module:Svc/OsTime",
+    "verification": "Unit Test",
+    "text": "Svc::OsTime shall return current system time as an Fw::Time objects in response to the timeGetPort port call",
+    "suggested_tests": [
+      "fn:Svc/OsTime/test/ut/OsTimeTestMain.cpp#TEST(Nominal, SetCurrentTimeTest)@29",
+      "fn:Svc/OsTime/test/ut/OsTimeTestMain.cpp#TEST(OffNominal, SetCurrentTimeErrorTest)@34",
+      "fn:Svc/OsTime/test/ut/OsTimeTestMain.cpp#TEST(Nominal, NoEpochTest)@19"
+    ]
+  },
+  {
+    "requirement": "SVC-OS-TIME-002",
+    "module": "module:Svc/OsTime",
+    "verification": "Unit Test",
+    "text": "Svc::OsTime shall return ZERO_TIME as an Fw::Time object if the RawTime layer returns an error code",
+    "suggested_tests": [
+      "fn:Svc/OsTime/test/ut/OsTimeTestMain.cpp#TEST(Nominal, ZeroEpochTest)@9",
+      "fn:Svc/OsTime/test/ut/OsTimeTestMain.cpp#TEST(OffNominal, SetCurrentTimeErrorTest)@34",
+      "fn:Svc/OsTime/test/ut/OsTimeTestMain.cpp#TEST(Nominal, SetCurrentTimeTest)@29"
+    ]
+  },
+  {
+    "requirement": "SVC-PASS_THROUGH_ROUTER-001",
+    "module": "module:Svc/PassThroughRouter",
+    "verification": "Unit test",
+    "text": "Svc::PassThroughRouter shall route packets received on dataIn to the allPacketsOut output port.",
+    "suggested_tests": [
+      "fn:Svc/PassThroughRouter/test/ut/PassThroughRouterTester.cpp#Svc::PassThroughRouterTester::testRouteAPacket@30",
+      "fn:Svc/PassThroughRouter/test/ut/PassThroughRouterTestMain.cpp#TEST(PassThroughRouter, TestRouteAPacket)@11",
+      "fn:Svc/PassThroughRouter/test/ut/PassThroughRouterTester.cpp#Svc::PassThroughRouterTester::testAllPacketsReturn@36"
+    ]
+  },
+  {
+    "requirement": "SVC-PASS_THROUGH_ROUTER-002",
+    "module": "module:Svc/PassThroughRouter",
+    "verification": "Unit test",
+    "text": "Svc::PassThroughRouter shall return ownership of all buffers received on dataIn through dataReturnOut",
+    "suggested_tests": [
+      "fn:Svc/PassThroughRouter/test/ut/PassThroughRouterTester.cpp#Svc::PassThroughRouterTester::testAllPacketsReturn@36",
+      "fn:Svc/PassThroughRouter/test/ut/PassThroughRouterTester.cpp#Svc::PassThroughRouterTester::testRouteAPacket@30",
+      "fn:Svc/PassThroughRouter/test/ut/PassThroughRouterTestMain.cpp#TEST(PassThroughRouter, TestAllPacketsReturn)@17"
+    ]
+  },
+  {
+    "requirement": "SVC-POSIX-TIME-001",
+    "module": "module:Svc/PosixTime",
+    "verification": "Unit Test",
+    "text": "Svc::PosixTime shall return current system time as an Fw::Time objects in response to the timeGetPort port call",
+    "suggested_tests": [
+      "fn:Svc/PosixTime/test/ut/PosixTimeMain.cpp#TEST(Test, GetTime)@9",
+      "fn:Svc/PosixTime/test/ut/PosixTimeMain.cpp#TEST(Test, GetTimeWithContext)@14",
+      "fn:Os/Posix/test/ut/PosixTaskTests.cpp#TEST_F(PosixTaskScheduling, ApplyLinuxNiceAppliesNiceBandToCallingThreadOnly)@248"
+    ]
+  },
+  {
+    "requirement": "SVC-POSIX-TIME-002",
+    "module": "module:Svc/PosixTime",
+    "verification": "Unit Test",
+    "text": "Svc::PosixTime shall set the time context of returned Fw::Time objects to the value supplied by setTimeContext",
+    "suggested_tests": [
+      "fn:Svc/PosixTime/test/ut/PosixTimeMain.cpp#TEST(Test, GetTimeWithContext)@14",
+      "fn:Svc/PosixTime/test/ut/PosixTimeMain.cpp#TEST(Test, GetTime)@9",
+      "fn:Os/Posix/test/ut/PosixRawTimeTests.cpp#TEST(PosixRawTime, NowInvalidClockReturnsInvalidParams)@102"
+    ]
+  },
+  {
+    "requirement": "SVC-ROUTER-001",
+    "module": "module:Svc/FprimeRouter",
+    "verification": "Unit test",
+    "text": "Svc::FprimeRouter shall route packets based on their packet type as indicated by the packet header",
+    "suggested_tests": [
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp#TEST(FprimeRouter, TestRouteUnknownPacketUnconnected)@26",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp#TEST(FprimeRouter, TestUnknownInterface)@21",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteUnknownPacket@51"
+    ]
+  },
+  {
+    "requirement": "SVC-ROUTER-002",
+    "module": "module:Svc/FprimeRouter",
+    "verification": "Unit test",
+    "text": "Svc::FprimeRouter shall route packets of type Fw::ComPacketType::FW_PACKET_COMMAND to the commandOut output port.",
+    "suggested_tests": [
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteUnknownPacketUnconnected@59",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteComInterface@35",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteUnknownPacket@51"
+    ]
+  },
+  {
+    "requirement": "SVC-ROUTER-003",
+    "module": "module:Svc/FprimeRouter",
+    "verification": "Unit test",
+    "text": "Svc::FprimeRouter shall route packets of type Fw::ComPacketType::FW_PACKET_FILE to the fileOut output port.",
+    "suggested_tests": [
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteUnknownPacketUnconnected@59",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteComInterface@35",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteUnknownPacket@51"
+    ]
+  },
+  {
+    "requirement": "SVC-ROUTER-004",
+    "module": "module:Svc/FprimeRouter",
+    "verification": "Unit test",
+    "text": "Svc::FprimeRouter shall route data that is neither Fw::ComPacketType::FW_PACKET_COMMAND nor Fw::ComPacketType::FW_PACKET_FILE to the unknownDataOut output port.",
+    "suggested_tests": [
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteUnknownPacketUnconnected@59",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteUnknownPacket@51",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteComInterface@35"
+    ]
+  },
+  {
+    "requirement": "SVC-ROUTER-005",
+    "module": "module:Svc/FprimeRouter",
+    "verification": "Unit test",
+    "text": "Svc::FprimeRouter shall emit warning events if serialization errors occur during processing of incoming packets",
+    "suggested_tests": [
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp#TEST(FprimeRouter, TestFileOutContextTableFull)@51",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp#TEST(FprimeRouter, TestUnknownDataOutContextTableFull)@56",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteUnknownPacket@51"
+    ]
+  },
+  {
+    "requirement": "SVC-ROUTER-006",
+    "module": "module:Svc/FprimeRouter",
+    "verification": "Unit test",
+    "text": "Svc::FprimeRouter shall pass through buffers for FW_PACKET_FILE and unknown packet types without copying, and defer returning them to the deframer until they are returned via fileBufferReturnIn",
+    "suggested_tests": [
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteUnknownPacket@51",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteUnknownPacketUnconnected@59",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteFileInterface@43"
+    ]
+  },
+  {
+    "requirement": "SVC-ROUTER-007",
+    "module": "module:Svc/FprimeRouter",
+    "verification": "Unit test",
+    "text": "Svc::FprimeRouter shall return ownership of all buffers received on dataIn through dataReturnOut",
+    "suggested_tests": [
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteFileInterface@43",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteUnknownPacket@51",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testRouteComInterface@35"
+    ]
+  },
+  {
+    "requirement": "SVC-ROUTER-008",
+    "module": "module:Svc/FprimeRouter",
+    "verification": "Unit test",
+    "text": "Svc::FprimeRouter shall preserve the ComCfg::FrameContext received on dataIn and restore it on the corresponding dataReturnOut, including across the fileOut/unknownDataOut \u2192 fileBufferReturnIn round-trip",
+    "suggested_tests": [
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp#TEST(FprimeRouter, TestMultiBufferContextRoundTrip)@46",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testMultiBufferContextRoundTrip@97",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testFileContextRoundTrip@81"
+    ]
+  },
+  {
+    "requirement": "SVC-ROUTER-009",
+    "module": "module:Svc/FprimeRouter",
+    "verification": "Unit test",
+    "text": "Svc::FprimeRouter shall emit a warning event and return the buffer with an empty context when the buffer-to-context table is full on hand-off, or when a returned buffer is not found in the table",
+    "suggested_tests": [
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testBufferReturn@67",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testContextTableFull@128",
+      "fn:Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp#Svc::FprimeRouterTester::testFileContextRoundTrip@81"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-001",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "ComAggregator shall accept incoming downlink data as Fw::Buffer, ComCfg::FrameContext pairs and append the buffer into the aggregate space permitting",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_exactly_full@244",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_oversize_hold_asserts@788",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_full@196"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-002",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "ComAggregator shall hold the incoming buffer when there is insufficient space in the aggregate buffer.",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_oversize_hold_asserts@788",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_small_residual_holds@289",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_exactly_full@244"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-003",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "ComAggregator shall send the current aggregate buffer when the incoming buffer is held due to overflow.",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_cleanup_drops_held_packet@755",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_small_residual_holds@289",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_full@196"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-004",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "ComAggregator shall send the current aggregate buffer when it receives a timeout trigger if and only if the aggregate is non-empty.",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_full@196",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTestMain.cpp#TEST(OffNominal, TimeoutEmpty)@59",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_oversize_hold_asserts@788"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-005",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "ComAggregator shall clear aggregation state when a Fw::Success::SUCCESS communication status is received back.",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_timeout@318",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_hold_while_waiting@396",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_timeout_overflow_prevention@348"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-006",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "ComAggregator shall preserve the order of received buffers when forming each aggregate and across aggregate sends.",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTestMain.cpp#TEST(Spanning, SplitAcrossTwoFrames)@95",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_oversize_hold_asserts@788",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_cleanup_drops_held_packet@755"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-007",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "ComAggregator shall interoperate with the [Communication Adapter Interface protocol](../../../docs/reference/communication-adapter-interface.md). Specifically, it shall pass through Fw::Success::SUCCESS and Fw::Success::FAILURE statuses per the [Framer Status Protocol](../../../docs/reference/communication-adapter-interface.md#framer-status-protocol), including the initial start-up SUCCESS and any recovery SUCCESS following a FAILURE.",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_initial@129",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_spanning_failure_drops_split_remainder@818",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_timeout@318"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-008",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "ComAggregator shall provide a packet spanning configuration, disabled by default; with spanning disabled, incoming buffers shall never be split.",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTestMain.cpp#TEST(Spanning, SplitAcrossTwoFrames)@95",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTestMain.cpp#TEST(Spanning, FailureDropsSplitRemainder)@201",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_spanning_split_two@483"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-009",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "With spanning enabled, when an incoming buffer does not fit in the remaining aggregate space, ComAggregator shall fill the remaining space with the buffer's leading bytes, send the full aggregate, and retain the remainder for subsequent aggregates.",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_spanning_split_two@483",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_full@196",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_spanning_failure_drops_split_remainder@818"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-010",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "With spanning enabled, a retained remainder shall be able to span one or more complete subsequent aggregates, which are sent as continuation-only aggregates.",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_spanning_split_two@483",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_spanning_three_frames@529",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTestMain.cpp#TEST(Spanning, FailureDropsSplitRemainder)@201"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-011",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "With spanning enabled, ComAggregator shall report the CCSDS TM First Header Pointer for each aggregate via ComCfg::FrameContext.firstHeaderPointer: the offset of the first packet header starting in the aggregate, or 0x7FF when no packet header starts in the aggregate (CCSDS 132.0-B-3 4.1.2.7.6).",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_spanning_three_frames@529",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_configure_invalid_size_asserts@646",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_spanning_split_two@483"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-012",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "ComAggregator shall fill residual aggregate space with an SPP idle packet before sending so that every emitted aggregate is exactly the configured aggregation size; with spanning enabled, the idle packet spans into the next aggregate when the residual space is smaller than a minimum idle packet.",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_configure_invalid_size_asserts@646",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTestMain.cpp#TEST(PerInstance, MinimumNonSpanningSize)@149",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTestMain.cpp#TEST(PerInstance, SmallAggregationSize)@159"
+    ]
+  },
+  {
+    "requirement": "Svc-ComAggregator-013",
+    "module": "module:Svc/ComAggregator",
+    "verification": "Unit-Test",
+    "text": "ComAggregator shall take its aggregation size, spanning setting, and aggregate storage (from an Fw::MemAllocator) per instance at initialization via configure(), and shall release the storage via cleanup().",
+    "suggested_tests": [
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_cleanup@700",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTester.cpp#Svc::ComAggregatorTester::test_configure_invalid_size_asserts@646",
+      "fn:Svc/ComAggregator/test/ut/ComAggregatorTestMain.cpp#TEST(PerInstance, MinimumNonSpanningSize)@149"
+    ]
+  },
+  {
+    "requirement": "TCP-CLIENT-COMP-002",
+    "module": "module:Drv/TcpClient",
+    "verification": "unit test",
+    "text": "The tcp client component shall provide a read thread",
+    "suggested_tests": [
+      "fn:Drv/TcpClient/test/ut/TcpClientTestMain.cpp#TEST(Nominal, TcpClientBasicReceiveThread)@12",
+      "fn:Drv/TcpClient/test/ut/TcpClientTestMain.cpp#TEST(Reconnect, TcpClientReceiveThreadReconnect)@27",
+      "fn:Drv/TcpClient/test/ut/TcpClientTester.cpp#Drv::TcpClientTester::test_receive_thread@164"
+    ]
+  },
+  {
+    "requirement": "TCP-CLIENT-COMP-003",
+    "module": "module:Drv/TcpClient",
+    "verification": "unit test",
+    "text": "The tcp client component shall provide bidirectional communication with a tcp server",
+    "suggested_tests": [
+      "fn:Drv/TcpClient/test/ut/TcpClientTester.cpp#Drv::TcpClientTester::test_no_automatic_send_connection@172",
+      "fn:Drv/TcpClient/test/ut/TcpClientTester.cpp#Drv::TcpClientTester::test_no_automatic_recv_connection@184",
+      "fn:Drv/TcpClient/test/ut/TcpClientTester.cpp#Drv::TcpClientTester::test_with_loop@49"
+    ]
+  },
+  {
+    "requirement": "TCP-SERVER-COMP-002",
+    "module": "module:Drv/TcpServer",
+    "verification": "unit test",
+    "text": "The tcp server component shall provide a read thread",
+    "suggested_tests": [
+      "fn:Drv/TcpServer/test/ut/TcpServerTestMain.cpp#TEST(Nominal, TcpServerBasicReceiveThread)@17",
+      "fn:Drv/TcpServer/test/ut/TcpServerTestMain.cpp#TEST(Reconnect, TcpServerReceiveThreadReconnect)@27",
+      "fn:Drv/TcpServer/test/ut/TcpServerTester.cpp#Drv::TcpServerTester::test_receive_thread@186"
+    ]
+  },
+  {
+    "requirement": "TCP-SERVER-COMP-003",
+    "module": "module:Drv/TcpServer",
+    "verification": "unit test",
+    "text": "The tcp server component shall provide bidirectional communication with a tcp client",
+    "suggested_tests": [
+      "fn:Drv/TcpServer/test/ut/TcpServerTester.cpp#Drv::TcpServerTester::test_no_automatic_send_connection@194",
+      "fn:Drv/TcpServer/test/ut/TcpServerTester.cpp#Drv::TcpServerTester::test_no_automatic_recv_connection@216",
+      "fn:Drv/TcpServer/test/ut/TcpServerTester.cpp#Drv::TcpServerTester::test_with_loop@47"
+    ]
+  },
+  {
+    "requirement": "TLC-005",
+    "module": "module:Svc/TlmChan",
+    "verification": "Unit Test",
+    "text": "The Svc::TlmChan component shall limit the number of telemetry entries processed per Run invocation to TLMCHAN_MAX_ENTRIES_PER_RUN",
+    "suggested_tests": [
+      "fn:Svc/TlmChan/test/ut/TlmChanMain.cpp#TEST(TlmChanTest, ProcGuardTest)@59",
+      "fn:Svc/TlmChan/test/ut/TlmChanTester.cpp#Svc::TlmChanTester::runProcGuard@202",
+      "fn:Svc/TlmChan/test/ut/TlmChanTester.cpp#Svc::TlmChanTester::runUpdatedFlagClearGuarded@153"
+    ]
+  },
+  {
+    "requirement": "TLC-006",
+    "module": "module:Svc/TlmChan",
+    "verification": "Unit Test",
+    "text": "The Svc::TlmChan component shall emit a WARNING_HI event when the per-run processing cap is reached",
+    "suggested_tests": [
+      "fn:Svc/TlmChan/test/ut/TlmChanTester.cpp#Svc::TlmChanTester::checkGuardEvent@404",
+      "fn:Svc/TlmChan/test/ut/TlmChanTester.cpp#Svc::TlmChanTester::runProcGuard@202",
+      "fn:Svc/TlmChan/test/ut/TlmChanMain.cpp#TEST(TlmChanTest, BucketPoolExhaustionTest)@69"
+    ]
+  },
+  {
+    "requirement": "TPK-001",
+    "module": "module:Svc/TlmPacketizer",
+    "verification": "Unit Test",
+    "text": "The Svc::TlmPacketizer component shall provide an interface to submit telemetry",
+    "suggested_tests": [
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, configuredTelemetryGroupsTests)@106",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, PushTlm)@16",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, TlmGetTest)@101"
+    ]
+  },
+  {
+    "requirement": "TPK-002",
+    "module": "module:Svc/TlmPacketizer",
+    "verification": "Unit Test",
+    "text": "The Svc::TlmPacketizer component shall time tag each packet",
+    "suggested_tests": [
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, SendPackets)@22",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, UpdatePacketsTest)@28",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, EmptyPacketTest)@89"
+    ]
+  },
+  {
+    "requirement": "TPK-003",
+    "module": "module:Svc/TlmPacketizer",
+    "verification": "Unit Test",
+    "text": "The Svc::TlmPacketizer component shall keep the latest value of each channel",
+    "suggested_tests": [
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, TlmGetTest)@101",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestOffNominal, OversizedChannelTest)@83",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, IgnoredChannelTest)@40"
+    ]
+  },
+  {
+    "requirement": "TPK-004",
+    "module": "module:Svc/TlmPacketizer",
+    "verification": "Unit Test",
+    "text": "The Svc::TlmPacketizer component shall uniquely identify each packet",
+    "suggested_tests": [
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, SendPackets)@22",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, UpdatePacketsTest)@28",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, EmptyPacketTest)@89"
+    ]
+  },
+  {
+    "requirement": "TPK-005",
+    "module": "module:Svc/TlmPacketizer",
+    "verification": "Unit Test",
+    "text": "The Svc::TlmPacketizer component shall write packets upon fulfilling the rate send configurations for its group",
+    "suggested_tests": [
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, configuredTelemetryGroupsTests)@106",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, advancedControlGroupTests)@111",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, SendPackets)@22"
+    ]
+  },
+  {
+    "requirement": "TPK-006",
+    "module": "module:Svc/TlmPacketizer",
+    "verification": "Unit Test",
+    "text": "The Svc::TlmPacketizer component shall determine output port index based on section and group",
+    "suggested_tests": [
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, advancedControlGroupTests)@111",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, sectionConfigParameterTest)@123",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, sectionEnabledParameterTest)@117"
+    ]
+  },
+  {
+    "requirement": "TPK-007",
+    "module": "module:Svc/TlmPacketizer",
+    "verification": "Unit Test",
+    "text": "The Svc::TlmPacketizer component shall accept a packet specification containing no channels",
+    "suggested_tests": [
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, EmptyPacketTest)@89",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestOffNominal, NullChannelListTest)@95",
+      "fn:Svc/TlmPacketizer/test/ut/main.cpp#TEST(TestNominal, DuplicateChannelIdMatchingSizeTest)@71"
+    ]
+  },
+  {
+    "requirement": "UDP-COMP-002",
+    "module": "module:Drv/Udp",
+    "verification": "unit test",
+    "text": "The udp component shall provide a read thread",
+    "suggested_tests": [
+      "fn:Drv/Udp/test/ut/UdpTestMain.cpp#TEST(Nominal, UdpBasicReceiveThread)@17",
+      "fn:Drv/Udp/test/ut/UdpTester.cpp#Drv::UdpTester::test_receive_thread@171",
+      "fn:Drv/Udp/test/ut/UdpTestMain.cpp#TEST(Reconnect, UdpReceiveThreadReconnect)@32"
+    ]
+  },
+  {
+    "requirement": "UDP-COMP-003",
+    "module": "module:Drv/Udp",
+    "verification": "unit test",
+    "text": "The udp component shall provide single and bidirectional communication across udp",
+    "suggested_tests": [
+      "fn:Drv/Udp/test/ut/UdpTestMain.cpp#TEST(Nominal, UdpBasicMessaging)@7",
+      "fn:Drv/Udp/test/ut/UdpTestMain.cpp#TEST(Reconnect, UdpBufferDeallocation)@37",
+      "fn:Drv/Udp/test/ut/UdpTestMain.cpp#TEST(Reconnect, UdpMultiMessaging)@22"
+    ]
+  }
+]

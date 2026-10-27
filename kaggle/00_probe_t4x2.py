@@ -41,7 +41,7 @@ import subprocess
 import sys
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 PROBE_VERSION = "0.1.0"
@@ -150,7 +150,7 @@ print(f"OUT_DIR={OUT_DIR}  WORK_DIR={WORK_DIR}  free={_free_gb(str(WORK_DIR)):.1
 # ---------------------------------------------------------------- helpers: results, shell, GPU
 RESULTS = {
     "probe_version": PROBE_VERSION,
-    "started_at": datetime.now(timezone.utc).isoformat(),
+    "started_at": datetime.now(UTC).isoformat(),
     "env": {},
     "builds": {},
     "runs": [],
@@ -158,13 +158,15 @@ RESULTS = {
 
 
 def save_results() -> None:
-    RESULTS["updated_at"] = datetime.now(timezone.utc).isoformat()
+    RESULTS["updated_at"] = datetime.now(UTC).isoformat()
     tmp = RESULTS_PATH.with_suffix(".tmp")
     tmp.write_text(json.dumps(RESULTS, indent=2))
     tmp.replace(RESULTS_PATH)
 
 
-def sh(cmd: str, timeout: int = 3600, log: Path | None = None, check: bool = False) -> subprocess.CompletedProcess:
+def sh(
+    cmd: str, timeout: int = 3600, log: Path | None = None, check: bool = False
+) -> subprocess.CompletedProcess:
     """Run a shell command, optionally teeing combined output to a log file."""
     print(f"$ {cmd}")
     proc = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)
@@ -183,7 +185,9 @@ def time_left() -> float:
 def gpu_mem_mib() -> list[int]:
     p = subprocess.run(
         "nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits",
-        shell=True, capture_output=True, text=True,
+        shell=True,
+        capture_output=True,
+        text=True,
     )
     try:
         return [int(x.strip()) for x in p.stdout.strip().splitlines()]
@@ -204,7 +208,9 @@ class GpuPeakSampler:
         while not self._stop.is_set():
             cur = gpu_mem_mib()
             if cur:
-                self.peak = cur if not self.peak else [max(a, b) for a, b in zip(self.peak, cur, strict=False)]
+                self.peak = (
+                    cur if not self.peak else [max(a, b) for a, b in zip(self.peak, cur, strict=False)]
+                )
             time.sleep(self.interval)
 
     def __enter__(self):
@@ -244,21 +250,26 @@ def fingerprint() -> dict:
         "python": sys.version.split()[0],
         "platform": platform.platform(),
         "cpu_count": os.cpu_count(),
-        "gpus": sh("nvidia-smi --query-gpu=index,name,memory.total,compute_cap,driver_version "
-                   "--format=csv,noheader").stdout.strip().splitlines(),
+        "gpus": sh(
+            "nvidia-smi --query-gpu=index,name,memory.total,compute_cap,driver_version --format=csv,noheader"
+        )
+        .stdout.strip()
+        .splitlines(),
         "nvcc": sh("nvcc --version | tail -2").stdout.strip(),
         "gcc": sh("gcc --version | head -1").stdout.strip(),
         "cmake": sh("cmake --version | head -1").stdout.strip(),
         "ram_total_gb": round(os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1e9, 1),
-        "disk_free_gb": {p: round(_free_gb(p), 1) for p in ["/kaggle/working", "/kaggle/temp", "/tmp"] if Path(p).exists()},
+        "disk_free_gb": {
+            p: round(_free_gb(p), 1) for p in ["/kaggle/working", "/kaggle/temp", "/tmp"] if Path(p).exists()
+        },
         "work_dir": str(WORK_DIR),
     }
     try:
-        import torch  # noqa: PLC0415
+        import torch
 
         env["system_torch"] = torch.__version__
         env["system_torch_cuda"] = torch.version.cuda
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         env["system_torch"] = f"unavailable: {e}"
     return env
 
@@ -273,14 +284,14 @@ try:
 
     os.environ["HF_TOKEN"] = UserSecretsClient().get_secret("HF_TOKEN")
     print("HF_TOKEN loaded from Kaggle secrets")
-except Exception:  # noqa: BLE001
+except Exception:
     print("No HF_TOKEN secret (anonymous downloads)")
 
 sh(f"{sys.executable} -m pip install -q -U huggingface_hub requests", timeout=900)
 
 # %%
 # ---------------------------------------------------------------- client-side measurements
-import requests  # noqa: E402
+import requests
 
 SMOKE_PROMPT = (
     "Write a C99 function with exactly this signature:\n"
@@ -319,14 +330,19 @@ def _long_prompt() -> str:
             f"    if (acc > k) {{ acc = k - {i}; }} else {{ acc += {i * 3}; }}\n"
             f"    return acc ^ 0x{i:04X};\n}}\n"
         )
-    return "Here is a C file:\n```c\n" + "\n".join(funcs) + "```\nIn one sentence, what do these functions have in common?"
+    return (
+        "Here is a C file:\n```c\n"
+        + "\n".join(funcs)
+        + "```\nIn one sentence, what do these functions have in common?"
+    )
 
 
 LONG_PROMPT = _long_prompt()
 
 
-def chat_stream(base: str, model: str, prompt: str, max_tokens: int, extra: dict | None = None,
-                timeout: int = 900) -> dict:
+def chat_stream(
+    base: str, model: str, prompt: str, max_tokens: int, extra: dict | None = None, timeout: int = 900
+) -> dict:
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -373,7 +389,9 @@ def chat_stream(base: str, model: str, prompt: str, max_tokens: int, extra: dict
         "total_s": round(t1 - t0, 3),
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
-        "decode_tps": round((completion_tokens - 1) / decode_window, 2) if decode_window and completion_tokens > 1 else None,
+        "decode_tps": round((completion_tokens - 1) / decode_window, 2)
+        if decode_window and completion_tokens > 1
+        else None,
         "prefill_tps": round(prompt_tokens / ttft, 1) if (prompt_tokens and ttft) else None,
         "usage_reported": usage is not None,
         "text": "".join(text),
@@ -392,8 +410,10 @@ def smoke_test(base: str, model: str, extra: dict | None, tag: str) -> dict:
     (d / "solution.c").write_text(extract_code(res["text"]))
     (d / "harness.c").write_text(SMOKE_HARNESS)
     comp = subprocess.run(
-        f"gcc -std=c99 -Wall -Wextra -O2 {d/'solution.c'} {d/'harness.c'} -o {d/'t'}",
-        shell=True, capture_output=True, text=True,
+        f"gcc -std=c99 -Wall -Wextra -O2 {d / 'solution.c'} {d / 'harness.c'} -o {d / 't'}",
+        shell=True,
+        capture_output=True,
+        text=True,
     )
     warnings = len(re.findall(r"warning:", comp.stderr))
     passed = False
@@ -414,14 +434,15 @@ def smoke_test(base: str, model: str, extra: dict | None, tag: str) -> dict:
 def concurrency_test(base: str, model: str, extra: dict | None, n: int) -> dict:
     prompts = [
         f"Write a C99 function that implements a fixed-size ring buffer push operation (variant {i}). "
-        "Explain each line briefly." for i in range(n)
+        "Explain each line briefly."
+        for i in range(n)
     ]
     out: list[dict | None] = [None] * n
 
     def worker(i: int) -> None:
         try:
             out[i] = chat_stream(base, model, prompts[i], max_tokens=256, extra=extra)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             out[i] = {"error": str(e)}
 
     t0 = time.perf_counter()
@@ -438,7 +459,9 @@ def concurrency_test(base: str, model: str, extra: dict | None, n: int) -> dict:
         "n_ok": len(ok),
         "wall_s": round(wall, 2),
         "aggregate_tps": round(total_tokens / wall, 2) if wall > 0 else None,
-        "mean_ttft_s": round(sum(o["ttft_s"] for o in ok if o["ttft_s"]) / max(1, len(ok)), 3) if ok else None,
+        "mean_ttft_s": round(sum(o["ttft_s"] for o in ok if o["ttft_s"]) / max(1, len(ok)), 3)
+        if ok
+        else None,
         "per_request_decode_tps": [o["decode_tps"] for o in ok],
         "errors": [o["error"] for o in out if o and "error" in o],
     }
@@ -459,8 +482,9 @@ class Server:
         self._log = open(self.log_path, "w")
         self._log.write("$ " + " ".join(self.cmd) + "\n")
         self._log.flush()
-        self.proc = subprocess.Popen(self.cmd, stdout=self._log, stderr=subprocess.STDOUT,
-                                     env=self.env, start_new_session=True)
+        self.proc = subprocess.Popen(
+            self.cmd, stdout=self._log, stderr=subprocess.STDOUT, env=self.env, start_new_session=True
+        )
 
     def wait_ready(self, timeout: int) -> tuple[bool, str]:
         t0 = time.time()
@@ -481,45 +505,59 @@ class Server:
             try:
                 os.killpg(self.proc.pid, signal.SIGTERM)
                 self.proc.wait(timeout=45)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 try:
                     os.killpg(self.proc.pid, signal.SIGKILL)
-                except Exception:  # noqa: BLE001
+                except Exception:
                     pass
         if self._log:
             self._log.close()
         wait_gpu_free()
 
 
-def measure_server(engine: str, base: str, model_name: str, cand: dict, tag: str,
-                   do_smoke: bool, do_single: bool, do_prefill: bool, do_concurrency: bool) -> dict:
+def measure_server(
+    engine: str,
+    base: str,
+    model_name: str,
+    cand: dict,
+    tag: str,
+    do_smoke: bool,
+    do_single: bool,
+    do_prefill: bool,
+    do_concurrency: bool,
+) -> dict:
     extra = {"chat_template_kwargs": {"enable_thinking": False}} if cand["disable_thinking"] else None
     m: dict = {"vram_idle_mib": gpu_mem_mib()}
     with GpuPeakSampler() as sampler:
         if do_smoke:
             try:
                 m["smoke"] = smoke_test(base, model_name, extra, f"{engine}_{tag}")
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 m["smoke"] = {"error": str(e)}
         if do_single:
             try:
-                r = chat_stream(base, model_name, "Explain what a watchdog timer is in an embedded system, "
-                                "in about 200 words.", max_tokens=320, extra=extra)
+                r = chat_stream(
+                    base,
+                    model_name,
+                    "Explain what a watchdog timer is in an embedded system, in about 200 words.",
+                    max_tokens=320,
+                    extra=extra,
+                )
                 r.pop("text", None)
                 m["single_stream"] = r
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 m["single_stream"] = {"error": str(e)}
         if do_prefill:
             try:
                 r = chat_stream(base, model_name, LONG_PROMPT, max_tokens=48, extra=extra)
                 r.pop("text", None)
                 m["prefill"] = r
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 m["prefill"] = {"error": str(e)}
         if do_concurrency:
             try:
                 m["concurrency"] = concurrency_test(base, model_name, extra, CONCURRENCY)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 m["concurrency"] = {"error": str(e)}
     m["vram_peak_mib"] = sampler.peak
     return m
@@ -543,11 +581,13 @@ if RUN_LLAMACPP:
                 f"cmake -S . -B build -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75 -DLLAMA_CURL=OFF "
                 f"-DCMAKE_BUILD_TYPE=Release && "
                 f"cmake --build build --config Release -j{nproc} --target llama-server",
-                log=build_log, check=True, timeout=5400,
+                log=build_log,
+                check=True,
+                timeout=5400,
             )
         commit = sh(f"git -C {LLAMA_DIR} rev-parse HEAD").stdout.strip()
         RESULTS["builds"]["llamacpp"] = {"ok": True, "commit": commit, "build_s": round(time.time() - t0)}
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         RESULTS["builds"]["llamacpp"] = {"ok": False, "error": str(e)[-2000:], "log_tail": tail(build_log)}
         RUN_LLAMACPP = False
     save_results()
@@ -555,7 +595,7 @@ if RUN_LLAMACPP:
 
 # %%
 # ---------------------------------------------------------------- GGUF resolution & download
-from huggingface_hub import HfApi, hf_hub_download  # noqa: E402
+from huggingface_hub import HfApi, hf_hub_download
 
 _api = HfApi()
 
@@ -566,8 +606,9 @@ def resolve_gguf(repo: str, quant: str) -> list[str]:
     pat = re.compile(rf"(^|[-_./]){re.escape(quant)}([-_.]|$)", re.I)
     ggufs = [f for f in files if f.endswith(".gguf") and "mmproj" not in f.lower() and pat.search(f)]
     if not ggufs:
-        raise FileNotFoundError(f"no {quant} GGUF in {repo}; available: "
-                                f"{sorted({f for f in files if f.endswith('.gguf')})[:20]}")
+        raise FileNotFoundError(
+            f"no {quant} GGUF in {repo}; available: {sorted({f for f in files if f.endswith('.gguf')})[:20]}"
+        )
     plain = [f for f in ggufs if "UD-" not in f] or ggufs
     # group shards: name-00001-of-00003.gguf
     first = sorted(plain)[0]
@@ -601,8 +642,16 @@ def llama_supports(flag: str) -> bool:
 # %%
 # ---------------------------------------------------------------- llama.cpp leg
 def run_llamacpp(cand: dict) -> None:
-    run = {"engine": "llama.cpp", "model_key": cand["key"], "family": cand["family"], "arch": cand["arch"],
-           "repo": cand["gguf_repo"], "quant": cand["gguf_quant"], "launches": [], "status": "started"}
+    run = {
+        "engine": "llama.cpp",
+        "model_key": cand["key"],
+        "family": cand["family"],
+        "arch": cand["arch"],
+        "repo": cand["gguf_repo"],
+        "quant": cand["gguf_quant"],
+        "launches": [],
+        "status": "started",
+    }
     RESULTS["runs"].append(run)
     save_results()
     try:
@@ -612,9 +661,10 @@ def run_llamacpp(cand: dict) -> None:
         model_path = download_gguf(cand["gguf_repo"], files)
         run["download_s"] = round(time.time() - t0)
         run["file_size_gb"] = round(
-            sum(p.stat().st_size for p in gguf_local_dir(cand["gguf_repo"]).rglob("*.gguf")) / 1e9, 2)
+            sum(p.stat().st_size for p in gguf_local_dir(cand["gguf_repo"]).rglob("*.gguf")) / 1e9, 2
+        )
         save_results()
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         run["status"] = "download_failed"
         run["error"] = str(e)[-1500:]
         save_results()
@@ -626,8 +676,23 @@ def run_llamacpp(cand: dict) -> None:
             run["launches"].append({"label": label, "skipped": "session time budget"})
             break
         log = LOG_DIR / f"llamacpp_{cand['key']}_{label}.log"
-        cmd = [str(LLAMA_SERVER), "-m", str(model_path), "--host", "127.0.0.1", "--port", str(SERVER_PORT),
-               "-ngl", "999", "-c", str(ctx), "--parallel", str(n_par), "--jinja", "--metrics"]
+        cmd = [
+            str(LLAMA_SERVER),
+            "-m",
+            str(model_path),
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(SERVER_PORT),
+            "-ngl",
+            "999",
+            "-c",
+            str(ctx),
+            "--parallel",
+            str(n_par),
+            "--jinja",
+            "--metrics",
+        ]
         if cand["disable_thinking"] and llama_supports("--reasoning-budget"):
             cmd += ["--reasoning-budget", "0"]
         launch = {"label": label, "n_parallel": n_par, "ctx_total": ctx, "cmd": " ".join(cmd[1:])}
@@ -645,11 +710,19 @@ def run_llamacpp(cand: dict) -> None:
             save_results()
             continue
         try:
-            launch.update(measure_server(
-                "llamacpp", f"http://127.0.0.1:{SERVER_PORT}", "probe", cand, f"{cand['key']}_{label}",
-                do_smoke=(label == "single_16k"), do_single=(label != "concurrent_4x8k"),
-                do_prefill=(label == "single_16k"), do_concurrency=(label == "concurrent_4x8k"),
-            ))
+            launch.update(
+                measure_server(
+                    "llamacpp",
+                    f"http://127.0.0.1:{SERVER_PORT}",
+                    "probe",
+                    cand,
+                    f"{cand['key']}_{label}",
+                    do_smoke=(label == "single_16k"),
+                    do_single=(label != "concurrent_4x8k"),
+                    do_prefill=(label == "single_16k"),
+                    do_concurrency=(label == "concurrent_4x8k"),
+                )
+            )
         finally:
             srv.stop()
         run["launches"].append(launch)
@@ -680,17 +753,30 @@ if RUN_VLLM and any(c["vllm_repos"] for c in CANDIDATES) and time_left() > 3600:
     log = LOG_DIR / "vllm_install.log"
     try:
         sh(f"{sys.executable} -m pip install -q uv", check=True, timeout=600)
-        sh(f"uv venv {VLLM_VENV} --python 3.12 --seed", check=True, timeout=900, log=LOG_DIR / "vllm_venv.log")
-        sh(f"uv pip install --python {VLLM_VENV}/bin/python {VLLM_PIP_SPEC}", check=True, timeout=2400, log=log)
-        ver = sh(f"{VLLM_VENV}/bin/python -c 'import vllm, torch; print(vllm.__version__, torch.__version__, "
-                 f"torch.version.cuda)'", timeout=600).stdout.strip()
+        sh(
+            f"uv venv {VLLM_VENV} --python 3.12 --seed",
+            check=True,
+            timeout=900,
+            log=LOG_DIR / "vllm_venv.log",
+        )
+        sh(
+            f"uv pip install --python {VLLM_VENV}/bin/python {VLLM_PIP_SPEC}",
+            check=True,
+            timeout=2400,
+            log=log,
+        )
+        ver = sh(
+            f"{VLLM_VENV}/bin/python -c 'import vllm, torch; print(vllm.__version__, torch.__version__, "
+            f"torch.version.cuda)'",
+            timeout=600,
+        ).stdout.strip()
         RESULTS["builds"]["vllm"] = {"ok": True, "versions": ver, "install_s": round(time.time() - t0)}
         hp = sh(f"{VLLM_BIN} serve --help=all", timeout=600)
         _vllm_help = hp.stdout + hp.stderr
         if len(_vllm_help) < 2000:
             hp = sh(f"{VLLM_BIN} serve --help", timeout=600)
             _vllm_help = hp.stdout + hp.stderr
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         RESULTS["builds"]["vllm"] = {"ok": False, "error": str(e)[-2000:], "log_tail": tail(log)}
         RUN_VLLM = False
     save_results()
@@ -732,14 +818,39 @@ def run_vllm(cand: dict) -> None:
                     extra += flag_pair
             if enforce_eager:
                 extra.append("--enforce-eager")
-            cmd = [str(VLLM_BIN), "serve", repo, "--host", "127.0.0.1", "--port", str(SERVER_PORT),
-                   "--served-model-name", "probe", "--tensor-parallel-size", "2", "--dtype", "half",
-                   "--max-model-len", str(VLLM_MAX_MODEL_LEN), "--gpu-memory-utilization", str(VLLM_GPU_MEM_UTIL),
-                   "--trust-remote-code", *extra]
+            cmd = [
+                str(VLLM_BIN),
+                "serve",
+                repo,
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(SERVER_PORT),
+                "--served-model-name",
+                "probe",
+                "--tensor-parallel-size",
+                "2",
+                "--dtype",
+                "half",
+                "--max-model-len",
+                str(VLLM_MAX_MODEL_LEN),
+                "--gpu-memory-utilization",
+                str(VLLM_GPU_MEM_UTIL),
+                "--trust-remote-code",
+                *extra,
+            ]
             tag = f"{cand['key']}__{repo.split('/')[0]}__{'eager' if enforce_eager else 'graphs'}"
             log = LOG_DIR / f"vllm_{tag}.log"
-            run = {"engine": "vllm", "model_key": cand["key"], "family": cand["family"], "arch": cand["arch"],
-                   "repo": repo, "enforce_eager": enforce_eager, "cmd": " ".join(cmd[1:]), "status": "started"}
+            run = {
+                "engine": "vllm",
+                "model_key": cand["key"],
+                "family": cand["family"],
+                "arch": cand["arch"],
+                "repo": repo,
+                "enforce_eager": enforce_eager,
+                "cmd": " ".join(cmd[1:]),
+                "status": "started",
+            }
             RESULTS["runs"].append(run)
             save_results()
             srv = Server(cmd, log, env={"HF_HOME": str(HF_HOME), "VLLM_LOGGING_LEVEL": "INFO"})
@@ -756,8 +867,19 @@ def run_vllm(cand: dict) -> None:
                 save_results()
                 continue
             try:
-                run.update(measure_server("vllm", f"http://127.0.0.1:{SERVER_PORT}", "probe", cand, tag,
-                                          do_smoke=True, do_single=True, do_prefill=True, do_concurrency=True))
+                run.update(
+                    measure_server(
+                        "vllm",
+                        f"http://127.0.0.1:{SERVER_PORT}",
+                        "probe",
+                        cand,
+                        tag,
+                        do_smoke=True,
+                        do_single=True,
+                        do_prefill=True,
+                        do_concurrency=True,
+                    )
+                )
                 run["status"] = "done"
             finally:
                 srv.stop()
@@ -773,6 +895,7 @@ if RUN_VLLM:
         if cand["vllm_repos"]:
             print(f"\n=== vLLM :: {cand['key']}")
             run_vllm(cand)
+
 
 # %%
 # ---------------------------------------------------------------- report
@@ -801,14 +924,28 @@ def build_report() -> str:
     for run in RESULTS["runs"]:
         rows = run.get("launches") if run["engine"] == "llama.cpp" else [run]
         if run["engine"] == "llama.cpp" and not rows:
-            lines.append(f"| llama.cpp | {run['model_key']} | — | ✗ | — | — | — | — | — | — | — | "
-                         f"{run.get('status')}: {str(run.get('error', ''))[:80]} |")
+            lines.append(
+                f"| llama.cpp | {run['model_key']} | — | ✗ | — | — | — | — | — | — | — | "
+                f"{run.get('status')}: {str(run.get('error', ''))[:80]} |"
+            )
             continue
         for r in rows:
-            cfg = r.get("label") or ("eager" if r.get("enforce_eager") else "cuda-graphs") + f" · {r.get('repo')}"
+            cfg = (
+                r.get("label")
+                or ("eager" if r.get("enforce_eager") else "cuda-graphs") + f" · {r.get('repo')}"
+            )
             loaded = r.get("loaded", r.get("status") == "done")
-            ss, pf, cc, sm = r.get("single_stream", {}), r.get("prefill", {}), r.get("concurrency", {}), r.get("smoke", {})
-            smoke = "—" if not sm else ("✓ pass" if sm.get("passed") else ("compiled, wrong" if sm.get("compiled") else "✗"))
+            ss, pf, cc, sm = (
+                r.get("single_stream", {}),
+                r.get("prefill", {}),
+                r.get("concurrency", {}),
+                r.get("smoke", {}),
+            )
+            smoke = (
+                "—"
+                if not sm
+                else ("✓ pass" if sm.get("passed") else ("compiled, wrong" if sm.get("compiled") else "✗"))
+            )
             lines.append(
                 f"| {run['engine']} | {run['model_key']} | {cfg} | {'✓' if loaded else '✗'} | {_fmt(r.get('load_s'))} "
                 f"| {r.get('vram_idle_mib', '—')} | {r.get('vram_peak_mib', '—')} | {_fmt(ss.get('ttft_s'), 2)} "
@@ -819,8 +956,15 @@ def build_report() -> str:
     if failures:
         lines += ["", "## Failures (log tails)", ""]
         for r in failures:
-            lines += [f"### {r['engine']} · {r['model_key']} · {r.get('repo')}", "", "```",
-                      str(r.get("error", ""))[:500], (r.get("log_tail") or "")[-2500:], "```", ""]
+            lines += [
+                f"### {r['engine']} · {r['model_key']} · {r.get('repo')}",
+                "",
+                "```",
+                str(r.get("error", ""))[:500],
+                (r.get("log_tail") or "")[-2500:],
+                "```",
+                "",
+            ]
     return "\n".join(lines)
 
 

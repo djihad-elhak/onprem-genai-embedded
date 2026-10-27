@@ -55,6 +55,7 @@ packages = ["src/onprem_genai"]
 line-length = 110
 target-version = "py311"
 src = ["src", "tests"]
+extend-exclude = ["kaggle/*.ipynb"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "N", "PL", "PT"]
@@ -63,7 +64,7 @@ ignore = ["PLR0913", "PLR0917", "PLR2004", "PLR0911", "PLR0912", "RUF001", "RUF0
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["PLR2004", "S101"]
 "src/**" = ["PT018"]
-"kaggle/**" = ["E402", "PLC0415", "BLE001", "PLW0603", "T201"]
+"kaggle/**" = ["E402", "E501", "E741", "PLC0415", "BLE001", "PLW0603", "PLW1510", "SIM105", "SIM115", "T201", "PLR0915"]
 
 [tool.pyright]
 include = ["src"]
