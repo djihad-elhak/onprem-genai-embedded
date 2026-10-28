@@ -20,6 +20,7 @@ from onprem_genai.agent.fprime import FprimeWorkspace, condense_diagnostics, fin
 from onprem_genai.agent.graph import carry_over
 from onprem_genai.agent.patch import PatchError, build_patch, parse_answer, render
 from onprem_genai.agent.runner import ScriptedModel, review_sheet, summarize
+from onprem_genai.agent.trace import describe
 
 HPP = """\
 #ifndef FOO_TESTER_HPP
@@ -338,7 +339,7 @@ def _fprime_ready() -> str | None:
 
 
 @pytest.mark.fprime
-def test_agent_e2e(tmp_path: Path) -> None:
+def test_agent_e2e(tmp_path: Path) -> None:  # noqa: PLR0915  (one end-to-end scenario, many checks)
     """Scripted model, real everything else: MCP retrieval, patching, fprime-util build, gtest, gcov, git."""
     if reason := _fprime_ready():
         pytest.skip(reason)
@@ -365,10 +366,15 @@ def test_agent_e2e(tmp_path: Path) -> None:
         prompt_sizes.append(len(messages))
         return model(messages)
 
+    steps: list[tuple[str, str, str | None]] = []
+
+    def on_step(req_id: str, node: str, update: dict, state: dict) -> None:
+        steps.append((req_id, node, describe(node, update, state)))
+
     async def go() -> list[dict]:
         async with KnowledgeClient(build_server(InMemoryStore(g))) as kb:
             deps = AgentDeps(ws, kb, llm, AgentConfig(model_label="scripted", mutants=2))
-            return await run_batch(deps, list(answers), out, branch)
+            return await run_batch(deps, list(answers), out, branch, trace=on_step)
 
     try:
         recs = {r["req_id"]: r for r in asyncio.run(go())}
@@ -384,6 +390,10 @@ def test_agent_e2e(tmp_path: Path) -> None:
         assert max(prompt_sizes) == 4  # repair prompts: system, task, latest answer, its diagnostics
         assert recs["SVC-COMSTUB-006"]["metrics"]["mutation"]["valid"] >= 1
         assert recs["SVC-COMSTUB-006"]["metrics"]["carried_blocks"] == 1  # main block reused on repair
+        nodes = [n for r, n, _ in steps if r == "SVC-COMSTUB-003"]  # streamed steps (--trace)
+        assert nodes[:6] == ["prepare", "gather", "generate", "check", "build", "generate"]
+        assert any(line and line.startswith("build failed → repair") for _, _, line in steps)
+        assert any(line and line.startswith("committed ") for _, _, line in steps)
         log = ws.git("log", "--format=%an|%s", f"{origin}..HEAD")
         assert log.count("oge-agent (scripted)|test(ComStub): verify SVC-COMSTUB-") == 3
         changed = ws.git("diff", "--name-only", f"{origin}..HEAD").split()

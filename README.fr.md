@@ -16,6 +16,21 @@ dans le dépôt.
 
 ---
 
+## Le voir tourner
+
+![L'agent comble un trou de traçabilité](docs/assets/demo-agent.gif)
+
+**L'agent comble un trou de traçabilité dans F´.** Le contexte arrive via MCP ; la réponse est ensuite contrôlée
+par la politique, compilée avec `fprime-util`, exécutée 3 fois avec la suite complète, commitée sur une branche
+de revue et notée sur 4 mutants. Tout est réel sauf le modèle : sa réponse est **rejouée** depuis la sortie réelle
+de Qwen3-Coder-30B-A3B lors de la passe 3, la machine d'enregistrement n'ayant pas de GPU
+([comment les démos sont faites](demo/README.md)).
+
+| Boucle de réparation (erreur scriptée) | Graphe de connaissances via MCP | Suite d'évaluation |
+|---|---|---|
+| ![réparation](docs/assets/demo-repair.gif) | ![mcp](docs/assets/demo-mcp.gif) | ![évaluation](docs/assets/demo-eval.gif) |
+| Une macro du harnais mal orthographiée fait échouer la compilation ; l'erreur et une suggestion repartent vers le modèle, qui corrige. | Ce qu'un assistant obtient du serveur MCP : une exigence, les trous d'un composant, des tests candidats, du code et la documentation. | Les 27 tâches C se valident elles-mêmes ; les deux modèles mesurés sur Kaggle, notés par exécution. |
+
 ## Ce que fait la plateforme
 
 | Couche | Composant | État |

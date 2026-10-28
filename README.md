@@ -15,6 +15,20 @@ Ingenuity Mars helicopter), Apache-2.0, ≈ 207 k lines of C++. Fetched at a pin
 
 ---
 
+## See it run
+
+![The agent closes a traceability gap](docs/assets/demo-agent.gif)
+
+**The agent closes a traceability gap in F´.** Context comes over MCP; then the answer is policy-checked,
+built with `fprime-util`, run 3 times plus the full suite, committed on a review branch, and graded on 4 mutants.
+Everything is live except the model: its answer is **replayed** from Qwen3-Coder-30B-A3B's real output in
+benchmark run 3, because the recording machine has no GPU ([how the demos are made](demo/README.md)).
+
+| Repair loop (scripted mistake) | Knowledge graph over MCP | Evaluation suite |
+|---|---|---|
+| ![repair](docs/assets/demo-repair.gif) | ![mcp](docs/assets/demo-mcp.gif) | ![eval](docs/assets/demo-eval.gif) |
+| A misspelt harness macro fails the build; the error and a did-you-mean hint go back to the model, which fixes it. | What an assistant gets from the MCP server: a requirement, the gaps of a component, candidate tests, code and design docs. | 27 C tasks validate themselves; the two models measured on Kaggle, scored by execution. |
+
 ## What it does
 
 | Layer | Component | Status |

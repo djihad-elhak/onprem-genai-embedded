@@ -11,6 +11,7 @@ from typing import Annotated, Any
 
 import typer
 from rich.console import Console
+from rich.syntax import Syntax
 
 from onprem_genai.agent.ci import DEFAULT_JOB, JenkinsCi
 from onprem_genai.agent.fprime import FprimeWorkspace
@@ -25,6 +26,7 @@ from onprem_genai.agent.runner import (
     summarize,
     verify_with_ci,
 )
+from onprem_genai.agent.trace import describe
 from onprem_genai.llm import ChatModel
 
 app = typer.Typer(
@@ -103,6 +105,7 @@ def run(
     ci_user: CiUserOpt = None,
     ci_token: CiSecretOpt = None,
     ci_job: CiJobOpt = DEFAULT_JOB,
+    trace: Annotated[bool, typer.Option(help="Print every agent step and the verified test code")] = False,
 ) -> None:
     """Generate, build, run and commit one unit test per requirement gap, then verify the branch in CI."""
     if scripted:
@@ -147,11 +150,28 @@ def run(
             f"{rec['wall_seconds']:6.1f}s  {stages}"
         )
 
+    def show_step(req_id: str, node: str, update: dict[str, Any], state: dict[str, Any]) -> None:
+        if node == "prepare":
+            text = " ".join(str((state.get("requirement") or {}).get("text", "")).split())
+            console.print(f"[bold cyan]▶ {req_id}[/] {text}", highlight=False)
+        line = describe(node, update, state)
+        if line is None:
+            return
+        bad = any(w in line for w in ("failed", "rejected", "error"))
+        mark = "[red]✗[/]" if bad else "[green]✓[/]"
+        console.print(f"  [bold]{node:<9}[/] {mark} {line}", highlight=False)
+        if node == "commit" and state.get("patch") is not None:
+            patch = state["patch"]
+            code = "\n\n".join(d.text for d in patch.definitions)
+            console.print(Syntax(code, "cpp", theme="ansi_dark", line_numbers=False, word_wrap=True))
+
     async def go() -> list[dict[str, Any]]:
         async with KnowledgeClient(_mcp_target(mcp_url, graph)) as kb:
             ids = await select_targets(kb, module, req)
             console.print(f"{len(ids)} requirement(s) → branch {branch}, results {out}")
-            records = await run_batch(AgentDeps(ws, kb, llm, cfg), ids, out, branch, progress)
+            records = await run_batch(
+                AgentDeps(ws, kb, llm, cfg), ids, out, branch, progress, trace=show_step if trace else None
+            )
         if ci_url:
             console.print(f"CI: Jenkins job {ci_job} on {branch} …")
             ci = await verify_with_ci(JenkinsCi(ci_url, ci_user, ci_token, ci_job), records, branch, out)
@@ -159,10 +179,10 @@ def run(
         return records
 
     records = asyncio.run(go())
-    _write_reports(records, out, label)
+    _write_reports(records, out, label, quiet=trace)
 
 
-def _write_reports(records: list[dict[str, Any]], out: Path, label: str) -> None:
+def _write_reports(records: list[dict[str, Any]], out: Path, label: str, quiet: bool = False) -> None:
     summary = summarize(records)
     ci_file = out.with_suffix(".ci.json")
     ci = json.loads(ci_file.read_text(encoding="utf-8")) if ci_file.exists() else None
@@ -171,7 +191,14 @@ def _write_reports(records: list[dict[str, Any]], out: Path, label: str) -> None
     text = json.dumps({"label": label, **summary}, indent=1)
     out.with_suffix(".summary.json").write_text(text, encoding="utf-8")
     out.with_suffix(".review.md").write_text(review_sheet(records, label, ci), encoding="utf-8")
-    console.print_json(json.dumps(summary))
+    if quiet:
+        mut = summary["mutation"]
+        console.print(
+            f"verified {summary['status'].get('passed', 0)}/{summary['targets']} · "
+            f"mutants killed {mut['killed']}/{mut['valid_mutants']}"
+        )
+    else:
+        console.print_json(json.dumps(summary))
     console.print(
         f"summary: {out.with_suffix('.summary.json')}  review sheet: {out.with_suffix('.review.md')}"
     )

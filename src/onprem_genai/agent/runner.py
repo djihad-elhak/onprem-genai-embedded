@@ -60,8 +60,12 @@ async def run_batch(
     branch: str,
     progress: Callable[[dict[str, Any], int, int], None] | None = None,
     deadline: float | None = None,
+    trace: Callable[[str, str, dict[str, Any], dict[str, Any]], None] | None = None,
 ) -> list[dict[str, Any]]:
-    """Run the agent on each requirement; with ``deadline`` (time.monotonic), start no new one after it."""
+    """Run the agent on each requirement; with ``deadline`` (time.monotonic), start no new one after it.
+
+    ``trace(req_id, node, update, state)`` is called after every graph step (streamed node updates).
+    """
     ws = deps.ws
     done: dict[str, dict[str, Any]] = {}
     if out.exists():
@@ -85,7 +89,15 @@ async def run_batch(
             break
         t0 = time.perf_counter()
         try:
-            state = await graph.ainvoke({"req_id": req_id}, {"recursion_limit": 100})
+            if trace is None:
+                state = await graph.ainvoke({"req_id": req_id}, {"recursion_limit": 100})
+            else:
+                state = {"req_id": req_id}
+                config: Any = {"recursion_limit": 100}
+                async for chunk in graph.astream({"req_id": req_id}, config, stream_mode="updates"):
+                    for node, update in chunk.items():
+                        state.update(update or {})  # no reducers: an update replaces its keys
+                        trace(req_id, node, update or {}, state)
         except Exception as exc:
             state = {"status": "error", "reason": f"{type(exc).__name__}: {exc}"[:1000]}
             leftovers = [f for f in ws.changed_files() if "/test/ut/" in f]
