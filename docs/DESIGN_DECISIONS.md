@@ -18,11 +18,18 @@ the end.
   same hardware is itself a sizing input. SGLang was not retained for the test hardware: its kernel wheel
   on Kaggle targets newer GPUs (a public T4 benchmark reports an import failure on SM 7.5), and vLLM covers
   the same role.
+- **Measured (probe run 2, 2× T4)**: llama.cpp ran all four candidates; vLLM 0.32 ran Qwen3-Coder-30B-A3B well
+  (101 tok/s single stream, 245 tok/s at 4 streams vs 82 / 151 for llama.cpp) but its AWQ prefill on SM 7.5 is 5×
+  slower (283 vs 1,445 tok/s), and the hybrid Qwen3.8-27B only loaded in eager GPTQ at 4.6 tok/s. Consequence:
+  llama.cpp serves agents and evaluation (long prompts), vLLM is kept for high-concurrency chat on MoE models.
 - **Would change if**: production hardware is Hopper/Blackwell-only (then vLLM or SGLang everywhere, FP8).
 
 ## D3 · Measure first: a probe notebook before any model choice
 - **Why**: 2026 hybrid-attention models (Qwen3.6/3.8) needed source patches to run in vLLM on older GPUs; FP8 and
   BF16 are unavailable on T4. Model choices are made from the probe's compatibility matrix, not assumed.
+- **It paid off twice**: run 1 exposed a llama.cpp build failure specific to the Kaggle image (no linkable CUDA
+  driver library; fixed with an alias and a no-VMM fallback); run 2 showed that the dense 27 B model, attractive
+  on paper, decodes at 14 tok/s on T4 while a 30 B MoE reaches 82–101 tok/s.
 
 ## D4 · Sizing calculator with provenance and refusal of unknowns
 - **Choice**: every GPU / quantization / architecture value carries its source; missing values raise
@@ -63,6 +70,10 @@ the end.
   build → test → commit, with a bounded repair loop); every node and edge is visible, testable and logged.
   LangGraph adds no model wrapper: the agent calls the platform's OpenAI-compatible endpoint and MCP directly.
 
+## D11 · Kaggle as GPU lab
+- **Why**: no local GPU; Kaggle's 2× T4 (32 GB) runs 4-bit 24–35 B models. Notebooks are batch jobs that write
+  result files; everything else (graph, MCP, sizing, deploy) runs on a laptop CPU.
+
 ## D12 · Agent with bounded authority: the model writes test code, nothing else
 - **Choice**: the model returns Tester methods and `TEST()` cases; retrieval, patching (tree-sitter anchors),
   policy, build, run, coverage, git and CI are deterministic nodes whose arguments come from the requirement.
@@ -95,9 +106,11 @@ the end.
   as MCP tools and filters them by the caller's permissions, so the same server also serves IDE assistants.
   A custom REST client would duplicate that and bypass the permission model.
 
-## D11 · Kaggle as GPU lab
-- **Why**: no local GPU; Kaggle's 2× T4 (32 GB) runs 4-bit 24–35 B models. Notebooks are batch jobs that write
-  result files; everything else (graph, MCP, sizing, deploy) runs on a laptop CPU.
+## D16 · Benchmark shortlist: Qwen3-Coder-30B-A3B and Devstral-Small-2-24B
+- **Choice**: the two code-specialised families named in the target role; quality stages
+  (`oge eval`, agent) on llama.cpp for both, same 4-bit format family and context budget.
+- **Why**: one Kaggle session (≈ 5 h) instead of two; the pair contrasts a fast MoE with a dense model of similar
+  memory footprint. Qwen3.6-35B-A3B and Qwen3.8-27B remain in the probe and the sizing data.
 
 ---
 

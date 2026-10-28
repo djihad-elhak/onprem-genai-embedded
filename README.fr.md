@@ -30,6 +30,25 @@ dans le dépôt.
 
 ## Résultats
 
+### Ce qui tourne sur 2× Tesla T4 (sonde, poids 4 bits)
+
+| Modèle | Moteur | Décodage jetons/s, 1 flux | Préremplissage jetons/s | Total jetons/s, 4 flux | VRAM par GPU (Gio) | Test C |
+|---|---|---|---|---|---|---|
+| Qwen3-Coder-30B-A3B (MoE, 3,3 B actifs) | llama.cpp Q4_K_M | 81,9 | 1 445 | 151 | 9,9 / 9,3 | ✗ ¹ |
+| Qwen3-Coder-30B-A3B | vLLM 0.32 AWQ | **101,0** | 283 | **245** | 13,4 / 13,4 ² | ✓ |
+| Qwen3.6-35B-A3B (MoE, attention hybride) | llama.cpp Q4_K_M | 60,9 | 1 326 | 107 | 10,8 / 10,3 | ✓ |
+| Devstral-Small-2-24B (dense) | llama.cpp Q4_K_M | 15,9 | 649 | 28 | 8,4 / 8,1 | ✓ |
+| Qwen3.8-27B (dense, attention hybride) | llama.cpp Q4_K_M | 13,9 | 550 | 29 | 7,6 / 8,6 | ✓ |
+| Qwen3.8-27B | vLLM 0.32 GPTQ (mode eager seulement) | 4,6 | 206 | 16 | 12,0 / 12,0 ² | ✓ |
+
+Sur des GPU Turing limités par la bande passante, les modèles MoE à ≈ 3 B de paramètres actifs décodent 4 à 6 fois
+plus vite que les modèles denses de 24–27 B. vLLM gagne en décodage et en concurrence sur le MoE, mais son
+préremplissage AWQ en SM 7.5 (pas de noyaux Marlin) est 5 fois plus lent que llama.cpp — décisif pour des prompts
+d'agent de 9 000 jetons. Qwen3.8 ne se charge pas dans vLLM en AWQ avec parallélisme tensoriel 2 (forme des poids
+quantifiés non alignée sur le découpage) et sature la mémoire avec les CUDA graphs en GPTQ.
+¹ Le modèle a utilisé `size_t` sans `#include <stddef.h>` ; ² vLLM pré-alloue 90 % de la mémoire GPU.
+Source : [`docs/results/probe/run2-2026-10-28.md`](docs/results/probe/run2-2026-10-28.md).
+
 ### Recouvrement de la traçabilité exigence → test (F´)
 
 Vérité terrain : les 481 balises `REQUIREMENT("ID")` posées par les développeurs F´ dans les tests unitaires,

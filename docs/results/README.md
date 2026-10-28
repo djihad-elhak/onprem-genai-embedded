@@ -8,7 +8,7 @@ F´ commit for all knowledge results: `558b7ef48edd5d25f3bdddcbbe7afddb9cc22d09`
 | `traceability_lexical.json` | Requirement→test recovery: BM25, graph, graph-constrained BM25 (151 requirements × 3,261 tests, per-requirement metrics, bootstrap CIs) | `oge knowledge trace-eval --out …` (CPU) |
 | `traceability_audit.json` | Tags citing undefined requirement IDs; tags citing another module's requirements (with file:line) | `oge knowledge ingest --audit-out …` |
 | `traceability_gaps.json` | Requirements specified as verified by test without an explicit test tag, with 3 suggested candidate tests each | `oge knowledge gaps --out …` |
-| `probe/` | 2× T4 compatibility matrix: load status, VRAM, TTFT, decode/prefill speed, 4× concurrency, C smoke test | `kaggle/00_probe_t4x2` |
+| `probe/` | 2× T4 compatibility matrix: load status, VRAM, TTFT, decode/prefill speed, 4× concurrency, C smoke test, root causes of failures — run 1 (llama.cpp build failed) and run 2 (complete) | `kaggle/00_probe_t4x2` |
 | `bench/` | Serving sweeps (3 profiles × concurrency), model configs for sizing, dense / hybrid / LLM-reranked traceability, `oge eval` reports, agent runs (results, summaries, generated tests as patches) | `kaggle/01_benchmark` |
 
 Reproduce the CPU results:

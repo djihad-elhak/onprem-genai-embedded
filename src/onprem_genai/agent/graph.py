@@ -38,7 +38,7 @@ TERMINAL = {"passed", "not_testable", "suspected_defect", "failed", "unsupported
 @dataclass
 class AgentConfig:
     max_attempts: int = 3
-    context_chars: int = 36000
+    context_chars: int = 32000  # ≈ 9k tokens: fits a 16k-token slot with one repair round
     test_repeat: int = 3  # run the new test several times (random seeds) to reject flaky tests
     mutants: int = 0  # fault-detection analysis after a successful commit (0 = off)
     model_label: str = "unknown-model"
@@ -176,9 +176,11 @@ def build_graph(deps: AgentDeps):  # noqa: PLR0915  (returns a compiled LangGrap
         }
 
     def _feedback(state: AgentState, kind: str, text: str, detail: str) -> dict[str, Any]:
+        # bounded context: task + the latest answer + its diagnostics (older attempts are dropped)
+        msgs = state["messages"]
         return {
             "feedback_kind": kind,
-            "messages": [*state["messages"], {"role": "user", "content": text}],
+            "messages": [*msgs[:2], msgs[-1], {"role": "user", "content": text}],
             "history": _record({**state}, kind, detail),
         }
 

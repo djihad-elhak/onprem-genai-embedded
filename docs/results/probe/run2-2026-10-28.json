@@ -1,0 +1,695 @@
+{
+ "probe_version": "0.2.0",
+ "started_at": "2026-10-28T08:29:53.785738+00:00",
+ "env": {
+  "python": "3.13.15",
+  "platform": "Linux-6.18.55+-x86_64-with-glibc2.39",
+  "cpu_count": 4,
+  "gpus": [
+   "0, Tesla T4, 15360 MiB, 7.5, 580.178.04",
+   "1, Tesla T4, 15360 MiB, 7.5, 580.178.04"
+  ],
+  "nvcc": "Cuda compilation tools, release 12.8, V12.8.93\nBuild cuda_12.8.r12.8/compiler.35583870_0",
+  "gcc": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "cmake": "cmake version 3.31.10",
+  "ram_total_gb": 33.7,
+  "disk_free_gb": {
+   "/kaggle/working": 20.9,
+   "/tmp": 1126.1
+  },
+  "work_dir": "/tmp/probe_work",
+  "system_torch": "2.11.0+cu128",
+  "system_torch_cuda": "12.8"
+ },
+ "builds": {
+  "llamacpp": {
+   "ok": true,
+   "commit": "a7af149a2a7768d4b1f6f02c6ce26a17fba11376",
+   "build_s": 1622,
+   "cuda_vmm": true,
+   "attempts": [
+    {
+     "cmake_extra": [
+      "-DCMAKE_LIBRARY_PATH=/usr/local/nvidia/lib64"
+     ],
+     "rc": 0,
+     "root_cause": ""
+    }
+   ]
+  },
+  "vllm": {
+   "ok": true,
+   "versions": "0.32.0 2.13.0+cu130 13.0",
+   "install_s": 76
+  }
+ },
+ "runs": [
+  {
+   "engine": "llama.cpp",
+   "model_key": "qwen3.8-27b",
+   "family": "Qwen (Alibaba)",
+   "arch": "dense 27B, hybrid linear/full attention (48 linear + 16 full layers)",
+   "repo": "unsloth/Qwen3.8-27B-GGUF",
+   "quant": "Q4_K_M",
+   "launches": [
+    {
+     "label": "single_16k",
+     "n_parallel": 1,
+     "ctx_total": 16384,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 16384 --parallel 1 --jinja --metrics --reasoning-budget 0",
+     "load_s": 72.1,
+     "loaded": true,
+     "vram_idle_mib": [
+      7821,
+      8825
+     ],
+     "smoke": {
+      "compiled": true,
+      "warnings": 0,
+      "passed": true,
+      "ttft_s": 0.814,
+      "decode_tps": 13.92,
+      "completion_tokens": 179
+     },
+     "single_stream": {
+      "ttft_s": 0.658,
+      "total_s": 19.229,
+      "prompt_tokens": 32,
+      "completion_tokens": 259,
+      "decode_tps": 13.89,
+      "prefill_tps": 48.6,
+      "usage_reported": true
+     },
+     "prefill": {
+      "ttft_s": 24.905,
+      "total_s": 28.482,
+      "prompt_tokens": 13698,
+      "completion_tokens": 48,
+      "decode_tps": 13.14,
+      "prefill_tps": 550.0,
+      "usage_reported": true
+     },
+     "vram_peak_mib": [
+      7833,
+      8837
+     ]
+    },
+    {
+     "label": "concurrent_4x8k",
+     "n_parallel": 4,
+     "ctx_total": 32768,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 32768 --parallel 4 --jinja --metrics --reasoning-budget 0",
+     "load_s": 9.0,
+     "loaded": true,
+     "vram_idle_mib": [
+      8535,
+      9521
+     ],
+     "concurrency": {
+      "n_requests": 4,
+      "n_ok": 4,
+      "wall_s": 35.2,
+      "aggregate_tps": 29.09,
+      "mean_ttft_s": 1.431,
+      "per_request_decode_tps": [
+       7.55,
+       7.55,
+       7.55,
+       7.55
+      ],
+      "errors": []
+     },
+     "vram_peak_mib": [
+      8539,
+      9525
+     ]
+    },
+    {
+     "label": "single_64k",
+     "n_parallel": 1,
+     "ctx_total": 65536,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Qwen3.8-27B-GGUF/Qwen3.8-27B-UD-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 65536 --parallel 1 --jinja --metrics --reasoning-budget 0",
+     "load_s": 9.0,
+     "loaded": true,
+     "vram_idle_mib": [
+      9549,
+      10553
+     ],
+     "single_stream": {
+      "ttft_s": 0.64,
+      "total_s": 19.839,
+      "prompt_tokens": 32,
+      "completion_tokens": 259,
+      "decode_tps": 13.44,
+      "prefill_tps": 50.0,
+      "usage_reported": true
+     },
+     "vram_peak_mib": [
+      9551,
+      10553
+     ]
+    }
+   ],
+   "status": "done",
+   "files": [
+    "Qwen3.8-27B-UD-Q4_K_M.gguf"
+   ],
+   "download_s": 67,
+   "file_size_gb": 16.46
+  },
+  {
+   "engine": "llama.cpp",
+   "model_key": "qwen3-coder-30b-a3b",
+   "family": "Qwen (Alibaba)",
+   "arch": "MoE 30B total / 3.3B active, full attention",
+   "repo": "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF",
+   "quant": "Q4_K_M",
+   "launches": [
+    {
+     "label": "single_16k",
+     "n_parallel": 1,
+     "ctx_total": 16384,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 16384 --parallel 1 --jinja --metrics",
+     "load_s": 78.1,
+     "loaded": true,
+     "vram_idle_mib": [
+      10095,
+      9569
+     ],
+     "smoke": {
+      "compiled": false,
+      "warnings": 0,
+      "passed": false,
+      "ttft_s": 0.71,
+      "decode_tps": 81.31,
+      "completion_tokens": 157
+     },
+     "single_stream": {
+      "ttft_s": 0.106,
+      "total_s": 2.914,
+      "prompt_tokens": 28,
+      "completion_tokens": 231,
+      "decode_tps": 81.92,
+      "prefill_tps": 263.5,
+      "usage_reported": true
+     },
+     "prefill": {
+      "ttft_s": 8.921,
+      "total_s": 9.546,
+      "prompt_tokens": 12893,
+      "completion_tokens": 37,
+      "decode_tps": 57.55,
+      "prefill_tps": 1445.3,
+      "usage_reported": true
+     },
+     "vram_peak_mib": [
+      10119,
+      9593
+     ]
+    },
+    {
+     "label": "concurrent_4x8k",
+     "n_parallel": 4,
+     "ctx_total": 32768,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 32768 --parallel 4 --jinja --metrics",
+     "load_s": 6.0,
+     "loaded": true,
+     "vram_idle_mib": [
+      10863,
+      10273
+     ],
+     "concurrency": {
+      "n_requests": 4,
+      "n_ok": 4,
+      "wall_s": 6.78,
+      "aggregate_tps": 151.14,
+      "mean_ttft_s": 0.53,
+      "per_request_decode_tps": [
+       40.23,
+       40.23,
+       41.64,
+       41.64
+      ],
+      "errors": []
+     },
+     "vram_peak_mib": [
+      10877,
+      10287
+     ]
+    },
+    {
+     "label": "single_64k",
+     "n_parallel": 1,
+     "ctx_total": 65536,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Qwen3-Coder-30B-A3B-Instruct-GGUF/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 65536 --parallel 1 --jinja --metrics",
+     "load_s": 9.0,
+     "loaded": true,
+     "vram_idle_mib": [
+      12687,
+      11969
+     ],
+     "single_stream": {
+      "ttft_s": 0.3,
+      "total_s": 3.12,
+      "prompt_tokens": 28,
+      "completion_tokens": 213,
+      "decode_tps": 75.18,
+      "prefill_tps": 93.2,
+      "usage_reported": true
+     },
+     "vram_peak_mib": [
+      12701,
+      11983
+     ]
+    }
+   ],
+   "status": "done",
+   "files": [
+    "Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf"
+   ],
+   "download_s": 118,
+   "file_size_gb": 18.56
+  },
+  {
+   "engine": "llama.cpp",
+   "model_key": "devstral-small-2-24b",
+   "family": "Devstral (Mistral AI)",
+   "arch": "dense 24B, full attention",
+   "repo": "unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF",
+   "quant": "Q4_K_M",
+   "launches": [
+    {
+     "label": "single_16k",
+     "n_parallel": 1,
+     "ctx_total": 16384,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Devstral-Small-2-24B-Instruct-2512-GGUF/Devstral-Small-2-24B-Instruct-2512-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 16384 --parallel 1 --jinja --metrics",
+     "load_s": 27.1,
+     "loaded": true,
+     "vram_idle_mib": [
+      8565,
+      8275
+     ],
+     "smoke": {
+      "compiled": true,
+      "warnings": 0,
+      "passed": true,
+      "ttft_s": 1.686,
+      "decode_tps": 15.96,
+      "completion_tokens": 166
+     },
+     "single_stream": {
+      "ttft_s": 0.111,
+      "total_s": 20.183,
+      "prompt_tokens": 576,
+      "completion_tokens": 320,
+      "decode_tps": 15.89,
+      "prefill_tps": 5178.8,
+      "usage_reported": true
+     },
+     "prefill": {
+      "ttft_s": 20.709,
+      "total_s": 24.069,
+      "prompt_tokens": 13439,
+      "completion_tokens": 48,
+      "decode_tps": 13.99,
+      "prefill_tps": 649.0,
+      "usage_reported": true
+     },
+     "vram_peak_mib": [
+      8585,
+      8295
+     ]
+    },
+    {
+     "label": "concurrent_4x8k",
+     "n_parallel": 4,
+     "ctx_total": 32768,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Devstral-Small-2-24B-Instruct-2512-GGUF/Devstral-Small-2-24B-Instruct-2512-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 32768 --parallel 4 --jinja --metrics",
+     "load_s": 6.0,
+     "loaded": true,
+     "vram_idle_mib": [
+      9877,
+      9459
+     ],
+     "concurrency": {
+      "n_requests": 4,
+      "n_ok": 4,
+      "wall_s": 36.52,
+      "aggregate_tps": 28.04,
+      "mean_ttft_s": 3.926,
+      "per_request_decode_tps": [
+       7.32,
+       8.02,
+       8.02,
+       8.02
+      ],
+      "errors": []
+     },
+     "vram_peak_mib": [
+      9895,
+      9477
+     ]
+    },
+    {
+     "label": "single_64k",
+     "n_parallel": 1,
+     "ctx_total": 65536,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Devstral-Small-2-24B-Instruct-2512-GGUF/Devstral-Small-2-24B-Instruct-2512-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 65536 --parallel 1 --jinja --metrics",
+     "load_s": 6.0,
+     "loaded": true,
+     "vram_idle_mib": [
+      12789,
+      12115
+     ],
+     "single_stream": {
+      "ttft_s": 1.567,
+      "total_s": 22.055,
+      "prompt_tokens": 576,
+      "completion_tokens": 320,
+      "decode_tps": 15.57,
+      "prefill_tps": 367.5,
+      "usage_reported": true
+     },
+     "vram_peak_mib": [
+      12807,
+      12133
+     ]
+    }
+   ],
+   "status": "done",
+   "files": [
+    "Devstral-Small-2-24B-Instruct-2512-Q4_K_M.gguf"
+   ],
+   "download_s": 53,
+   "file_size_gb": 14.33
+  },
+  {
+   "engine": "llama.cpp",
+   "model_key": "qwen3.6-35b-a3b",
+   "family": "Qwen (Alibaba)",
+   "arch": "MoE 35B total / 3B active, hybrid linear/full attention",
+   "repo": "unsloth/Qwen3.6-35B-A3B-GGUF",
+   "quant": "Q4_K_M",
+   "launches": [
+    {
+     "label": "single_16k",
+     "n_parallel": 1,
+     "ctx_total": 16384,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 16384 --parallel 1 --jinja --metrics --reasoning-budget 0",
+     "load_s": 90.1,
+     "loaded": true,
+     "vram_idle_mib": [
+      11077,
+      10529
+     ],
+     "smoke": {
+      "compiled": true,
+      "warnings": 0,
+      "passed": true,
+      "ttft_s": 0.635,
+      "decode_tps": 59.48,
+      "completion_tokens": 168
+     },
+     "single_stream": {
+      "ttft_s": 0.279,
+      "total_s": 4.646,
+      "prompt_tokens": 32,
+      "completion_tokens": 267,
+      "decode_tps": 60.91,
+      "prefill_tps": 114.6,
+      "usage_reported": true
+     },
+     "prefill": {
+      "ttft_s": 10.33,
+      "total_s": 11.161,
+      "prompt_tokens": 13698,
+      "completion_tokens": 48,
+      "decode_tps": 56.55,
+      "prefill_tps": 1326.1,
+      "usage_reported": true
+     },
+     "vram_peak_mib": [
+      11101,
+      10553
+     ]
+    },
+    {
+     "label": "concurrent_4x8k",
+     "n_parallel": 4,
+     "ctx_total": 32768,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 32768 --parallel 4 --jinja --metrics --reasoning-budget 0",
+     "load_s": 9.0,
+     "loaded": true,
+     "vram_idle_mib": [
+      11305,
+      10745
+     ],
+     "concurrency": {
+      "n_requests": 4,
+      "n_ok": 4,
+      "wall_s": 9.2,
+      "aggregate_tps": 107.17,
+      "mean_ttft_s": 0.798,
+      "per_request_decode_tps": [
+       30.05,
+       30.06,
+       31.09,
+       30.75
+      ],
+      "errors": []
+     },
+     "vram_peak_mib": [
+      11321,
+      10761
+     ]
+    },
+    {
+     "label": "single_64k",
+     "n_parallel": 1,
+     "ctx_total": 65536,
+     "cmd": "-m /tmp/probe_work/models/unsloth__Qwen3.6-35B-A3B-GGUF/Qwen3.6-35B-A3B-UD-Q4_K_M.gguf --host 127.0.0.1 --port 8080 -ngl 999 -c 65536 --parallel 1 --jinja --metrics --reasoning-budget 0",
+     "load_s": 9.0,
+     "loaded": true,
+     "vram_idle_mib": [
+      11749,
+      11201
+     ],
+     "single_stream": {
+      "ttft_s": 0.383,
+      "total_s": 5.02,
+      "prompt_tokens": 32,
+      "completion_tokens": 267,
+      "decode_tps": 57.37,
+      "prefill_tps": 83.5,
+      "usage_reported": true
+     },
+     "vram_peak_mib": [
+      11763,
+      11215
+     ]
+    }
+   ],
+   "status": "done",
+   "files": [
+    "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf"
+   ],
+   "download_s": 107,
+   "file_size_gb": 22.13
+  },
+  {
+   "engine": "vllm",
+   "model_key": "qwen3.8-27b",
+   "family": "Qwen (Alibaba)",
+   "arch": "dense 27B, hybrid linear/full attention (48 linear + 16 full layers)",
+   "repo": "mattbucci/Qwen3.8-27B-AWQ",
+   "enforce_eager": false,
+   "cmd": "serve mattbucci/Qwen3.8-27B-AWQ --host 127.0.0.1 --port 8080 --served-model-name probe --tensor-parallel-size 2 --dtype half --max-model-len 16384 --gpu-memory-utilization 0.9 --trust-remote-code --gdn-prefill-backend triton",
+   "status": "load_failed",
+   "load_s": 102.1,
+   "log_info": {
+    "quantization": "auto_awq"
+   },
+   "error": "process exited with code 1",
+   "root_cause": "(Worker pid=8673) WARNING 10-28 09:16:46 [symm_mem.py:67] SymmMemCommunicator: Device capability 7.5 not supported, communicator is not available.\n(Worker pid=8674) WARNING 10-28 09:16:46 [flashinfer_all_reduce.py:425] FlashInfer All Reduce is disabled because it is not supported for world_size=2.\n(Worker_TP0 pid=8673) ERROR 10-28 09:16:49 [fa_utils.py:212] Cannot use FA version 2 is not supported due to FA2 is only supported on devices with compute capability >= 8\n(Worker_TP0 pid=8673) WARNING 10-28 09:16:49 [auto_awq.py:325] Layer 'visual.blocks.0.attn.proj' is not supported by AutoAWQMarlin. Falling back to unoptimized AWQ kernels.\n(Worker_TP1 pid=8674) ERROR 10-28 09:16:50 [multiproc_executor.py:953] WorkerProc failed to start.\n(Worker_TP1 pid=8674) ERROR 10-28 09:16:50 [multiproc_executor.py:953]     raise ValueError(\n(Worker_TP1 pid=8674) ERROR 10-28 09:16:50 [multiproc_executor.py:953] ValueError: The input size is not aligned with the quantized weight shape. This can be caused by too large tensor parallel size.\n(EngineCore pid=8645) ERROR 10-28 09:16:52 [core.py:1510] EngineCore failed to start.\n(EngineCore pid=8645) ERROR 10-28 09:16:52 [core.py:1510] Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.\nException: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.\nraise RuntimeError("
+  },
+  {
+   "engine": "vllm",
+   "model_key": "qwen3.8-27b",
+   "family": "Qwen (Alibaba)",
+   "arch": "dense 27B, hybrid linear/full attention (48 linear + 16 full layers)",
+   "repo": "mattbucci/Qwen3.8-27B-AWQ",
+   "enforce_eager": true,
+   "cmd": "serve mattbucci/Qwen3.8-27B-AWQ --host 127.0.0.1 --port 8080 --served-model-name probe --tensor-parallel-size 2 --dtype half --max-model-len 16384 --gpu-memory-utilization 0.9 --trust-remote-code --gdn-prefill-backend triton --enforce-eager",
+   "status": "load_failed",
+   "load_s": 78.1,
+   "log_info": {
+    "quantization": "auto_awq"
+   },
+   "error": "process exited with code 1",
+   "root_cause": "(Worker pid=8920) WARNING 10-28 09:18:04 [symm_mem.py:67] SymmMemCommunicator: Device capability 7.5 not supported, communicator is not available.\n(Worker pid=8921) WARNING 10-28 09:18:04 [flashinfer_all_reduce.py:425] FlashInfer All Reduce is disabled because it is not supported for world_size=2.\n(Worker_TP0 pid=8920) ERROR 10-28 09:18:08 [fa_utils.py:212] Cannot use FA version 2 is not supported due to FA2 is only supported on devices with compute capability >= 8\n(Worker_TP0 pid=8920) WARNING 10-28 09:18:08 [auto_awq.py:325] Layer 'visual.blocks.0.attn.proj' is not supported by AutoAWQMarlin. Falling back to unoptimized AWQ kernels.\n(Worker_TP0 pid=8920) ERROR 10-28 09:18:09 [multiproc_executor.py:953] WorkerProc failed to start.\n(Worker_TP0 pid=8920) ERROR 10-28 09:18:09 [multiproc_executor.py:953]     raise ValueError(\n(Worker_TP0 pid=8920) ERROR 10-28 09:18:09 [multiproc_executor.py:953] ValueError: The input size is not aligned with the quantized weight shape. This can be caused by too large tensor parallel size.\n(EngineCore pid=8887) ERROR 10-28 09:18:12 [core.py:1510] EngineCore failed to start.\n(EngineCore pid=8887) ERROR 10-28 09:18:12 [core.py:1510] Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.\nException: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.\nraise RuntimeError("
+  },
+  {
+   "engine": "vllm",
+   "model_key": "qwen3.8-27b",
+   "family": "Qwen (Alibaba)",
+   "arch": "dense 27B, hybrid linear/full attention (48 linear + 16 full layers)",
+   "repo": "bernhardbrieger/Qwen3.8-27B-GPTQ-Int4",
+   "enforce_eager": false,
+   "cmd": "serve bernhardbrieger/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8080 --served-model-name probe --tensor-parallel-size 2 --dtype half --max-model-len 16384 --gpu-memory-utilization 0.9 --trust-remote-code --gdn-prefill-backend triton",
+   "status": "load_failed",
+   "load_s": 759.5,
+   "log_info": {
+    "weights_gib_per_rank": 9.45,
+    "backends": [
+     "TRITON_ATTN"
+    ],
+    "quantization": "auto_gptq"
+   },
+   "error": "process exited with code 1",
+   "root_cause": "(Worker pid=9182) WARNING 10-28 09:19:25 [symm_mem.py:67] SymmMemCommunicator: Device capability 7.5 not supported, communicator is not available.\n(Worker pid=9182) WARNING 10-28 09:19:25 [flashinfer_all_reduce.py:425] FlashInfer All Reduce is disabled because it is not supported for world_size=2.\n(Worker_TP0 pid=9182) ERROR 10-28 09:19:30 [fa_utils.py:212] Cannot use FA version 2 is not supported due to FA2 is only supported on devices with compute capability >= 8\n(Worker_TP0 pid=9182) WARNING 10-28 09:22:28 [topk_topp_sampler.py:131] FlashInfer top-p/top-k sampling unavailable: unsupported compute capability 7.5; falling back. Set VLLM_USE_FLASHINFER_SAMPLER=0 to silence.\n[rank1]:[W1028 09:30:45.979832001 CUDACachingAllocator.cpp:3933] memory allocation failed with OOM on device 1 while trying to allocate 6576668672 bytes (free: 3926720512, total: 15636037632).\n(Worker_TP0 pid=9182) ERROR 10-28 09:30:45 [multiproc_executor.py:1063] torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 6.12 GiB. GPU 0 has a total capacity of 14.56 GiB of which 3.66 GiB is free. Including non-PyTorch memory, this process has 10.90 GiB memory in use. Of the allocated memory 9.76 GiB is allocated by PyTorch, and 190.64 MiB is reserved by PyTorch but unallocated. If r\n(EngineCore pid=9149) ERROR 10-28 09:30:45 [core.py:1510] EngineCore failed to start.\n(EngineCore pid=9149) ERROR 10-28 09:30:45 [core.py:1510]     raise RuntimeError(\n(EngineCore pid=9149) ERROR 10-28 09:30:45 [core.py:1510] RuntimeError: Worker failed with error 'CUDA out of memory. Tried to allocate 6.12 GiB. GPU 0 has a total capacity of 14.56 GiB of which 3.66 GiB is free. Including non-PyTorch memory, this process has 10.90 GiB memory in use. Of the allocated memory 9.76 GiB is allocated by PyTorch, and 190.64 MiB is reserved by PyTorch but unallocated. If\nraise RuntimeError(\nRuntimeError: Worker failed with error 'CUDA out of memory. Tried to allocate 6.12 GiB. GPU 0 has a total capacity of 14.56 GiB of which 3.66 GiB is free. Including non-PyTorch memory, this process has 10.90 GiB memory in use. Of the allocated memory 9.76 GiB is allocated by PyTorch, and 190.64 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTO"
+  },
+  {
+   "engine": "vllm",
+   "model_key": "qwen3.8-27b",
+   "family": "Qwen (Alibaba)",
+   "arch": "dense 27B, hybrid linear/full attention (48 linear + 16 full layers)",
+   "repo": "bernhardbrieger/Qwen3.8-27B-GPTQ-Int4",
+   "enforce_eager": true,
+   "cmd": "serve bernhardbrieger/Qwen3.8-27B-GPTQ-Int4 --host 127.0.0.1 --port 8080 --served-model-name probe --tensor-parallel-size 2 --dtype half --max-model-len 16384 --gpu-memory-utilization 0.9 --trust-remote-code --gdn-prefill-backend triton --enforce-eager",
+   "status": "done",
+   "load_s": 564.6,
+   "log_info": {
+    "kv_cache_tokens": 27306,
+    "max_concurrency_at_len": {
+     "tokens": 16384,
+     "x": 1.67
+    },
+    "weights_gib_per_rank": 9.45,
+    "backends": [
+     "TRITON_ATTN"
+    ],
+    "quantization": "auto_gptq"
+   },
+   "vram_idle_mib": [
+    12271,
+    12271
+   ],
+   "smoke": {
+    "compiled": true,
+    "warnings": 0,
+    "passed": true,
+    "ttft_s": 5.111,
+    "decode_tps": 4.24,
+    "completion_tokens": 179
+   },
+   "single_stream": {
+    "ttft_s": 0.332,
+    "total_s": 53.12,
+    "prompt_tokens": 32,
+    "completion_tokens": 245,
+    "decode_tps": 4.62,
+    "prefill_tps": 96.5,
+    "usage_reported": true
+   },
+   "prefill": {
+    "ttft_s": 66.512,
+    "total_s": 75.064,
+    "prompt_tokens": 13698,
+    "completion_tokens": 39,
+    "decode_tps": 4.44,
+    "prefill_tps": 205.9,
+    "usage_reported": true
+   },
+   "concurrency": {
+    "n_requests": 4,
+    "n_ok": 4,
+    "wall_s": 63.96,
+    "aggregate_tps": 16.01,
+    "mean_ttft_s": 3.086,
+    "per_request_decode_tps": [
+     4.19,
+     4.19,
+     4.19,
+     4.19
+    ],
+    "errors": []
+   },
+   "vram_peak_mib": [
+    12527,
+    12527
+   ]
+  },
+  {
+   "engine": "vllm",
+   "model_key": "qwen3-coder-30b-a3b",
+   "family": "Qwen (Alibaba)",
+   "arch": "MoE 30B total / 3.3B active, full attention",
+   "repo": "QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ",
+   "enforce_eager": false,
+   "cmd": "serve QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ --host 127.0.0.1 --port 8080 --served-model-name probe --tensor-parallel-size 2 --dtype half --max-model-len 16384 --gpu-memory-utilization 0.9 --trust-remote-code --enable-expert-parallel",
+   "status": "done",
+   "load_s": 315.2,
+   "log_info": {
+    "kv_cache_tokens": 86720,
+    "max_concurrency_at_len": {
+     "tokens": 16384,
+     "x": 5.29
+    },
+    "weights_gib_per_rank": 7.95,
+    "backends": [
+     "TRITON_ATTN"
+    ],
+    "quantization": "auto_awq"
+   },
+   "vram_idle_mib": [
+    13753,
+    13753
+   ],
+   "smoke": {
+    "compiled": true,
+    "warnings": 0,
+    "passed": true,
+    "ttft_s": 1.134,
+    "decode_tps": 98.04,
+    "completion_tokens": 162
+   },
+   "single_stream": {
+    "ttft_s": 0.052,
+    "total_s": 2.171,
+    "prompt_tokens": 28,
+    "completion_tokens": 215,
+    "decode_tps": 100.97,
+    "prefill_tps": 538.7,
+    "usage_reported": true
+   },
+   "prefill": {
+    "ttft_s": 45.618,
+    "total_s": 46.948,
+    "prompt_tokens": 12893,
+    "completion_tokens": 48,
+    "decode_tps": 35.32,
+    "prefill_tps": 282.6,
+    "usage_reported": true
+   },
+   "concurrency": {
+    "n_requests": 4,
+    "n_ok": 4,
+    "wall_s": 4.19,
+    "aggregate_tps": 244.63,
+    "mean_ttft_s": 0.097,
+    "per_request_decode_tps": [
+     62.59,
+     62.34,
+     62.58,
+     62.58
+    ],
+    "errors": []
+   },
+   "vram_peak_mib": [
+    13813,
+    13813
+   ]
+  }
+ ],
+ "updated_at": "2026-10-28T09:50:36.695722+00:00"
+}

@@ -82,10 +82,11 @@ efficiencies calibrated on measured runs (`--calibration`). The workload assumpt
 headroom, request rates per class) and are replaced by pilot telemetry as soon as it exists. ⏳ Calibrated team
 tables (25 / 100 / 400 engineers × scenarios × GPU types) are generated after the benchmark run.
 
-Why calibration matters: on the first probe run, a 27 B dense model in GPTQ 4-bit on vLLM (eager mode) decoded
-at 4.8 tokens/s on 2× T4, while a 30 B MoE with 3.3 B active parameters (AWQ) reached 98.8 tokens/s on the same
-GPUs (`docs/results/probe/run1-2026-10-28.md`). Engine, kernel path and architecture move throughput by an order
-of magnitude; a sizing model that ignores them buys the wrong hardware.
+Why calibration matters: on 2× T4 the same 27 B dense model decodes at 13.9 tokens/s on llama.cpp and 4.6 on
+vLLM (eager GPTQ), while a 30 B MoE with 3.3 B active parameters reaches 82 (llama.cpp) to 101 (vLLM) tokens/s,
+and vLLM's prefill on that MoE is 5× slower than llama.cpp's (`docs/results/probe/run2-2026-10-28.md`). Engine,
+kernel path and architecture move throughput by an order of magnitude; a sizing model that ignores them buys the
+wrong hardware.
 
 ## 5. Model governance
 

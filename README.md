@@ -29,6 +29,24 @@ Ingenuity Mars helicopter), Apache-2.0, ≈ 207 k lines of C++. Fetched at a pin
 
 ## Results so far
 
+### What runs on 2× Tesla T4 (probe, 4-bit weights)
+
+| Model | Engine | Decode tok/s, 1 stream | Prefill tok/s | Total tok/s, 4 streams | VRAM per GPU (GiB) | C smoke test |
+|---|---|---|---|---|---|---|
+| Qwen3-Coder-30B-A3B (MoE, 3.3 B active) | llama.cpp Q4_K_M | 81.9 | 1,445 | 151 | 9.9 / 9.3 | ✗ ¹ |
+| Qwen3-Coder-30B-A3B | vLLM 0.32 AWQ | **101.0** | 283 | **245** | 13.4 / 13.4 ² | ✓ |
+| Qwen3.6-35B-A3B (MoE, hybrid attention) | llama.cpp Q4_K_M | 60.9 | 1,326 | 107 | 10.8 / 10.3 | ✓ |
+| Devstral-Small-2-24B (dense) | llama.cpp Q4_K_M | 15.9 | 649 | 28 | 8.4 / 8.1 | ✓ |
+| Qwen3.8-27B (dense, hybrid attention) | llama.cpp Q4_K_M | 13.9 | 550 | 29 | 7.6 / 8.6 | ✓ |
+| Qwen3.8-27B | vLLM 0.32 GPTQ (eager only) | 4.6 | 206 | 16 | 12.0 / 12.0 ² | ✓ |
+
+On bandwidth-bound Turing GPUs, MoE models with ≈ 3 B active parameters decode 4–6× faster than dense 24–27 B
+models. vLLM wins decode and concurrency on the MoE model but its AWQ prefill on SM 7.5 (no Marlin kernels) is 5×
+slower than llama.cpp — decisive for 9k-token agent prompts. Qwen3.8 does not load in vLLM with AWQ at tensor
+parallel 2 (quantized weight shape not aligned with the TP split) and runs out of memory with CUDA graphs in GPTQ.
+¹ The model used `size_t` without `#include <stddef.h>`; ² vLLM pre-allocates 90 % of GPU memory.
+Source: [`docs/results/probe/run2-2026-10-28.md`](docs/results/probe/run2-2026-10-28.md).
+
 ### Requirement → test traceability recovery (F´)
 
 Ground truth: the 481 `REQUIREMENT("ID")` tags F´ developers placed in unit tests, linking **151 requirements**

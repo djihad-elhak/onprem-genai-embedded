@@ -356,9 +356,16 @@ def test_agent_e2e(tmp_path: Path) -> None:
     branch = "oge-agent/pytest-e2e"
     out = tmp_path / "run.jsonl"
 
+    model = ScriptedModel(answers)
+    prompt_sizes: list[int] = []
+
+    def llm(messages: list[dict[str, str]]):
+        prompt_sizes.append(len(messages))
+        return model(messages)
+
     async def go() -> list[dict]:
         async with KnowledgeClient(build_server(InMemoryStore(g))) as kb:
-            deps = AgentDeps(ws, kb, ScriptedModel(answers), AgentConfig(model_label="scripted", mutants=2))
+            deps = AgentDeps(ws, kb, llm, AgentConfig(model_label="scripted", mutants=2))
             return await run_batch(deps, list(answers), out, branch)
 
     try:
@@ -372,6 +379,7 @@ def test_agent_e2e(tmp_path: Path) -> None:
         }
         assert all(recs[r]["status"] == "passed" and recs[r]["commit"] for r in list(answers)[:3])
         assert recs["SVC-COMSTUB-003"]["metrics"]["first_attempt_compiled"] is False
+        assert max(prompt_sizes) == 4  # repair prompts: system, task, latest answer, its diagnostics
         assert recs["SVC-COMSTUB-006"]["metrics"]["mutation"]["valid"] >= 1
         log = ws.git("log", "--format=%an|%s", f"{origin}..HEAD")
         assert log.count("oge-agent (scripted)|test(ComStub): verify SVC-COMSTUB-") == 3

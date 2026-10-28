@@ -15,7 +15,7 @@
 # Also: dense + hybrid traceability recovery (Qwen3-Embedding-0.6B on GPU) with LLM reranking by `JUDGE_CONFIG`,
 # and the official architecture configs used to complete the sizing calculator.
 #
-# **How to run (≈ 6–9 h of GPU quota; it stops cleanly before Kaggle's 12 h limit):** Kaggle → *File → Import
+# **How to run (≈ 5 h of GPU quota; it stops cleanly before Kaggle's 12 h limit):** Kaggle → *File → Import
 # Notebook* → this file · *Session options*: **GPU T4 ×2**, **Internet On** · *Save Version* → **Save & Run All
 # (Commit)**. Download the `bench/` output folder. Every stage writes its results as soon as it finishes; a failure
 # in one configuration or stage does not stop the others.
@@ -34,33 +34,28 @@ from pathlib import Path
 DRY_RUN = os.environ.get("BENCH_DRY_RUN") == "1"  # local check: no installs, no GPU, scripted / oracle models
 REPO_URL = "https://github.com/__GITHUB_USER__/onprem-genai-embedded"
 REPO_REF = "main"
+# Standalone builds (scripts/build_kaggle_notebook.py --standalone) embed the package wheel here, so the notebook
+# runs without access to the repository; the commit it was built from is recorded in env.json.
+WHEEL_B64 = None
+WHEEL_COMMIT = None
 SESSION_BUDGET_S = 11.0 * 3600
 T0 = time.time()
 
-# Shortlist from the kaggle/00 probe (docs/results/probe/). Each entry = one served configuration.
-# Probe run 1: Qwen3-Coder-30B-A3B AWQ on vLLM works (98.8 tok/s single stream); llama.cpp entries are
-# confirmed or replaced after probe run 2 (llama.cpp build fixed in probe 0.2.0).
+# Shortlist from the kaggle/00 probe, run 2 (docs/results/probe/run2-2026-10-28.md): every candidate runs on
+# llama.cpp; on vLLM only Qwen3-Coder runs well on Turing. Retained: Qwen3-Coder-30B-A3B and Devstral-Small-2-24B
+# (the two code-specialised families named in the target role). Quality stages (eval, agent) run on llama.cpp
+# for both models: same engine, same 4-bit format family, and 5x faster prefill than vLLM's unoptimised AWQ
+# kernels on SM 7.5 (1445 vs 283 tok/s), which matters for 9k-token agent prompts. vLLM is measured for serving.
 CONFIGS = [
     {
-        "key": "qwen3-coder-30b-a3b__vllm",
+        "key": "qwen3-coder-30b-a3b__llamacpp",
         "model": "qwen3-coder-30b-a3b",
-        "engine": "vllm",
-        "hf_repo": "QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ",
-        "max_model_len": 20480,
-        "extra": ["--enable-expert-parallel"],
-        "parallel": 8,
-        "disable_thinking": False,
-        "stages": ["serving", "eval", "agent"],
-    },
-    {
-        "key": "qwen3.8-27b__llamacpp",
-        "model": "qwen3.8-27b",
         "engine": "llama.cpp",
-        "gguf_repo": "unsloth/Qwen3.8-27B-GGUF",
+        "gguf_repo": "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF",
         "quant": "Q4_K_M",
         "parallel": 4,
-        "ctx_per_slot": 20480,
-        "disable_thinking": True,
+        "ctx_per_slot": 16384,
+        "disable_thinking": False,
         "stages": ["serving", "eval", "agent"],
     },
     {
@@ -70,12 +65,25 @@ CONFIGS = [
         "gguf_repo": "unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF",
         "quant": "Q4_K_M",
         "parallel": 4,
-        "ctx_per_slot": 20480,
+        "ctx_per_slot": 16384,
         "disable_thinking": False,
-        "stages": ["serving", "eval"],
+        "stages": ["serving", "eval", "agent"],
+    },
+    {
+        "key": "qwen3-coder-30b-a3b__vllm",
+        "model": "qwen3-coder-30b-a3b",
+        "engine": "vllm",
+        "hf_repo": "QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ",
+        "max_model_len": 16384,
+        "extra": ["--enable-expert-parallel"],
+        "parallel": 8,
+        "disable_thinking": False,
+        "stages": ["serving"],
     },
 ]
-JUDGE_CONFIG = "qwen3-coder-30b-a3b__vllm"  # served model used for LLM reranking of traceability candidates
+JUDGE_CONFIG = (
+    "qwen3-coder-30b-a3b__llamacpp"  # served model used for LLM reranking of traceability candidates
+)
 PROFILES = ["completion", "chat", "agent"]
 CONCURRENCY = [1, 2, 4, 8, 16]
 MIN_REQUESTS_PER_LEVEL = 8
@@ -84,6 +92,8 @@ AGENT_MUTANTS = 4  # fault-detection mutants per verified requirement
 AGENT_MAX_ATTEMPTS = 3
 MIN_TIME_FOR_AGENT_S = 3600  # do not start an agent stage with less session time left
 EMBED_MODEL = "Qwen/Qwen3-Embedding-0.6B"
+LLAMACPP_REF = "b11953"  # = a7af149, the build measured by probe run 2
+VLLM_SPEC = "vllm==0.32.0"  # version measured by probe run 2
 PORT = 8080
 FPRIME_TOOLS = ["fprime-tools==4.4.0", "fprime-fpp==3.4.0", "cmake==3.26.0", "ninja==1.11.1.4"]
 
@@ -133,6 +143,21 @@ except Exception:
 
 # %%
 # ---------------------------------------------------------------- install this project (pinned ref)
+EXTRAS = "knowledge,bench,eval,agent"
+if WHEEL_B64:
+    import base64
+    import hashlib
+
+    _wheel = WORK / "onprem_genai_embedded-0.1.0-py3-none-any.whl"
+    _wheel.write_bytes(base64.b64decode(WHEEL_B64))
+    package_spec = f"onprem-genai-embedded[{EXTRAS}] @ {_wheel.as_uri()}"
+    repo_commit = (
+        f"{WHEEL_COMMIT} (embedded wheel sha256 {hashlib.sha256(_wheel.read_bytes()).hexdigest()[:16]})"
+    )
+else:
+    package_spec = f"onprem-genai-embedded[{EXTRAS}] @ git+{REPO_URL}@{REPO_REF}"
+    _remote = run(["git", "ls-remote", REPO_URL, REPO_REF]).stdout.split()
+    repo_commit = _remote[0] if _remote else "unknown"
 if not DRY_RUN:
     subprocess.run([sys.executable, "-m", "pip", "install", "-q", "uv"], check=True)
     subprocess.run(
@@ -143,14 +168,12 @@ if not DRY_RUN:
             "--python",
             sys.executable,
             "-q",
-            f"onprem-genai-embedded[knowledge,bench,eval,agent] @ git+{REPO_URL}@{REPO_REF}",
+            package_spec,
             "sentence-transformers>=3.0",
             "transformers>=4.51",
         ],
         check=True,
     )
-_remote = run(["git", "ls-remote", REPO_URL, REPO_REF]).stdout.split()
-repo_commit = _remote[0] if _remote else "unknown"
 
 from onprem_genai.agent.fprime import UT_BUILD_DIR, FprimeWorkspace
 from onprem_genai.agent.graph import AgentConfig, AgentDeps
@@ -295,7 +318,9 @@ builds = {}
 LLAMA_SERVER = VLLM = None
 if "llama.cpp" in needs:
     try:
-        LLAMA_SERVER = E.build_llamacpp(WORK, cuda_arch="75", log=LOGS / "llamacpp_build.log")
+        LLAMA_SERVER = E.build_llamacpp(
+            WORK, cuda_arch="75", ref=LLAMACPP_REF, log=LOGS / "llamacpp_build.log"
+        )
         builds["llama.cpp"] = run(
             ["git", "-C", str(LLAMA_SERVER.parents[2]), "rev-parse", "HEAD"]
         ).stdout.strip()
@@ -303,7 +328,7 @@ if "llama.cpp" in needs:
         builds["llama.cpp_error"] = traceback.format_exc()[-3000:]
 if "vllm" in needs:
     try:
-        VLLM = E.install_vllm(WORK, log=LOGS / "vllm_install.log")
+        VLLM = E.install_vllm(WORK, spec=VLLM_SPEC, log=LOGS / "vllm_install.log")
         builds["vllm"] = run(
             [str(VLLM.parent / "python"), "-c", "import vllm; print(vllm.__version__)"]
         ).stdout.strip()
@@ -474,7 +499,7 @@ for cfg in [] if DRY_RUN else CONFIGS:
                     client = evalrunner.ChatClient(srv.base_url, "default", extra_body=extra, max_tokens=4096)
                     stage_eval(cfg, client)
                 else:
-                    llm = ChatModel(srv.base_url, "default", extra_body=extra, max_tokens=4096)
+                    llm = ChatModel(srv.base_url, "default", extra_body=extra, max_tokens=3072)
                     stage_agent(cfg, llm.complete)
                 res["stages"][stage] = f"done in {time.time() - t:.0f}s"
             except Exception:

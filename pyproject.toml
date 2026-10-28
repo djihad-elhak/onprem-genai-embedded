@@ -50,6 +50,7 @@ dev = [
   "ruff>=0.9",
   "pyright>=1.1.400",
   "pre-commit>=4.0",
+  "jupytext>=1.17",
 ]
 
 [tool.hatch.build.targets.wheel]

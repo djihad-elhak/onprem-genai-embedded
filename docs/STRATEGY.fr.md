@@ -87,11 +87,11 @@ avec des rendements calibrés sur des mesures (`--calibration`). Les hypothèses
 débits de requêtes par classe) et sont remplacées par la télémétrie du pilote dès qu'elle existe. ⏳ Les tableaux
 calibrés (25 / 100 / 400 ingénieurs × scénarios × types de GPU) sont générés après le benchmark.
 
-Pourquoi calibrer : lors du premier passage de la sonde, un modèle dense de 27 B en GPTQ 4 bits sous vLLM (mode
-*eager*) décodait à 4,8 jetons/s sur 2× T4, alors qu'un MoE de 30 B avec 3,3 B de paramètres actifs (AWQ)
-atteignait 98,8 jetons/s sur les mêmes GPU (`docs/results/probe/run1-2026-10-28.md`). Le moteur, le chemin de
-noyaux et l'architecture changent le débit d'un ordre de grandeur ; un modèle de dimensionnement qui les ignore
-fait acheter le mauvais matériel.
+Pourquoi calibrer : sur 2× T4, le même modèle dense de 27 B décode à 13,9 jetons/s sous llama.cpp et 4,6 sous
+vLLM (GPTQ en mode *eager*), alors qu'un MoE de 30 B avec 3,3 B de paramètres actifs atteint 82 (llama.cpp) à 101
+(vLLM) jetons/s, et le préremplissage de vLLM sur ce MoE est 5 fois plus lent que celui de llama.cpp
+(`docs/results/probe/run2-2026-10-28.md`). Le moteur, le chemin de noyaux et l'architecture changent le débit d'un
+ordre de grandeur ; un modèle de dimensionnement qui les ignore fait acheter le mauvais matériel.
 
 ## 5. Gouvernance des modèles
 
