@@ -10,7 +10,6 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-import time
 from collections import defaultdict
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -19,82 +18,24 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import httpx
 import numpy as np
 
 from onprem_genai.evalsuite import prompts
 from onprem_genai.evalsuite.scoring import reference_output, score
 from onprem_genai.evalsuite.tasks import Category, Task, tasks_dir
-
-
-@dataclass
-class Completion:
-    text: str
-    latency_s: float = 0.0
-    prompt_tokens: int | None = None
-    completion_tokens: int | None = None
-    finish_reason: str | None = None
-
+from onprem_genai.llm import ChatModel, Completion
 
 Generator = Callable[[Task, list[dict[str, str]]], Completion]
 
 
-class ChatClient:
-    """Minimal OpenAI-compatible chat-completions client (llama.cpp server, vLLM, SGLang, TGI, ...)."""
-
-    def __init__(
-        self,
-        base_url: str,
-        model: str = "default",
-        api_key: str | None = None,
-        temperature: float = 0.2,
-        top_p: float = 0.95,
-        max_tokens: int = 4096,
-        extra_body: dict[str, Any] | None = None,
-        timeout_s: float = 900,
-        retries: int = 2,
-        backoff_s: float = 2.0,
-        transport: httpx.BaseTransport | None = None,
-    ) -> None:
-        self.url = base_url.rstrip("/") + "/v1/chat/completions"
-        self.model, self.retries, self.backoff_s = model, retries, backoff_s
-        self.params = {
-            "temperature": temperature,
-            "top_p": top_p,
-            "max_tokens": max_tokens,
-            **(extra_body or {}),
-        }
-        headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
-        self.client = httpx.Client(timeout=timeout_s, headers=headers, transport=transport)
+class ChatClient(ChatModel):
+    """The shared OpenAI-compatible client, called per task."""
 
     def __call__(self, task: Task, messages: list[dict[str, str]]) -> Completion:
-        body = {"model": self.model, "messages": messages, **self.params}
-        last: Exception | None = None
-        for attempt in range(self.retries + 1):
-            t0 = time.perf_counter()
-            try:
-                r = self.client.post(self.url, json=body)
-                if r.status_code >= 500:
-                    raise httpx.HTTPStatusError(
-                        f"server error {r.status_code}", request=r.request, response=r
-                    )
-                r.raise_for_status()
-                data = r.json()
-                choice = data["choices"][0]
-                usage = data.get("usage") or {}
-                return Completion(
-                    text=choice["message"].get("content") or "",
-                    latency_s=time.perf_counter() - t0,
-                    prompt_tokens=usage.get("prompt_tokens"),
-                    completion_tokens=usage.get("completion_tokens"),
-                    finish_reason=choice.get("finish_reason"),
-                )
-            except (httpx.TransportError, httpx.HTTPStatusError) as exc:
-                last = exc
-                if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code < 500:
-                    break
-                time.sleep(self.backoff_s * (attempt + 1))
-        raise RuntimeError(f"chat completion failed for {task.id}: {last}") from last
+        try:
+            return self.complete(messages)
+        except RuntimeError as exc:
+            raise RuntimeError(f"{task.id}: {exc}") from exc
 
 
 def reference_generator(task: Task, messages: list[dict[str, str]]) -> Completion:

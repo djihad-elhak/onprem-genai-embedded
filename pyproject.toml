@@ -36,6 +36,9 @@ knowledge = [
 ]
 bench = ["gguf>=0.17", "huggingface_hub>=0.30"]
 eval = ["lizard>=1.17", "tree-sitter>=0.25", "tree-sitter-cpp>=0.23"]
+agent = [
+    "langgraph>=1.2,<2",
+]
 
 [project.scripts]
 oge = "onprem_genai.cli:app"

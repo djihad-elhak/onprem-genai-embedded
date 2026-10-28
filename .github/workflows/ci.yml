@@ -48,9 +48,9 @@ jobs:
           python-version: "3.12"
       - name: Install
         run: uv sync --all-extras --group dev
-      - name: Fetch pinned F´
-        run: scripts/fetch_fprime.sh
-      - name: Integration tests (F´ ingestion, Neo4j store)
+      - name: Fetch pinned F´ and prepare its unit-test build
+        run: scripts/setup_fprime_ut.sh
+      - name: Integration tests (F´ ingestion, Neo4j store, test-generation agent end to end)
         run: uv run pytest -m "neo4j or fprime"
 
   deploy-smoke:

@@ -138,14 +138,15 @@ def test_root_cause_skips_tracebacks_and_keeps_cmake_context() -> None:
         (EngineCore_DP0 pid=512) ERROR 10-28 07:21:03 [core.py:700] EngineCore failed to start.
         (EngineCore_DP0 pid=512) ERROR 10-28 07:21:03 [core.py:700] Traceback (most recent call last):
           File "/x/core.py", line 691, in run_engine_core
-        (EngineCore_DP0 pid=512) ERROR 10-28 07:21:03 [core.py:700] ValueError: quantization awq unsupported on SM 75
-        (EngineCore_DP0 pid=513) ERROR 10-28 07:21:04 [core.py:700] ValueError: quantization awq unsupported on SM 75
+        (EngineCore_DP0 pid=512) ERROR 10-28 07:21:03 [core.py:700] ValueError: awq unsupported on SM 75
+        (EngineCore_DP0 pid=513) ERROR 10-28 07:21:04 [core.py:700] ValueError: awq unsupported on SM 75
         RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
     """)
     rc = root_cause(vllm_log)
-    assert "ValueError: quantization awq unsupported on SM 75" in rc
+    assert "ValueError: awq unsupported on SM 75" in rc
     assert rc.count("ValueError") == 1  # deduplicated across worker processes
-    assert "Engine core initialization failed" not in rc and "File " not in rc
+    assert "Engine core initialization failed" not in rc
+    assert "File " not in rc
     cmake_log = (
         "-- Generating done (0.5s)\n"
         "CMake Error at ggml/src/ggml-cuda/CMakeLists.txt:181 (target_link_libraries):\n"

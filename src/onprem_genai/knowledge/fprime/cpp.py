@@ -49,6 +49,11 @@ def _parser() -> Parser:
     return Parser(Language(tree_sitter_cpp.language()))
 
 
+def cpp_parser() -> Parser:
+    """Shared tree-sitter C++ parser."""
+    return _parser()
+
+
 def _text(src: bytes, node: Node) -> str:
     return src[node.start_byte : node.end_byte].decode("utf-8", errors="replace")
 
