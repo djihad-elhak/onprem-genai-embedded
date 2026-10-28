@@ -140,6 +140,18 @@ class SentenceTransformerEmbedder:
         return np.asarray(emb, dtype=np.float32)
 
 
+class CacheOnlyEmbedder:
+    """Inner embedder for a :class:`CachedEmbedder` whose cache was filled elsewhere (e.g. by a GPU child
+    process, see ``embed_job``): every lookup must hit the cache."""
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def embed(self, texts: Sequence[str], *, is_query: bool = False) -> np.ndarray:
+        kind = "queries" if is_query else "documents"
+        raise LookupError(f"{len(texts)} {kind} missing from the precomputed {self.name} embeddings")
+
+
 class CachedEmbedder:
     """Disk cache keyed by (embedder name, text hash) so experiments can be re-run offline."""
 

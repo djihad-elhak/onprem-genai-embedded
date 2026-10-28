@@ -70,6 +70,8 @@ erDiagram
    stemming; code stop-words).
 2. **Dense**: any OpenAI-compatible `/v1/embeddings` endpoint (the platform's own embedding server) or a local
    sentence-transformers model; queries carry a task instruction (Qwen3-Embedding convention); disk cache.
+   Batch embedding on a shared GPU runs in a child process (`knowledge/embed_job.py`) so the model's memory is
+   always returned before the LLM servers start, with the batch halved on out-of-memory errors.
 3. **Graph prior**: tests of the requirement's module first, then tests calling into that module.
 4. **Hybrid**: rank by graph tier, then by the (fused) text score within each tier; reciprocal-rank fusion
    combines lexical and dense scores.

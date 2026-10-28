@@ -265,23 +265,30 @@ rankers = {"bm25": bm25, "graph": tr.graph_ranker(ds), "graph+bm25": tr.graph_co
 try:
     if DRY_RUN:
         raise RuntimeError("dry run: dense retrieval skipped")
-    from onprem_genai.knowledge.retrieval import SentenceTransformerEmbedder
+    # In a child process: a model loaded in this kernel would keep its GPU memory (all of it after an
+    # out-of-memory error) and starve the LLM servers started below.
+    from onprem_genai.knowledge.embed_job import embed_in_subprocess
 
-    emb = SentenceTransformerEmbedder(
-        EMBED_MODEL, query_instruction=tr.QUERY_INSTRUCTION, device="cuda", max_seq_length=2048, batch=16
-    )
     t = time.time()
-    dense = tr.dense_ranker(ds, emb)
+    emb = embed_in_subprocess(
+        f"st:{EMBED_MODEL}",
+        ds.cand_text,
+        [ds.req_text[r] for r in ds.req_ids],
+        WORK / "embeddings",
+        query_instruction=tr.QUERY_INSTRUCTION,
+        device="cuda",
+        max_seq_length=2048,
+        batch=8,
+        log=LOGS / "embedding.log",
+    )
     trace_results["dataset"]["embedding_s"] = round(time.time() - t, 1)
+    dense = tr.dense_ranker(ds, emb)
     rankers["dense"] = dense
     rankers["graph+dense"] = tr.graph_constrained(ds, dense)
     rankers["graph+rrf(bm25,dense)"] = tr.graph_constrained(ds, tr.fused([bm25, dense]))
-    del emb
-    import torch
-
-    torch.cuda.empty_cache()
 except Exception:
     trace_results["dense_error"] = traceback.format_exc()[-3000:]
+trace_results["dataset"]["gpu_mib_after_embedding"] = E.gpu_memory_mib()
 for name, rk in rankers.items():
     trace_results["methods"][name] = tr.evaluate(ds, rk)
     print(name, {k: v["mean"] for k, v in trace_results["methods"][name]["metrics"].items()})
@@ -469,6 +476,7 @@ for cfg in [] if DRY_RUN else CONFIGS:
         t = time.time()
         srv, info = launch(cfg)
         res.update(info)
+        E.require_gpus_free()
         srv.start()
         ok, why = srv.wait_ready(timeout_s=2400)
         res["load_s"] = round(time.time() - t, 1)

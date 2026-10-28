@@ -80,6 +80,36 @@ def wait_gpu_released(threshold_mib: int = 600, timeout_s: float = 120) -> None:
         time.sleep(2)
 
 
+def gpu_processes() -> str:
+    """Processes holding GPU memory, as nvidia-smi reports them (may be empty inside containers)."""
+    try:
+        p = subprocess.run(
+            ["nvidia-smi", "--query-compute-apps=pid,process_name,used_memory", "--format=csv,noheader"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+    return "; ".join(x.strip() for x in p.stdout.splitlines() if x.strip())
+
+
+def require_gpus_free(threshold_mib: int = 1024, timeout_s: float = 180) -> None:
+    """Before a server starts: wait for leftover processes to release the GPUs, else fail with the culprits.
+
+    A server started on a partly occupied GPU fails late and obscurely (out of memory while loading), or
+    worse, runs with a smaller KV cache and skews the measurements.
+    """
+    wait_gpu_released(threshold_mib, timeout_s)
+    mem = gpu_memory_mib()
+    if mem and max(mem) >= threshold_mib:
+        raise RuntimeError(
+            f"GPU memory still in use before server start: {mem} MiB "
+            f"(processes: {gpu_processes() or 'not visible from this container'})"
+        )
+
+
 def port_free(port: int, host: str = "127.0.0.1") -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex((host, port)) != 0

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from onprem_genai.bench import engines
 from onprem_genai.bench.engines import (
     ServerProcess,
     cuda_driver_cmake_args,
@@ -153,3 +154,14 @@ def test_root_cause_skips_tracebacks_and_keeps_cmake_context() -> None:
         '  Target "ggml-cuda" links to:\n\n    CUDA::cuda_driver\n\n  but the target was not found.\n'
     )
     assert "CUDA::cuda_driver but the target was not found" in root_cause(cmake_log)
+
+
+def test_require_gpus_free(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(engines, "gpu_processes", lambda: "")
+    monkeypatch.setattr(engines, "gpu_memory_mib", lambda: [13950, 4])  # a kernel still holding GPU 0
+    with pytest.raises(RuntimeError, match=r"\[13950, 4\] MiB"):
+        engines.require_gpus_free(threshold_mib=1024, timeout_s=0)
+    monkeypatch.setattr(engines, "gpu_memory_mib", lambda: [3, 4])
+    engines.require_gpus_free(threshold_mib=1024, timeout_s=0)
+    monkeypatch.setattr(engines, "gpu_memory_mib", list)  # no NVIDIA GPU: nothing to check
+    engines.require_gpus_free(threshold_mib=1024, timeout_s=0)
