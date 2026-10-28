@@ -6,6 +6,9 @@ sources:
   - src/onprem_genai/mcp_server/
   - src/onprem_genai/platform/
   - src/onprem_genai/evalsuite/
+  - src/onprem_genai/agent/
+  - deploy/compose.ci.yaml
+  - deploy/jenkins/
   - deploy/
   - kaggle/
 ---
@@ -28,8 +31,9 @@ the Model Context Protocol, and is sized from measurements rather than vendor cl
 | `knowledge` | F´ ingestion (tree-sitter C++, requirement tables, test tags, design docs); typed graph + snapshots; BM25 / dense / fusion retrieval; traceability benchmark and audit; in-memory and Neo4j stores | `fprime/`, `model.py`, `retrieval.py`, `traceability.py`, `store.py`, `neo4j_store.py` |
 | `mcp_server` | MCP server (SDK v2 `MCPServer`) over any `KnowledgeStore` | `server.py` |
 | `evalsuite` | 27 purpose-written embedded C tasks (not taken from public benchmarks) (generate, unit-test generation, refactor, document) scored by execution: strict compile, hidden tests, sanitizers, gcov, mutation testing, complexity, Doxygen; OpenAI-compatible runner with pass@k and CIs ([EVALSUITE.md](EVALSUITE.md)) | `tasks/`, `scoring.py`, `validate.py`, `runner.py` |
+| `agent` | LangGraph test-generation agent: MCP retrieval, policy-checked patching of F´ unit tests, build / run / coverage / mutants, git review branch, Jenkins CI over MCP ([AGENT.md](AGENT.md)) | `graph.py`, `patch.py`, `context.py`, `fprime.py`, `mutation.py`, `ci.py`, `runner.py` |
 | `platform` | Deployment verification: LLM, embeddings, MCP over HTTP, egress probe | `smoke.py` |
-| `deploy/` | Container image, Compose profiles, air-gap overlay, client configs | `Dockerfile`, `compose.yaml`, `compose.offline.yaml`, `clients/` |
+| `deploy/` | Container image, Compose profiles, air-gap overlay, Jenkins add-on (`compose.ci.yaml`), client configs | `Dockerfile`, `compose.yaml`, `compose.offline.yaml`, `clients/` |
 | `kaggle/` | GPU batch notebooks (2× T4) producing every hardware measurement | `00_probe_t4x2`, `01_m1_benchmark` |
 
 ## 3. Knowledge graph

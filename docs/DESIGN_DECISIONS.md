@@ -59,8 +59,41 @@ the end.
   phoning home). Making it a failing test keeps it true.
 
 ## D10 · Agent framework (M2): LangGraph
-- **Why**: explicit state machine fits a deterministic engineering loop (retrieve → write test → build → fix →
-  commit → CI); checkpointing and human-in-the-loop interrupts; MCP adapters; widely used.
+- **Why**: an explicit state machine fits a deterministic engineering loop (retrieve → write test → check →
+  build → test → commit, with a bounded repair loop); every node and edge is visible, testable and logged.
+  LangGraph adds no model wrapper: the agent calls the platform's OpenAI-compatible endpoint and MCP directly.
+
+## D12 · Agent with bounded authority: the model writes test code, nothing else
+- **Choice**: the model returns Tester methods and `TEST()` cases; retrieval, patching (tree-sitter anchors),
+  policy, build, run, coverage, git and CI are deterministic nodes whose arguments come from the requirement.
+- **Why**: flight-software teams cannot let a model run commands or edit flight code. Confining the edit to three
+  test files, enforcing the `REQUIREMENT` tag and rejecting process control / skipped tests makes the agent's
+  worst case a bad unit test on a review branch. It also makes runs reproducible and models comparable (same
+  context, same tools, same budget).
+- **Trade-off**: no free exploration (a tool-calling agent could look up more context); compensated by
+  error-driven retrieval (unknown identifiers → *did-you-mean* + definitions over MCP).
+- **Would change if**: a sandbox with stronger isolation is available and measured gains justify tool calling.
+
+## D13 · Evaluation by execution, on purpose-written embedded C tasks
+- **Choice**: 27 C99 tasks (generation, unit-test generation, refactoring, documentation) scored by compiling and
+  running: hidden tests, sanitizers, gcov, mutants, cyclomatic complexity, Doxygen completeness. The suite
+  validates itself (references pass, stubs fail, reference tests kill every mutant).
+- **Why**: public benchmarks are Python-centric and in the training data; an LLM judge would grade style, not
+  behaviour. Embedded constraints (no heap, no stdio, fixed-point, wraparound) are what the target teams need.
+- **Limit**: 27 tasks → wide confidence intervals, reported as such.
+
+## D14 · Test quality is measured by fault detection, not by passing
+- **Choice**: each verified test is run against gcov-guided mutants of the code it executes (inverted conditions,
+  bounds, swapped statuses, deleted port calls / events); score = killed / valid.
+- **Why**: a test that passes may assert nothing useful; coverage counts lines, not checks. Mutants answer "would
+  this test catch a bug here?". Relevance to the requirement still gets a human verdict (review sheet).
+
+## D15 · CI through the official Jenkins MCP Server plugin
+- **Choice**: Jenkins LTS + `mcp-server` plugin, configured as code; the agent uses a service account with
+  Overall/Read, Job/Read, Job/Build only; the pipeline tests the agent's branch from a read-only mount.
+- **Why**: the target environment already runs Jenkins; the plugin exposes builds, queue, test results and logs
+  as MCP tools and filters them by the caller's permissions, so the same server also serves IDE assistants.
+  A custom REST client would duplicate that and bypass the permission model.
 
 ## D11 · Kaggle as GPU lab
 - **Why**: no local GPU; Kaggle's 2× T4 (32 GB) runs 4-bit 24–35 B models. Notebooks are batch jobs that write
@@ -76,6 +109,9 @@ the end.
 | Why not just use an API (Copilot, Claude)? | Data cannot leave the site; D9, security defaults in ARCHITECTURE §6. |
 | How do you know the RAG works? | Traceability benchmark with ground truth, confidence intervals, ablation (D6). |
 | What does "288 gaps" mean exactly? | Requirements specified as verified by test with no explicit test tag — candidates for review, not proof of missing tests. |
-| What happens when the model is wrong? | Suggestions are ranked with evidence (file:line, scores); M2 agent output must compile and pass, then goes through CI and review. |
+| What happens when the model is wrong? | Suggestions are ranked with evidence (file:line, scores); agent output must pass policy, build and tests (3 runs, no regression), then CI and human review; it can only ever touch test files (D12). |
+| Can the agent break flight code? | No path exists: it writes only into `test/ut` of one component, on a branch, and its CI account cannot administer Jenkins (D12, D15). |
+| How do you know generated tests are useful? | Fault detection on mutants of the code they execute (D14) + a human relevance verdict per test. |
+| How do you choose a model for code? | `oge eval` on embedded C tasks scored by execution (D13) + agent metrics on real F´ gaps; speed from the probe and serving benchmark. |
 | Why these models? | Probe compatibility matrix + license + measured speed/quality on T4 (D3). DeepSeek-V4 is sized but does not fit the test hardware. |
 | How would you scale it? | Profiles `gpu` → `vllm`; replicas behind a gateway; Neo4j for the graph; per-team MCP servers; see sizing report. |

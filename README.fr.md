@@ -5,7 +5,7 @@ embarqué / aéronautique — dimensionnée, mesurée et vérifiée en mode déc
 connaissances code + exigences + tests exposé aux assistants via MCP.**
 
 [English](README.md) · [Architecture](docs/ARCHITECTURE.md) · [Décisions de conception](docs/DESIGN_DECISIONS.md) ·
-[Résultats](docs/results/README.md)
+[Agent](docs/AGENT.md) · [Suite d'évaluation](docs/EVALSUITE.md) · [Résultats](docs/results/README.md)
 
 Base de code cible : **NASA F´ (F Prime) v4.4.1** — framework logiciel de vol open source du JPL (embarqué sur
 l'hélicoptère martien Ingenuity), Apache-2.0, ≈ 207 000 lignes de C++. Récupéré à un commit figé, jamais copié
@@ -23,7 +23,9 @@ dans le dépôt.
 | **MCP** | Serveur de connaissances (SDK MCP v2, stdio ou HTTP) : `search`, `get_symbol`, `get_callers/callees`, `get_requirement`, `trace_requirement`, `coverage_gaps`, `module_overview` | ✅ |
 | **Assistants** | Configurations Continue, Aider et MCP générique pointant vers la plateforme | ✅ |
 | **Air gap** | Surcouche Compose sur réseau Docker interne + test de fumée qui **échoue si une seule connexion sortante aboutit** | ✅ (CI) |
-| **Agents & CI** | Agent de génération de tests à partir des exigences (LangGraph) compilant les tests unitaires F´, Jenkins via son plugin MCP | M2 |
+| **Évaluation des modèles** | `oge eval` — 27 tâches C embarqué écrites pour le projet (génération, génération de tests unitaires, refactorisation, documentation) notées par exécution : compilation stricte, tests cachés, ASan/UBSan, couverture gcov, test de mutation, complexité, complétude Doxygen ; la suite se valide elle-même | ✅ suite · ⏳ passes modèles |
+| **Agent** | `oge agent` — agent LangGraph qui comble les trous de traçabilité de F´ : contexte récupéré via MCP, test unitaire balisé par l'exigence, compilation et exécution, réparation à partir des erreurs du compilateur et des tests, commit sur une branche de revue ; le modèle n'écrit que du code de test, tout le reste est déterministe et contrôlé par une politique | ✅ de bout en bout sur F´ (modèle scripté) · ⏳ passes modèles |
+| **CI** | Jenkins LTS avec le plugin officiel MCP Server (compte de service à privilèges minimaux, JCasC) ; l'agent déclenche le pipeline de tests unitaires F´ et lit le verdict via MCP | ✅ (CI) |
 
 ## Résultats
 
@@ -74,14 +76,22 @@ docker compose -f deploy/compose.yaml -f deploy/compose.offline.yaml \
   --profile cpu --profile smoke up --abort-on-container-exit --exit-code-from smoke   # preuve air gap
 ```
 
+```bash
+uv run oge eval validate                     # la suite d'évaluation se vérifie elle-même
+scripts/setup_fprime_ut.sh                   # build des tests unitaires F´ (googletest, outils, cache)
+uv run oge agent run --scripted tests/data/scripted_agent_answers.json -r SVC-COMSTUB-003   # démo hors GPU
+docker compose -f deploy/compose.ci.yaml up -d --build                        # Jenkins + plugin MCP
+```
+
 Les mesures GPU s'exécutent en notebooks batch sur Kaggle (2× Tesla T4) : `kaggle/00_probe_t4x2` et
 `kaggle/01_m1_benchmark`.
 
 ## Ingénierie
 
 Python ≥ 3.11, `uv`, ruff, pyright, pytest (tests unitaires, tests de contrat communs aux stockages mémoire et
-Neo4j, test d'intégration MCP sur HTTP réel) ; CI GitHub Actions : qualité → intégration F´ + Neo4j → test de
-déploiement déconnecté. Aucune API de modèle externe n'est appelée à l'exécution.
+Neo4j, test d'intégration MCP sur HTTP réel, agent de bout en bout sur F´ réel) ; CI GitHub Actions : qualité →
+intégration F´ + Neo4j + agent → test de déploiement déconnecté → Jenkins via MCP. Aucune API de modèle externe
+n'est appelée à l'exécution.
 
 ## Licence
 

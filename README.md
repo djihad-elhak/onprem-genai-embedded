@@ -5,7 +5,8 @@ sized, benchmarked and air-gap verified, with a requirements-aware code knowledg
 over MCP.**
 
 [Français](README.fr.md) · [Architecture](docs/ARCHITECTURE.md) · [Design decisions](docs/DESIGN_DECISIONS.md) ·
-[Results](docs/results/README.md) · [Plan](docs/PLAN.md)
+[Agent](docs/AGENT.md) · [Evaluation suite](docs/EVALSUITE.md) · [Results](docs/results/README.md) ·
+[Plan](docs/PLAN.md)
 
 Target code base: **NASA F´ (F Prime) v4.4.1** — JPL's open-source flight-software framework (flown on the
 Ingenuity Mars helicopter), Apache-2.0, ≈ 207 k lines of C++. Fetched at a pinned commit, never vendored.
@@ -22,7 +23,9 @@ Ingenuity Mars helicopter), Apache-2.0, ≈ 207 k lines of C++. Fetched at a pin
 | **MCP** | Knowledge server (MCP SDK v2, stdio or streamable HTTP): `search`, `get_symbol`, `get_callers/callees`, `get_requirement`, `trace_requirement`, `coverage_gaps`, `module_overview` | ✅ |
 | **Assistants** | Continue, Aider and generic MCP client configs targeting the platform | ✅ |
 | **Air gap** | Compose overlay on an internal Docker network + smoke test that **fails if any outbound connection succeeds** | ✅ (CI) |
-| **Agents & CI** | Requirement-based test-generation agent (LangGraph) building F´ unit tests, Jenkins via its MCP plugin | M2 |
+| **Model evaluation** | `oge eval` — 27 purpose-written embedded C tasks (generation, unit-test generation, refactoring, documentation) scored by execution: strict compile, hidden tests, ASan/UBSan, gcov coverage, mutation testing, complexity, Doxygen completeness; the suite validates itself | ✅ suite · ⏳ model runs |
+| **Agent** | `oge agent` — LangGraph agent that closes F´ traceability gaps: retrieves context over MCP, writes a requirement-tagged unit test, builds and runs it, repairs from compiler and test output, commits on a review branch; the model only writes test code, everything else is deterministic and policy-checked | ✅ end to end on F´ (scripted model) · ⏳ model runs |
+| **CI** | Jenkins LTS with the official MCP Server plugin (least-privilege service account, JCasC); the agent triggers the F´ unit-test pipeline and reads the verdict over MCP | ✅ (CI) |
 
 ## Results so far
 
@@ -83,6 +86,17 @@ docker compose -f deploy/compose.yaml -f deploy/compose.offline.yaml --profile c
     up --abort-on-container-exit --exit-code-from smoke
 ```
 
+```bash
+# 5. Evaluation suite and test-generation agent (no GPU needed for the demo)
+uv run oge eval validate                                    # the suite checks itself
+uv run oge eval run --reference                             # oracle answers → 100 %, proves the harness
+scripts/setup_fprime_ut.sh                                  # F´ unit-test build (googletest, tools, cache)
+uv run oge agent run --scripted tests/data/scripted_agent_answers.json -r SVC-COMSTUB-003
+# with a served model and Jenkins (deploy/compose.ci.yaml):
+uv run oge agent run --base-url http://localhost:8080 --label my-model \
+    --ci-url http://localhost:8090/mcp-server/mcp --ci-user oge-agent --ci-token "$JENKINS_AGENT_PASSWORD"
+```
+
 GPU benchmarks run as batch notebooks on Kaggle (2× Tesla T4): `kaggle/00_probe_t4x2` (what runs on Turing
 GPUs) and `kaggle/01_m1_benchmark` (serving sweeps, sizing calibration, dense/LLM traceability).
 
@@ -93,13 +107,14 @@ flowchart LR
   subgraph C[Clients]
     IDE["IDE assistant<br/>(Continue)"]
     CLI["CLI assistant<br/>(Aider)"]
-    AG["Agents<br/>(M2)"]
+    AG["Test-generation<br/>agent (LangGraph)"]
   end
   subgraph P["On-prem platform · internal network"]
     LLM["LLM server<br/>llama.cpp · vLLM"]
     MCP["Knowledge MCP server"]
     EMB["Embedding server<br/>Qwen3-Embedding"]
     NEO[("Neo4j<br/>optional")]
+    JEN["Jenkins<br/>+ MCP Server plugin"]
   end
   SRC["F´ sources<br/>code · tests · design docs"] -- "oge knowledge ingest" --> SNAP[("Graph<br/>snapshot")]
   IDE -- "OpenAI API" --> LLM
@@ -111,6 +126,9 @@ flowchart LR
   MCP -- "embeddings API" --> EMB
   MCP -. "Cypher" .-> NEO
   SNAP -. "load-neo4j" .-> NEO
+  AG -- "MCP" --> JEN
+  AG -- "git branch" --> SRC
+  JEN -- "unit tests" --> SRC
 ```
 
 Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -118,7 +136,8 @@ Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Engineering
 
 - Python ≥ 3.11, `uv`, ruff, pyright, pytest (unit, contract tests shared by the in-memory and Neo4j stores,
-  live MCP-over-HTTP integration test); GitHub Actions: quality → F´ + Neo4j integration → air-gapped deploy smoke.
+  live MCP-over-HTTP integration test, agent end to end on real F´); GitHub Actions: quality → F´ + Neo4j +
+  agent integration → air-gapped deploy smoke → Jenkins over MCP.
 - Reproducibility: pinned F´ commit, deterministic graph snapshots, every reported number produced by a command
   or notebook committed here, with its inputs recorded.
 - No model API is called at runtime; all models are open weights served locally.
@@ -126,9 +145,9 @@ Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Repository layout
 
 ```
-src/onprem_genai/   sizing/  bench/  knowledge/  mcp_server/  platform/
+src/onprem_genai/   sizing/  bench/  knowledge/  mcp_server/  platform/  evalsuite/  agent/  llm.py
 kaggle/             GPU notebooks (probe, M1 benchmark)
-deploy/             Dockerfile, compose (cpu/gpu/vllm/neo4j), offline overlay, client configs
+deploy/             Dockerfile, compose (cpu/gpu/vllm/neo4j), offline overlay, Jenkins (compose.ci.yaml), clients
 docs/               plan, architecture, design decisions, results
 tests/              unit, contract and integration tests
 ```
