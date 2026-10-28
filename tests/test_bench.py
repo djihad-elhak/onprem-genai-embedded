@@ -99,3 +99,33 @@ def test_run_blocking_inside_running_loop() -> None:
 
     assert run_blocking(value()) == 7
     assert asyncio.run(outer()) == 7
+
+
+def test_sweep_never_resends_a_prompt() -> None:
+    # benchmark run 2: levels 1, 2 and 4 re-sent the same 8 prompts, so levels 2 and 4 were served from cache
+    from onprem_genai.bench.loadgen import sweep  # noqa: PLC0415
+
+    prof = make_profiles(synthetic_corpus(), scale=0.1)["chat"]
+    seen: list[str] = []
+    inner = _sse_server()
+
+    async def record(request: httpx.Request) -> httpx.Response:
+        seen.append(json.loads(request.content)["messages"][-1]["content"])
+        return await inner.handle_async_request(request)
+
+    real_client = httpx.AsyncClient
+
+    def client_factory(*args, **kwargs):
+        kwargs.pop("limits", None)
+        return real_client(transport=httpx.MockTransport(record))
+
+    import onprem_genai.bench.loadgen as lg  # noqa: PLC0415
+
+    lg.httpx.AsyncClient = client_factory  # type: ignore[assignment]
+    try:
+        levels = asyncio.run(sweep("http://mock", "m", prof, [1, 2, 4], 3, warmup_requests=2))
+    finally:
+        lg.httpx.AsyncClient = real_client  # type: ignore[assignment]
+    assert len(seen) == 2 + 3 + 3 + 4
+    assert len(set(seen)) == len(seen)
+    assert [lv.first_request for lv in levels] == [0, 3, 6]

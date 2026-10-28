@@ -359,3 +359,30 @@ def test_cases(c: Component) -> dict[str, str]:
     """``Suite.Name`` -> TEST() block text in the test main file."""
     info = parse_cpp(c.test_main.read_bytes())
     return {f.name: f.text for f in info.functions if f.is_gtest_case}
+
+
+def component_kind(c: Component) -> str | None:
+    """``active``, ``passive`` or ``queued``, from the component's FPP model."""
+    for fpp in c.fpp_files:
+        text = fpp.read_text(encoding="utf-8", errors="replace")
+        m = re.search(rf"\b(active|passive|queued)\s+component\s+{re.escape(c.name)}\b", text)
+        if m:
+            return m.group(1)
+    return None
+
+
+def component_member(c: Component) -> str | None:
+    """Name of the Tester member that holds the component under test (``component``, ``m_impl``, ...)."""
+    impl = None
+    for h in c.impl_headers:
+        m = re.search(
+            rf"class\s+(\w+)\s*(?:final\s*)?:\s*public\s+(?:\w+::)*{re.escape(c.name)}ComponentBase\b",
+            h.read_text(encoding="utf-8", errors="replace"),
+        )
+        if m:
+            impl = m.group(1)
+            break
+    if impl is None:
+        return None
+    m = re.search(rf"(?:\w+::)*\b{impl}\s*[&*]?\s+(\w+)\s*;", c.tester_hpp.read_text(encoding="utf-8"))
+    return m.group(1) if m else None

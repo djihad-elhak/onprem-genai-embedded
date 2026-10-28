@@ -12,7 +12,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from onprem_genai.agent.fprime import Component, FprimeWorkspace, tester_methods
+from onprem_genai.agent.fprime import (
+    Component,
+    FprimeWorkspace,
+    component_kind,
+    component_member,
+    tester_methods,
+)
 from onprem_genai.agent.knowledge import KnowledgeClient
 
 SYSTEM_PROMPT = """\
@@ -24,12 +30,13 @@ Rules (from the F´ unit-testing guidelines):
 - Test through the component's interface only: invoke input ports (invoke_to_*), send commands (sendCmd_*),
   then assert on output ports (ASSERT_from_*), events (ASSERT_EVENTS_*), telemetry (ASSERT_TLM_*) and command
   responses (ASSERT_CMD_RESPONSE*). Use only macros and methods listed in the harness API.
-- Call this->clearHistory() before the action you check; call this->component.doDispatch() after each
-  asynchronous port invocation or command on an active/queued component.
+- Call this->clearHistory() before the action you check. Dispatch messages only as the "dispatch" line of
+  the requirement section says: passive components have no message queue and nothing to dispatch.
 - Derive expected values from the requirement and the FPP model, never from guesses. Check values,
   not only sizes.
 - Reuse the existing Tester helpers, members and constructor modes shown below; do not modify existing code.
 - No dynamic memory, threads, sleeps, file deletion or process control.
+- The tests build with -Werror: use static_cast / reinterpret_cast (no C-style casts) and no deprecated APIs.
 
 Answer format: optionally one short paragraph of reasoning, then exactly two fenced blocks:
 ```cpp tester
@@ -49,25 +56,27 @@ REPAIR_BUILD = """\
 The test did not compile. Diagnostics (paths relative to the repository):
 {errors}
 {hints}
-Fix the problem and answer again with the complete ```cpp tester``` and ```cpp main``` blocks."""
+Fix the problem and answer again with the ```cpp tester``` and ```cpp main``` blocks (a block you leave
+out is taken unchanged from your previous answer)."""
 
 REPAIR_POLICY = """\
 The answer was rejected before building: {error}
-Answer again with the complete ```cpp tester``` and ```cpp main``` blocks."""
+Answer again with the ```cpp tester``` and ```cpp main``` blocks (a block you leave out is taken unchanged
+from your previous answer)."""
 
 REPAIR_TEST = """\
 The test compiled but failed:
 {failures}
-Re-read the requirement and the implementation. If the expectation in the test is wrong, fix the test and
-answer again with the complete blocks. If you are confident the test is right and the implementation
-violates the requirement, answer SUSPECTED_DEFECT: <one-paragraph explanation> followed by the unchanged
-blocks."""
+{hints}Re-read the requirement and the implementation. If the expectation in the test is wrong, fix the test
+and answer again (a block you leave out is taken unchanged from your previous answer). If you are confident
+the test is right and the implementation violates the requirement, answer SUSPECTED_DEFECT:
+<one-paragraph explanation> followed by the unchanged blocks."""
 
 REPAIR_REGRESSION = """\
 Your test passes, but the existing unit tests now fail:
 {failures}
 Your change must not affect other tests (shared state, name clashes, history size). Fix it and answer
-again with the complete blocks."""
+again (a block you leave out is taken unchanged from your previous answer)."""
 
 
 @dataclass
@@ -131,9 +140,28 @@ def harness_api(ws: FprimeWorkspace, c: Component) -> tuple[str, list[str]]:
                 continue
             names.append(m.group(2))
             out.append(f"{' '.join(m.group(1).split())} {m.group(2)}({' '.join(m.group(3).split())})")
-        names += ["clearHistory", "dispatchAll"]
+        names.append("clearHistory")
         out.append("void clearHistory()")
     return "\n".join(dict.fromkeys(out)), sorted(set(names))
+
+
+def dispatch_rule(c: Component) -> str:
+    """How the test must process the component's messages, stated per component (models over-apply
+    doDispatch() to passive components when told only the general rule)."""
+    kind = component_kind(c)
+    member = component_member(c) or "component"
+    if kind == "passive":
+        return (
+            f"{c.name} is a passive component: invoke_to_* and sendCmd_* run its handlers synchronously "
+            "before they return. There is no message queue: never call doDispatch() or any dispatch helper."
+        )
+    if kind in ("active", "queued"):
+        return (
+            f"{c.name} is an {kind} component: async input ports and commands are queued. After each "
+            f"invoke_to_* on an async port or sendCmd_*, call this->{member}.doDispatch() once per message "
+            "before asserting (sync and guarded ports run immediately)."
+        )
+    return "unknown component kind: follow the existing tests"
 
 
 # ------------------------------------------------------------------------------------------- assembly
@@ -153,7 +181,9 @@ async def build_context(ws: FprimeWorkspace, kb: KnowledgeClient, c: Component, 
             "Requirement",
             f"- id: {req_id}\n- text: {req.get('text', '').strip()}\n"
             f"- verification: {req.get('verification', '')}\n"
-            f"- component: {c.module} (Tester class `{c.tester_class}`)",
+            f"- component: {c.module} (Tester class `{c.tester_class}`, component under test: "
+            f"`this->{component_member(c) or 'component'}`)\n"
+            f"- dispatch: {dispatch_rule(c)}",
             priority=0,
         )
     )
@@ -246,6 +276,9 @@ async def repair_hints(errors: str, ctx: AgentContext, kb: KnowledgeClient, c: C
     """Error-driven retrieval: suggest close harness names and show definitions of unknown symbols."""
     unknown = list(dict.fromkeys(m.group(1) for rx in _UNKNOWN for m in rx.finditer(errors)))[:6]
     hints = []
+    if any("dispatch" in n.lower() for n in unknown):
+        hints.append(f"- {dispatch_rule(c)}")
+        unknown = [n for n in unknown if "dispatch" not in n.lower()]
     for name in unknown:
         close = difflib.get_close_matches(name, ctx.api_names, n=3, cutoff=0.6) or difflib.get_close_matches(
             name, ctx.known_names, n=3, cutoff=0.75
@@ -259,4 +292,28 @@ async def repair_hints(errors: str, ctx: AgentContext, kb: KnowledgeClient, c: C
             hints.append(
                 f"- `{name}` is defined at {s.get('location')}:\n```cpp\n{s.get('text', '')[:1200]}\n```"
             )
+    return ("Hints:\n" + "\n".join(hints) + "\n") if hints else ""
+
+
+_FW_ASSERT = re.compile(r'Assert: "([^"]+?):(\d+)"')
+
+
+def assert_hints(failures: str, repo: Path, context_lines: int = 4) -> str:
+    """Source of each F´ assertion (FW_ASSERT) a failing test triggered, i.e. the precondition it broke."""
+    hints = []
+    for path, line in list(dict.fromkeys(_FW_ASSERT.findall(failures)))[:3]:
+        f = Path(path) if Path(path).is_absolute() else repo / path
+        if not f.is_file():
+            continue
+        lines = f.read_text(encoding="utf-8", errors="replace").splitlines()
+        n = int(line)
+        if not 1 <= n <= len(lines):
+            continue
+        first = max(1, n - context_lines)
+        excerpt = "\n".join(f"{'>' if i == n else ' '} {i:4d} | {lines[i - 1]}" for i in range(first, n + 1))
+        shown = f.relative_to(repo) if f.is_relative_to(repo) else f
+        hints.append(
+            f"- the component asserted (FW_ASSERT) at {shown}:{n}; the test broke this precondition:\n"
+            f"```cpp\n{excerpt}\n```"
+        )
     return ("Hints:\n" + "\n".join(hints) + "\n") if hints else ""

@@ -28,7 +28,7 @@ from onprem_genai.agent import context as ctxmod
 from onprem_genai.agent import mutation
 from onprem_genai.agent.fprime import Component, FprimeWorkspace, UnsupportedComponentError
 from onprem_genai.agent.knowledge import KnowledgeClient
-from onprem_genai.agent.patch import PatchError, TestPatch, apply, build_patch, parse_answer
+from onprem_genai.agent.patch import Answer, PatchError, TestPatch, apply, build_patch, parse_answer
 from onprem_genai.llm import Completion
 
 SUSPECTED_DEFECT = re.compile(r"SUSPECTED[_ ]DEFECT\s*:\s*(.+?)(?:\n\s*\n|```|$)", re.DOTALL | re.IGNORECASE)
@@ -72,6 +72,7 @@ class AgentState(TypedDict, total=False):
     ctx: ctxmod.AgentContext
     messages: list[dict[str, str]]
     answer: str
+    blocks: Answer | None  # the last parsed answer, for blocks a repair answer leaves out
     patch: TestPatch | None
     attempt: int
     feedback_kind: str | None
@@ -91,6 +92,23 @@ def _metric(state: AgentState, **updates: Any) -> dict[str, Any]:
         else:
             m[k] = v
     return m
+
+
+def carry_over(answer: Answer, previous: Answer | None) -> list[str]:
+    """Repair answers often resend only the block they change: take the other one from the previous answer.
+
+    Only when exactly one block is present (an answer with no block at all is not completed from the past).
+    Returns the names of the blocks carried over.
+    """
+    if previous is None or bool(answer.tester_code.strip()) == bool(answer.main_code.strip()):
+        return []
+    if not answer.tester_code.strip() and previous.tester_code.strip():
+        answer.tester_code = previous.tester_code
+        return ["tester"]
+    if not answer.main_code.strip() and previous.main_code.strip():
+        answer.main_code = previous.main_code
+        return ["main"]
+    return []
 
 
 def _record(state: AgentState, stage: str, detail: str = "", **extra: Any) -> list[dict[str, Any]]:
@@ -202,14 +220,18 @@ def build_graph(deps: AgentDeps):  # noqa: PLR0915  (returns a compiled LangGrap
                 "reason": answer.not_testable[:1000],
                 "history": _record(state, "not_testable", answer.not_testable),
             }
+        carried = carry_over(answer, state.get("blocks"))
+        metrics = _metric(state, carried_blocks=len(carried)) if carried else state.get("metrics") or {}
         try:
             patch = build_patch(answer, state["component"], state["req_id"])
         except PatchError as exc:
             return {
                 "patch": None,
+                "blocks": answer,
+                "metrics": metrics,
                 **_feedback(state, "policy", ctxmod.REPAIR_POLICY.format(error=exc), str(exc)),
             }
-        return {"patch": patch, "feedback_kind": None}
+        return {"patch": patch, "blocks": answer, "metrics": metrics, "feedback_kind": None}
 
     async def build(state: AgentState) -> dict[str, Any]:
         c, patch = state["component"], state["patch"]
@@ -237,7 +259,9 @@ def build_graph(deps: AgentDeps):  # noqa: PLR0915  (returns a compiled LangGrap
         new_cov = ws.coverage(c)
         if not new.passed:
             failures = "\n".join(new.failures) or new.output_tail
-            return _feedback(state, "test", ctxmod.REPAIR_TEST.format(failures=failures[:3000]), failures)
+            hints = ctxmod.assert_hints(failures, ws.repo)
+            text = ctxmod.REPAIR_TEST.format(failures=failures[:3000], hints=hints)
+            return _feedback(state, "test", text, failures)
         ws.reset_coverage(c)
         full = await asyncio.to_thread(ws.run_ut, c)
         base = deps.baselines[state["module"]]

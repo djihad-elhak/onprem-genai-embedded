@@ -51,6 +51,7 @@ class LevelSummary:
     e2e_p95_s: float | None
     mean_prompt_tokens: float | None
     mean_completion_tokens: float | None
+    first_request: int = 0  # profile request indices [first_request, first_request + n_requests)
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -176,12 +177,14 @@ async def run_level(
     extra_body: dict[str, Any] | None = None,
     client: httpx.AsyncClient | None = None,
     headers: dict[str, str] | None = None,
+    first: int = 0,
 ) -> tuple[LevelSummary, list[RequestResult]]:
+    """Send profile requests ``first .. first + n_requests - 1`` with ``concurrency`` workers."""
     owns_client = client is None
     client = client or httpx.AsyncClient(limits=httpx.Limits(max_connections=concurrency * 2))
     queue: asyncio.Queue[int] = asyncio.Queue()
     for i in range(n_requests):
-        queue.put_nowait(i)
+        queue.put_nowait(first + i)
     results: list[RequestResult] = []
 
     async def worker() -> None:
@@ -202,7 +205,12 @@ async def run_level(
         if owns_client:
             await client.aclose()
     wall = time.perf_counter() - t0
-    return summarize(profile.name, concurrency, results, wall), results
+    summary = summarize(profile.name, concurrency, results, wall)
+    summary.first_request = first
+    return summary, results
+
+
+WARMUP_FIRST = 1_000_000  # warm-up request indices, disjoint from the measured ones
 
 
 async def sweep(
@@ -215,15 +223,23 @@ async def sweep(
     warmup_requests: int = 2,
     headers: dict[str, str] | None = None,
 ) -> list[LevelSummary]:
-    """Run a warm-up, then each concurrency level in order."""
+    """Run a warm-up, then each concurrency level in order, every level on requests not sent before.
+
+    Re-sending the same prompts at the next level would let the server answer from its prompt / prefix cache
+    and inflate that level; only the agent profile's shared repository prefix is meant to be reused.
+    """
     async with httpx.AsyncClient(limits=httpx.Limits(max_connections=max(concurrencies) * 2)) as client:
         if warmup_requests:
-            await run_level(base_url, model, profile, 1, warmup_requests, extra_body, client, headers)
-        out = []
-        for c in concurrencies:
-            summary, _ = await run_level(
-                base_url, model, profile, c, max(requests_per_level, c), extra_body, client, headers
+            await run_level(
+                base_url, model, profile, 1, warmup_requests, extra_body, client, headers, first=WARMUP_FIRST
             )
+        out, first = [], 0
+        for c in concurrencies:
+            n = max(requests_per_level, c)
+            summary, _ = await run_level(
+                base_url, model, profile, c, n, extra_body, client, headers, first=first
+            )
+            first += n
             out.append(summary)
         return out
 

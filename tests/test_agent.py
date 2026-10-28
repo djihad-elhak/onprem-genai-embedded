@@ -17,6 +17,7 @@ import pytest
 from onprem_genai.agent import context as ctxmod
 from onprem_genai.agent import mutation
 from onprem_genai.agent.fprime import FprimeWorkspace, condense_diagnostics, find_component
+from onprem_genai.agent.graph import carry_over
 from onprem_genai.agent.patch import PatchError, build_patch, parse_answer, render
 from onprem_genai.agent.runner import ScriptedModel, review_sheet, summarize
 
@@ -198,6 +199,7 @@ def test_harness_api_and_repair_hints(repo: Path) -> None:
     assert "ASSERT_from_dataOut_SIZE(size)" in api
     assert "void invoke_to_cmdIn(FwIndexType portNum, U32 opcode)" in api
     assert "_static" not in api
+    assert "dispatchAll" not in names  # not part of the F´ v4 harness: suggesting it misled the models
 
     class NoKb:
         async def symbol(self, name: str, module: str | None = None) -> list:
@@ -381,6 +383,7 @@ def test_agent_e2e(tmp_path: Path) -> None:
         assert recs["SVC-COMSTUB-003"]["metrics"]["first_attempt_compiled"] is False
         assert max(prompt_sizes) == 4  # repair prompts: system, task, latest answer, its diagnostics
         assert recs["SVC-COMSTUB-006"]["metrics"]["mutation"]["valid"] >= 1
+        assert recs["SVC-COMSTUB-006"]["metrics"]["carried_blocks"] == 1  # main block reused on repair
         log = ws.git("log", "--format=%an|%s", f"{origin}..HEAD")
         assert log.count("oge-agent (scripted)|test(ComStub): verify SVC-COMSTUB-") == 3
         changed = ws.git("diff", "--name-only", f"{origin}..HEAD").split()
@@ -394,3 +397,74 @@ def test_agent_e2e(tmp_path: Path) -> None:
     finally:
         subprocess.run(["git", "-C", str(FPRIME), "checkout", "-q", "--detach", origin], check=False)
         subprocess.run(["git", "-C", str(FPRIME), "branch", "-D", branch], check=False, capture_output=True)
+
+
+# ------------------------------------------------------------------------------- v2: from run-2 failures
+def test_namespace_qualified_definitions_get_plain_declarations(repo: Path) -> None:
+    # benchmark run 2: `void Svc::ComStubTester::f()` produced the declaration `void Svc::f();` (build error)
+    c = find_component(repo, "Svc/Foo")
+    answer = good_answer().replace("void FooTester::", "void Svc::FooTester::")
+    answer = answer.replace(
+        "```cpp tester\n",
+        "```cpp tester\nFw::Buffer Svc::FooTester ::makeBuffer() {\n    return Fw::Buffer();\n}\n",
+    )
+    p = build_patch(parse_answer(answer), c, "FOO-002")
+    assert [d.declaration for d in p.definitions] == [
+        "Fw::Buffer makeBuffer();",
+        "void testDropWhenFull();",
+        "void fillQueue(U32 n);",
+    ]
+    assert p.definitions[1].text.startswith("void FooTester::testDropWhenFull()")
+    assert p.definitions[0].text.startswith("Fw::Buffer FooTester ::makeBuffer()")
+    hpp = render(c, p, "FOO-002")[str(c.tester_hpp)]
+    assert "Svc::" not in hpp.split("Tests generated")[1]
+
+
+def test_repair_answer_missing_a_block_reuses_the_previous_one(repo: Path) -> None:
+    c = find_component(repo, "Svc/Foo")
+    previous = parse_answer(good_answer())
+    tester_only = parse_answer(good_answer().split("```cpp main")[0].replace("SIZE(0)", "SIZE(1)"))
+    assert carry_over(tester_only, previous) == ["main"]
+    p = build_patch(tester_only, c, "FOO-002")
+    assert "SIZE(1)" in p.definitions[0].text
+    assert p.test_names == ["Requirement.DropWhenFull"]
+    assert carry_over(parse_answer(good_answer()), previous) == []  # complete answers are taken as they are
+    assert carry_over(parse_answer("no code at all"), previous) == []  # nothing to complete
+    assert carry_over(tester_only, None) == []
+
+
+def test_dispatch_rule_follows_the_component_kind(repo: Path) -> None:
+    c = find_component(repo, "Svc/Foo")
+    assert "passive" in ctxmod.dispatch_rule(c)
+    assert "never call doDispatch()" in ctxmod.dispatch_rule(c)
+    comp = repo / "Svc" / "Foo"
+    (comp / "Foo.fpp").write_text("module Svc { active component Foo { async input port cmdIn: CmdPort } }\n")
+    (comp / "Foo.hpp").write_text("namespace Svc {\nclass FooImpl final : public FooComponentBase {\n};\n}\n")
+    hpp = comp / "test" / "ut" / "FooTester.hpp"
+    hpp.write_text(hpp.read_text().replace("Foo component;", "Svc::FooImpl& m_impl;"))
+    c = find_component(repo, "Svc/Foo")
+    assert "this->m_impl.doDispatch()" in ctxmod.dispatch_rule(c)
+
+    class NoKb:
+        async def symbol(self, name: str, module: str | None = None) -> list:
+            return []
+
+    ctx = ctxmod.AgentContext("FOO-002", {}, api_names=["invoke_to_cmdIn"], known_names=[])
+    errors = "FooTester.cpp:9:21: error: 'class Svc::FooTester' has no member named 'component'\n"
+    errors += "FooTester.cpp:9:21: error: 'class Svc::FooImpl' has no member named 'dispatchAll'\n"
+    hints = asyncio.run(ctxmod.repair_hints(errors, ctx, NoKb(), c))  # type: ignore[arg-type]
+    assert "this->m_impl.doDispatch()" in hints
+    assert "similar names" not in hints.split("\n")[1]  # no did-you-mean for a dispatch helper
+
+
+def test_assert_hints_show_the_broken_precondition(tmp_path: Path) -> None:
+    src = tmp_path / "Svc" / "Foo" / "Foo.cpp"
+    src.parent.mkdir(parents=True)
+    src.write_text("void f() {\n  int x = 0;\n  FW_ASSERT(this->m_owned);\n  send();\n}\n")
+    failures = (
+        'Assert: "Svc/Foo/Foo.cpp:3"\nSvc_Foo_ut_exe: Fw/Types/Assert.cpp:128: Assertion `false\' failed.'
+    )
+    hints = ctxmod.assert_hints(failures, tmp_path)
+    assert "Svc/Foo/Foo.cpp:3" in hints
+    assert ">    3 |   FW_ASSERT(this->m_owned);" in hints
+    assert ctxmod.assert_hints('Assert: "Missing/File.cpp:3"', tmp_path) == ""

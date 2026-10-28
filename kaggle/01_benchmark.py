@@ -15,10 +15,11 @@
 # Also: dense + hybrid traceability recovery (Qwen3-Embedding-0.6B on GPU) with LLM reranking by `JUDGE_CONFIG`,
 # and the official architecture configs used to complete the sizing calculator.
 #
-# **How to run (≈ 5 h of GPU quota; it stops cleanly before Kaggle's 12 h limit):** Kaggle → *File → Import
-# Notebook* → this file · *Session options*: **GPU T4 ×2**, **Internet On** · *Save Version* → **Save & Run All
-# (Commit)**. Download the `bench/` output folder. Every stage writes its results as soon as it finishes; a failure
-# in one configuration or stage does not stop the others.
+# **How to run (≈ 3.5 h of GPU quota for all stages; it stops cleanly before Kaggle's 12 h limit):** Kaggle →
+# *File → Import Notebook* → this file · *Session options*: **GPU T4 ×2**, **Internet On** · *Save Version* →
+# **Save & Run All (Commit)**. Download the `bench/` output folder. Every stage writes its results as soon as it
+# finishes; a failure in one configuration or stage does not stop the others. `STAGES` restricts a re-run to some
+# stages (`scripts/build_kaggle_notebook.py --set 'STAGES=[...]'`).
 
 # %%
 import json
@@ -84,6 +85,7 @@ CONFIGS = [
 JUDGE_CONFIG = (
     "qwen3-coder-30b-a3b__llamacpp"  # served model used for LLM reranking of traceability candidates
 )
+STAGES = ["traceability", "serving", "judge", "eval", "agent"]  # a subset re-runs only those stages
 PROFILES = ["completion", "chat", "agent"]
 CONCURRENCY = [1, 2, 4, 8, 16]
 MIN_REQUESTS_PER_LEVEL = 8
@@ -180,7 +182,7 @@ from onprem_genai.agent.graph import AgentConfig, AgentDeps
 from onprem_genai.agent.knowledge import KnowledgeClient
 from onprem_genai.agent.runner import DEFAULT_MODULES, ScriptedModel, run_batch, select_targets, summarize
 from onprem_genai.bench import engines as E  # noqa: N812
-from onprem_genai.bench.loadgen import run_blocking, run_level
+from onprem_genai.bench.loadgen import WARMUP_FIRST, run_blocking, run_level
 from onprem_genai.bench.profiles import load_corpus, make_profiles
 from onprem_genai.evalsuite import runner as evalrunner
 from onprem_genai.evalsuite.tasks import load_tasks
@@ -202,6 +204,7 @@ env = {
     "python": sys.version.split()[0],
     "cpus": os.cpu_count(),
     "configs": CONFIGS,
+    "stages": STAGES,
 }
 save("env.json", env)
 
@@ -263,8 +266,8 @@ trace_results = {
 bm25 = tr.bm25_ranker(ds)
 rankers = {"bm25": bm25, "graph": tr.graph_ranker(ds), "graph+bm25": tr.graph_constrained(ds, bm25)}
 try:
-    if DRY_RUN:
-        raise RuntimeError("dry run: dense retrieval skipped")
+    if DRY_RUN or "traceability" not in STAGES:
+        raise RuntimeError("dense retrieval skipped (dry run or not in STAGES)")
     # In a child process: a model loaded in this kernel would keep its GPU memory (all of it after an
     # out-of-memory error) and starve the LLM servers started below.
     from onprem_genai.knowledge.embed_job import embed_in_subprocess
@@ -379,16 +382,19 @@ def launch(cfg):
 
 
 def stage_serving(cfg, base_url, extra, res) -> None:
-    run_blocking(run_level(base_url, "default", profiles["chat"], 1, 2, extra))  # warm-up
+    # Warm-up on requests outside the measured range: compiles kernels and caches the agent profile's shared
+    # repository prefix, as on a server in steady state.
     for pname in PROFILES:
-        levels = []
+        run_blocking(run_level(base_url, "default", profiles[pname], 1, 1, extra, first=WARMUP_FIRST))
+    for pname in PROFILES:
+        levels, first = [], 0
         for c in CONCURRENCY:
-            with E.GpuPeakSampler() as sampler:
+            n = max(MIN_REQUESTS_PER_LEVEL, 2 * c)
+            with E.GpuPeakSampler() as sampler:  # every level on new prompts: no level is served from cache
                 summary, _ = run_blocking(
-                    run_level(
-                        base_url, "default", profiles[pname], c, max(MIN_REQUESTS_PER_LEVEL, 2 * c), extra
-                    )
+                    run_level(base_url, "default", profiles[pname], c, n, extra, first=first)
                 )
+            first += n
             levels.append({**summary.as_dict(), "vram_peak_mib": sampler.peak_mib})
             print(cfg["key"], pname, c, round(summary.output_tps, 1), "tok/s")
         res["profiles"][pname] = levels
@@ -488,9 +494,9 @@ for cfg in [] if DRY_RUN else CONFIGS:
         if cfg["engine"] == "vllm":
             res["vllm_log"] = E.parse_vllm_log(srv.log_path.read_text(errors="replace"))
         extra = {"chat_template_kwargs": {"enable_thinking": False}} if cfg.get("disable_thinking") else None
-        stages = cfg.get("stages", ["serving"])
+        stages = [s for s in cfg.get("stages", ["serving"]) if s in STAGES]
         for stage in ["serving", "judge", "eval", "agent"]:
-            if stage == "judge" and cfg["key"] != JUDGE_CONFIG:
+            if stage == "judge" and (cfg["key"] != JUDGE_CONFIG or "judge" not in STAGES):
                 continue
             if stage != "judge" and stage not in stages:
                 continue

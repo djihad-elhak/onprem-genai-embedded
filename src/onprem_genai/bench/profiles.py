@@ -64,17 +64,17 @@ def synthetic_corpus(n_files: int = 50, seed: int = 0) -> list[str]:
     return out
 
 
-def _take(corpus: list[str], rng: random.Random, n_tokens: int) -> str:
-    """Concatenate corpus files from a random start until ~n_tokens tokens."""
+def _take(text: str, rng: random.Random, n_tokens: int) -> str:
+    """~n_tokens of the concatenated corpus from a random line (wrapping around).
+
+    Starting at a random line rather than at a file boundary keeps prompts distinct: with file-aligned starts,
+    two requests drawing the same first file would share their whole prefix and hit the server's cache.
+    """
     target = int(n_tokens * CHARS_PER_TOKEN)
-    start = rng.randrange(len(corpus))
-    parts, size, i = [], 0, start
-    while size < target:
-        text = corpus[i % len(corpus)]
-        parts.append(text)
-        size += len(text)
-        i += 1
-    return "".join(parts)[:target]
+    start = rng.randrange(len(text))
+    start = text.find("\n", start) + 1  # 0 when there is no further newline: wrap to the start
+    looped = text * ((start + target) // len(text) + 1)
+    return looped[start : start + target]
 
 
 @dataclass
@@ -86,11 +86,15 @@ class Profile:
     corpus: list[str] = field(repr=False)
     shared_prefix_tokens: int = 0
     seed: int = 1234
+    _text: str = field(init=False, repr=False, default="")
+
+    def __post_init__(self) -> None:
+        self._text = "".join(self.corpus)
 
     def request(self, i: int) -> tuple[list[dict[str, str]], int]:
         rng = random.Random(self.seed * 1_000_003 + i)
         if self.name == "completion":
-            code = _take(self.corpus, rng, self.prompt_tokens)
+            code = _take(self._text, rng, self.prompt_tokens)
             cut = rng.randint(len(code) // 2, len(code))
             return [
                 {"role": "system", "content": SYSTEM_COMPLETION},
@@ -98,13 +102,13 @@ class Profile:
             ], self.max_tokens
         if self.name == "agent":
             # Identical long prefix for every request (repository context) -> exercises prefix caching.
-            shared = _take(self.corpus, random.Random(self.seed), self.shared_prefix_tokens)
-            tail = _take(self.corpus, rng, self.prompt_tokens - self.shared_prefix_tokens)
+            shared = _take(self._text, random.Random(self.seed), self.shared_prefix_tokens)
+            tail = _take(self._text, rng, self.prompt_tokens - self.shared_prefix_tokens)
             return [
                 {"role": "system", "content": SYSTEM_AGENT + "\n\nRepository context:\n" + shared},
                 {"role": "user", "content": "Tool output:\n" + tail + "\n\nWhat is the next action?"},
             ], self.max_tokens
-        context = _take(self.corpus, rng, self.prompt_tokens)
+        context = _take(self._text, rng, self.prompt_tokens)
         question = CHAT_QUESTIONS[i % len(CHAT_QUESTIONS)]
         return [
             {"role": "system", "content": SYSTEM_ENGINEER},

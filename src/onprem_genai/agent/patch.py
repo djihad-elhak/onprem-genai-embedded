@@ -106,8 +106,11 @@ def _member_definitions(code: str, cls: str) -> tuple[list[MemberDef], list[str]
                 name = re.search(r"(\w+)\s*\(", head)
                 stray.append(name.group(1) if name else head[:60])
                 return
-            decl = re.sub(rf"\b{re.escape(cls)}\s*::\s*", "", head, count=1)
+            # `void Svc::XTester::f()` is a valid definition; its in-class declaration is `void f();`
+            decl = re.sub(rf"(?:\b\w+\s*::\s*)*\b{re.escape(cls)}\s*::\s*", "", head, count=1)
             decl = re.sub(r"\s*\boverride\b", "", decl).strip()
+            local = re.sub(rf"(?:\b\w+\s*::\s*)+(?=\b{re.escape(cls)}\s*::)", "", head, count=1)
+            text = text.replace(head, local, 1)  # the definition is inserted inside the tester's namespace
             defs.append(MemberDef(m.group(1), decl + ";", text.strip()))
             return
         for child in node.children:
