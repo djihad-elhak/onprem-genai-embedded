@@ -61,10 +61,12 @@ async def run_batch(
     progress: Callable[[dict[str, Any], int, int], None] | None = None,
     deadline: float | None = None,
     trace: Callable[[str, str, dict[str, Any], dict[str, Any]], None] | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> list[dict[str, Any]]:
     """Run the agent on each requirement; with ``deadline`` (time.monotonic), start no new one after it.
 
-    ``trace(req_id, node, update, state)`` is called after every graph step (streamed node updates).
+    ``trace(req_id, node, update, state)`` is called after every graph step (streamed node updates);
+    ``should_stop()`` is checked before each requirement (a stop request finishes the current one first).
     """
     ws = deps.ws
     done: dict[str, dict[str, Any]] = {}
@@ -85,7 +87,7 @@ async def run_batch(
     graph = build_graph(deps)
     todo = [r for r in req_ids if r not in done]
     for req_id in todo:
-        if deadline is not None and time.monotonic() > deadline:
+        if (deadline is not None and time.monotonic() > deadline) or (should_stop and should_stop()):
             break
         t0 = time.perf_counter()
         try:

@@ -7,7 +7,7 @@ embarqué / aéronautique — dimensionnée, mesurée et vérifiée en mode déc
 connaissances code + exigences + tests exposé aux assistants via MCP.**
 
 [English](README.md) · [Architecture](docs/ARCHITECTURE.md) · [Décisions de conception](docs/DESIGN_DECISIONS.md) ·
-[Agent](docs/AGENT.md) · [Suite d'évaluation](docs/EVALSUITE.md) ·
+[Agent](docs/AGENT.md) · [Console](docs/CONSOLE.md) · [Suite d'évaluation](docs/EVALSUITE.md) ·
 [Productivité et passage à l'échelle](docs/STRATEGY.fr.md) · [Résultats](docs/results/README.md)
 
 Base de code cible : **NASA F´ (F Prime) v4.4.1** — framework logiciel de vol open source du JPL (embarqué sur
@@ -17,6 +17,27 @@ dans le dépôt.
 ---
 
 ## Le voir tourner
+
+### Console d'ingénierie
+
+![Console d'ingénierie : traçabilité de F´](docs/assets/console-overview.png)
+
+**L'application web des ingénieurs sur site** ([guide](docs/CONSOLE.md)). Elle montre chaque exigence et ses
+preuves, cherche dans le code, lance l'agent de génération de tests en diffusant chaque étape en direct,
+recueille les verdicts de revue sur les tests générés et dimensionne les déploiements GPU. Elle n'a besoin
+d'aucun accès à Internet : polices et scripts sont servis localement.
+
+```bash
+uv run oge console serve --fprime third_party/fprime     # http://127.0.0.1:8770
+docker compose -f deploy/compose.yaml --profile cpu --profile console up -d   # avec les serveurs de modèles
+```
+
+| Exécution de l'agent en direct | File de revue | Preuves d'une exigence | Dimensionnement GPU |
+|---|---|---|---|
+| ![exécution](docs/assets/console-run.png) | ![revue](docs/assets/console-review.png) | ![exigence](docs/assets/console-requirement.png) | ![dimensionnement](docs/assets/console-sizing.png) |
+| Contexte, réponse, politique, compilation, tests, commit et bugs injectés, au fil de l'eau. | Code du test, mutants détectés ou manqués, verdict avec les touches 1 à 3, export Markdown. | Tests qui la citent, tests candidats classés par le modèle de traçabilité, code associé. | Plus petit déploiement par type de GPU ; chaque hypothèse de charge se modifie. |
+
+### Enregistrements de terminal
 
 ![L'agent comble un trou de traçabilité](docs/assets/demo-agent.gif)
 
@@ -55,6 +76,7 @@ recouvrement de la traçabilité, génération de tests) : [`paper/main.pdf`](pa
 | **Air gap** | Surcouche Compose sur réseau Docker interne + test de fumée qui **échoue si une seule connexion sortante aboutit** | ✅ (CI) |
 | **Évaluation des modèles** | `oge eval` — 27 tâches C embarqué écrites pour le projet (génération, génération de tests unitaires, refactorisation, documentation) notées par exécution : compilation stricte, tests cachés, ASan/UBSan, couverture gcov, test de mutation, complexité, complétude Doxygen ; la suite se valide elle-même | ✅ 2 modèles mesurés |
 | **Agent** | `oge agent` — agent LangGraph qui comble les trous de traçabilité de F´ : contexte récupéré via MCP, test unitaire balisé par l'exigence, compilation et exécution, réparation à partir des erreurs du compilateur et des tests, commit sur une branche de revue ; le modèle n'écrit que du code de test, tout le reste est déterministe et contrôlé par une politique | ✅ 18/28 trous comblés par modèle (v2) |
+| **Console** | `oge console` — application web du site : carte de traçabilité, preuves par exigence, recherche dans le code, exécutions de l'agent en direct (server-sent events), file de revue avec verdicts et export, dimensionnement GPU ; image Docker avec la chaîne C++ et un espace de travail F´ | ✅ testée sur F´ réel (CI) |
 | **CI** | Jenkins LTS avec le plugin officiel MCP Server (compte de service à privilèges minimaux, JCasC) ; l'agent déclenche le pipeline de tests unitaires F´ et lit le verdict via MCP | ✅ (CI) |
 
 ## Résultats
@@ -193,6 +215,7 @@ uv run oge eval validate                     # la suite d'évaluation se vérifi
 scripts/setup_fprime_ut.sh                   # build des tests unitaires F´ (googletest, outils, cache)
 uv run oge agent run --scripted tests/data/scripted_agent_answers.json -r SVC-COMSTUB-003   # démo hors GPU
 docker compose -f deploy/compose.ci.yaml up -d --build                        # Jenkins + plugin MCP
+uv run oge console serve --fprime third_party/fprime    # console d'ingénierie : http://127.0.0.1:8770
 ```
 
 Les mesures GPU s'exécutent en notebooks batch sur Kaggle (2× Tesla T4) : `kaggle/00_probe_t4x2` et

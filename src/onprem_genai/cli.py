@@ -7,6 +7,7 @@ import typer
 from onprem_genai import __version__
 from onprem_genai.agent.cli import app as agent_app
 from onprem_genai.bench.cli import app as bench_app
+from onprem_genai.console.cli import app as console_app
 from onprem_genai.evalsuite.cli import app as eval_app
 from onprem_genai.knowledge.cli import app as knowledge_app
 from onprem_genai.knowledge.cli import mcp_app
@@ -25,6 +26,7 @@ app.add_typer(knowledge_app, name="knowledge")
 app.add_typer(mcp_app, name="mcp")
 app.add_typer(platform_app, name="platform")
 app.add_typer(agent_app, name="agent")
+app.add_typer(console_app, name="console")
 
 
 @app.command()

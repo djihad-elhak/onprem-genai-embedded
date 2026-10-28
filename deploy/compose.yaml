@@ -7,6 +7,8 @@
 #   docker compose -f deploy/compose.yaml --profile vllm up -d           # multi-GPU server (vLLM)
 #   add  --profile neo4j  to persist the knowledge graph in Neo4j (Cypher, Neo4j Browser on :7474)
 #   add  -f deploy/compose.ci.yaml  for Jenkins (http://localhost:8090) with the MCP Server plugin
+#   add  --profile console  for the engineering console (http://localhost:8770): traceability, code search,
+#        live agent runs, test review and GPU sizing; set the model server in its Settings page
 #
 # Air-gap verification: deploy/compose.offline.yaml (internal network + smoke test with egress probe).
 
@@ -167,9 +169,26 @@ services:
         condition: service_healthy
     networks: [platform]
 
+  # ------------------------------------------------------------------------------------- console
+  console:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: console
+    image: ${OGE_CONSOLE_IMAGE:-onprem-genai/console:0.1.0}
+    profiles: [console]
+    restart: unless-stopped
+    volumes:
+      - console-data:/var/lib/oge          # runs, results and review verdicts (SQLite)
+      - console-fprime:/opt/fprime-ut      # F´ working copy with the review branches
+    networks: [platform]
+    ports: ["127.0.0.1:8770:8770"]
+
 networks:
   platform: {}
 
 volumes:
   neo4j-data: {}
   oge-cache: {}
+  console-data: {}
+  console-fprime: {}

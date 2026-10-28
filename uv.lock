@@ -1125,6 +1125,18 @@ bench = [
     { name = "gguf" },
     { name = "huggingface-hub" },
 ]
+console = [
+    { name = "langgraph" },
+    { name = "mcp" },
+    { name = "neo4j" },
+    { name = "networkx", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "networkx", version = "3.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "sse-starlette" },
+    { name = "starlette" },
+    { name = "tree-sitter" },
+    { name = "tree-sitter-cpp" },
+    { name = "uvicorn" },
+]
 eval = [
     { name = "lizard" },
     { name = "tree-sitter" },
@@ -1160,16 +1172,20 @@ requires-dist = [
     { name = "neo4j", marker = "extra == 'knowledge'", specifier = ">=5.28" },
     { name = "networkx", marker = "extra == 'knowledge'", specifier = ">=3.4" },
     { name = "numpy", specifier = ">=2.0" },
+    { name = "onprem-genai-embedded", extras = ["knowledge", "agent"], marker = "extra == 'console'" },
     { name = "pydantic", specifier = ">=2.10" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "rich", specifier = ">=13.9" },
+    { name = "sse-starlette", marker = "extra == 'console'", specifier = ">=3.0" },
+    { name = "starlette", marker = "extra == 'console'", specifier = ">=1.0" },
     { name = "tree-sitter", marker = "extra == 'eval'", specifier = ">=0.25" },
     { name = "tree-sitter", marker = "extra == 'knowledge'", specifier = ">=0.25" },
     { name = "tree-sitter-cpp", marker = "extra == 'eval'", specifier = ">=0.23" },
     { name = "tree-sitter-cpp", marker = "extra == 'knowledge'", specifier = ">=0.23" },
     { name = "typer", specifier = ">=0.15" },
+    { name = "uvicorn", marker = "extra == 'console'", specifier = ">=0.34" },
 ]
-provides-extras = ["knowledge", "bench", "eval", "agent"]
+provides-extras = ["knowledge", "bench", "eval", "agent", "console"]
 
 [package.metadata.requires-dev]
 dev = [

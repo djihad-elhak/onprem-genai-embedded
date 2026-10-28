@@ -82,6 +82,40 @@ jobs:
         if: failure()
         run: docker compose -f deploy/compose.yaml -f deploy/compose.offline.yaml --profile cpu --profile smoke logs --tail 200
 
+  console-image:
+    # Builds the console image (C++ toolchain + F´ workspace), then runs the agent inside it from the HTTP API.
+    runs-on: ubuntu-latest
+    needs: quality
+    env:
+      OGE_API_KEY: ci-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the console image
+        run: docker compose -f deploy/compose.yaml --profile console build console
+      - name: Start the console and check that agent runs are available
+        run: |
+          docker compose -f deploy/compose.yaml --profile console up -d --no-deps console
+          for i in $(seq 1 60); do s=$(curl -fsS http://127.0.0.1:8770/api/status) && break; sleep 3; done
+          echo "$s"
+          echo "$s" | python3 -c "import json, sys; s = json.load(sys.stdin);
+          sys.exit(0 if s['workspace']['ready'] and s['replay']['requirements'] > 0 else 1)"
+      - name: Agent run inside the container (recorded answer; build, tests, commit and mutants live)
+        run: |
+          id=$(curl -fsS -X POST -H 'Content-Type: application/json' \
+            -d '{"req_ids": ["SVC-COMSTUB-007"], "model_kind": "replay", "mutants": 1}' \
+            http://127.0.0.1:8770/api/runs | python3 -c "import json, sys; print(json.load(sys.stdin)['id'])")
+          for i in $(seq 1 120); do
+            st=$(curl -fsS "http://127.0.0.1:8770/api/runs/$id" | python3 -c "import json, sys; r = json.load(sys.stdin);
+          print(r['status'], *[x['status'] for x in r['results']])")
+            case "$st" in done*|failed*|cancelled*) break;; esac
+            sleep 5
+          done
+          echo "$st"
+          test "$st" = "done passed"
+      - name: Console logs on failure
+        if: failure()
+        run: docker compose -f deploy/compose.yaml --profile console logs --tail 200 console
+
   jenkins-integration:
     # Jenkins LTS + MCP Server plugin (deploy/compose.ci.yaml). The agent writes tests on a branch (scripted
     # model), then triggers the F´ unit-test pipeline over MCP and waits for its verdict.

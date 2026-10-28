@@ -1,0 +1,8 @@
+{
+  "decode_bw_efficiency": 0.3738,
+  "prefill_compute_efficiency": 0.0298,
+  "tp_efficiency": 0.85,
+  "moe_decode_bw_efficiency": 0.3738,
+  "moe_prefill_compute_efficiency": 0.0298,
+  "source": "median over 0 dense + 1 MoE decode, 0 dense + 1 MoE prefill measurements; vllm on t4; probe run2-2026-10-28.json"
+}

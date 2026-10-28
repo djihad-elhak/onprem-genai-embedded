@@ -7,7 +7,7 @@ sized, benchmarked and air-gap verified, with a requirements-aware code knowledg
 over MCP.**
 
 [Français](README.fr.md) · [Architecture](docs/ARCHITECTURE.md) · [Design decisions](docs/DESIGN_DECISIONS.md) ·
-[Agent](docs/AGENT.md) · [Evaluation suite](docs/EVALSUITE.md) · [Productivity & scale-up](docs/STRATEGY.md) ·
+[Agent](docs/AGENT.md) · [Console](docs/CONSOLE.md) · [Evaluation suite](docs/EVALSUITE.md) · [Productivity & scale-up](docs/STRATEGY.md) ·
 [Results](docs/results/README.md) · [Plan](docs/PLAN.md)
 
 Target code base: **NASA F´ (F Prime) v4.4.1** — JPL's open-source flight-software framework (flown on the
@@ -16,6 +16,27 @@ Ingenuity Mars helicopter), Apache-2.0, ≈ 207 k lines of C++. Fetched at a pin
 ---
 
 ## See it run
+
+### Engineering console
+
+![Engineering console: traceability of F´](docs/assets/console-overview.png)
+
+**The web application engineers use on site** ([guide](docs/CONSOLE.md)). It shows every requirement and its
+evidence, searches the code, runs the test-generation agent with each step streamed live, collects review
+verdicts on generated tests, and sizes GPU deployments. It needs no internet access: fonts and scripts are
+served locally.
+
+```bash
+uv run oge console serve --fprime third_party/fprime     # http://127.0.0.1:8770
+docker compose -f deploy/compose.yaml --profile cpu --profile console up -d   # with the model servers
+```
+
+| Live agent run | Review queue | Requirement evidence | GPU sizing |
+|---|---|---|---|
+| ![run](docs/assets/console-run.png) | ![review](docs/assets/console-review.png) | ![requirement](docs/assets/console-requirement.png) | ![sizing](docs/assets/console-sizing.png) |
+| Context, answer, policy, build, tests, commit and seeded bugs, as they happen. | Test code, mutants caught and missed, verdict keys 1 to 3, Markdown export. | Tests that cite it, candidate tests ranked by the traceability model, related code. | Smallest deployment per GPU type; every workload assumption is editable. |
+
+### Terminal recordings
 
 ![The agent closes a traceability gap](docs/assets/demo-agent.gif)
 
@@ -51,6 +72,7 @@ test generation): [`paper/main.pdf`](paper/main.pdf), LaTeX source in [`paper/`]
 | **Air gap** | Compose overlay on an internal Docker network + smoke test that **fails if any outbound connection succeeds** | ✅ (CI) |
 | **Model evaluation** | `oge eval` — 27 purpose-written embedded C tasks (generation, unit-test generation, refactoring, documentation) scored by execution: strict compile, hidden tests, ASan/UBSan, gcov coverage, mutation testing, complexity, Doxygen completeness; the suite validates itself | ✅ 2 models measured |
 | **Agent** | `oge agent` — LangGraph agent that closes F´ traceability gaps: retrieves context over MCP, writes a requirement-tagged unit test, builds and runs it, repairs from compiler and test output, commits on a review branch; the model only writes test code, everything else is deterministic and policy-checked | ✅ 18/28 gaps closed per model (v2) |
+| **Console** | `oge console` — web application for the site: traceability map, requirement evidence, code search, live agent runs (server-sent events), review queue with verdicts and export, GPU sizing; Docker image with the C++ toolchain and an F´ workspace | ✅ tested on real F´ (CI) |
 | **CI** | Jenkins LTS with the official MCP Server plugin (least-privilege service account, JCasC); the agent triggers the F´ unit-test pipeline and reads the verdict over MCP | ✅ (CI) |
 
 ## Results
@@ -199,6 +221,9 @@ uv run oge agent run --scripted tests/data/scripted_agent_answers.json -r SVC-CO
 # with a served model and Jenkins (deploy/compose.ci.yaml):
 uv run oge agent run --base-url http://localhost:8080 --label my-model \
     --ci-url http://localhost:8090/mcp-server/mcp --ci-user oge-agent --ci-token "$JENKINS_AGENT_PASSWORD"
+
+# 6. Engineering console (web): traceability, search, live agent runs, review, sizing
+uv run oge console serve --fprime third_party/fprime        # http://127.0.0.1:8770
 ```
 
 GPU benchmarks run as batch notebooks on Kaggle (2× Tesla T4): `kaggle/00_probe_t4x2` (what runs on Turing
@@ -250,9 +275,11 @@ Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Repository layout
 
 ```
-src/onprem_genai/   sizing/  bench/  knowledge/  mcp_server/  platform/  evalsuite/  agent/  llm.py
+src/onprem_genai/   sizing/  bench/  knowledge/  mcp_server/  platform/  evalsuite/  agent/  console/  llm.py
 kaggle/             GPU notebooks (probe, M1 benchmark)
-deploy/             Dockerfile, compose (cpu/gpu/vllm/neo4j), offline overlay, Jenkins (compose.ci.yaml), clients
+deploy/             Dockerfile, compose (cpu/gpu/vllm/neo4j/console), offline overlay, Jenkins (compose.ci.yaml), clients
+demo/               terminal recordings, interactive replay page
+paper/              IEEE paper (LaTeX)
 docs/               plan, architecture, design decisions, results
 tests/              unit, contract and integration tests
 ```

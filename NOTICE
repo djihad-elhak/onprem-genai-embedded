@@ -9,3 +9,9 @@ release by scripts/fetch_fprime.sh and is NOT redistributed in this repository:
 Neither the name of Caltech nor its operating division, the Jet Propulsion Laboratory, endorses this project.
 
 Third-party open-weight models referenced in benchmarks are governed by their own licenses.
+
+The engineering console (src/onprem_genai/console/static) redistributes, unmodified:
+  htm 3.1.1 with its bundled Preact (htm/preact/standalone), Apache License 2.0 (htm) and MIT License (Preact),
+    https://github.com/developit/htm, https://github.com/preactjs/preact
+  Atkinson Hyperlegible Next and JetBrains Mono fonts (latin subsets, woff2), SIL Open Font License 1.1;
+    license texts in static/fonts/

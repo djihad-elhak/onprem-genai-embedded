@@ -137,6 +137,18 @@ the end.
   decode is within ±11 % and one server's chat capacity within 7 % of the measurement. vLLM on Turing is
   calibrated separately because its kernel path there (no Marlin, no FlashAttention 2) is not representative.
 
+## D20 · A web console for the site, built from the platform's own pieces
+- **Choice**: `oge console` serves a web application on the same machine as the model servers: traceability
+  map, requirement evidence, code search, agent runs with live steps, a review queue and GPU sizing. Starlette
+  and server-sent events (already MCP SDK dependencies), SQLite, and a no-build Preact front end with its
+  fonts vendored. Runs are queued on one F´ working copy, each on its own branch from a fixed base commit; a
+  stop request finishes the current requirement. The model server's API key is write-only.
+- **Why**: the agent's output is only worth something once a person has reviewed it, and engineers will not
+  review from a terminal. Building on the existing graph, MCP server, agent and planner keeps one source of
+  truth, and having no CDN, build step or extra service keeps the air-gap promise (D9). Replay of recorded
+  answers is limited to self-contained ones: in the live test of this feature, a repair answer that resent
+  only one block could not pass on its own.
+
 ---
 
 ## Questions to expect (and where the answers are)
@@ -149,7 +161,7 @@ the end.
 | What does "288 gaps" mean exactly? | Requirements specified as verified by test with no explicit test tag — candidates for review, not proof of missing tests. |
 | What happens when the model is wrong? | Suggestions are ranked with evidence (file:line, scores); agent output must pass policy, build and tests (3 runs, no regression), then CI and human review; it can only ever touch test files (D12). |
 | Can the agent break flight code? | No path exists: it writes only into `test/ut` of one component, on a branch, and its CI account cannot administer Jenkins (D12, D15). |
-| How do you know generated tests are useful? | Fault detection on mutants of the code they execute (D14) + a human relevance verdict per test. |
+| How do you know generated tests are useful? | Fault detection on mutants of the code they execute (D14) + a human relevance verdict per test, given in the console's review queue (D20). |
 | How do you choose a model for code? | `oge eval` on embedded C tasks scored by execution (D13) + agent metrics on real F´ gaps; speed from the probe and serving benchmark. |
 | Why these models? | Probe compatibility matrix + license + measured speed/quality on T4 (D3). DeepSeek-V4 is sized but does not fit the test hardware. |
 | How would you scale it? | Profiles `gpu` → `vllm`; replicas behind a gateway; Neo4j for the graph; per-team MCP servers; see sizing report. |

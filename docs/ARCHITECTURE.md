@@ -7,6 +7,7 @@ sources:
   - src/onprem_genai/platform/
   - src/onprem_genai/evalsuite/
   - src/onprem_genai/agent/
+  - src/onprem_genai/console/
   - deploy/compose.ci.yaml
   - deploy/jenkins/
   - deploy/
@@ -32,6 +33,7 @@ the Model Context Protocol, and is sized from measurements rather than vendor cl
 | `mcp_server` | MCP server (SDK v2 `MCPServer`) over any `KnowledgeStore` | `server.py` |
 | `evalsuite` | 27 purpose-written embedded C tasks (not taken from public benchmarks) (generate, unit-test generation, refactor, document) scored by execution: strict compile, hidden tests, sanitizers, gcov, mutation testing, complexity, Doxygen; OpenAI-compatible runner with pass@k and CIs ([EVALSUITE.md](EVALSUITE.md)) | `tasks/`, `scoring.py`, `validate.py`, `runner.py` |
 | `agent` | LangGraph test-generation agent: MCP retrieval, policy-checked patching of F´ unit tests, build / run / coverage / mutants, git review branch, Jenkins CI over MCP ([AGENT.md](AGENT.md)) | `graph.py`, `patch.py`, `context.py`, `fprime.py`, `mutation.py`, `ci.py`, `runner.py` |
+| `console` | Web application for the site: traceability map, requirement evidence, code search, agent runs with live steps (queue, server-sent events), review verdicts, GPU sizing; SQLite state, vendored front end, no build step ([CONSOLE.md](CONSOLE.md)) | `app.py`, `jobs.py`, `catalog.py`, `db.py`, `static/` |
 | `platform` | Deployment verification: LLM, embeddings, MCP over HTTP, egress probe | `smoke.py` |
 | `deploy/` | Container image, Compose profiles, air-gap overlay, Jenkins add-on (`compose.ci.yaml`), client configs | `Dockerfile`, `compose.yaml`, `compose.offline.yaml`, `clients/` |
 | `kaggle/` | GPU batch notebooks (2× T4) producing every hardware measurement | `00_probe_t4x2`, `01_benchmark` |
@@ -102,6 +104,7 @@ arbitrary ordering.
 | `gpu` | llama.cpp CUDA | single NVIDIA server |
 | `vllm` | vLLM (tensor parallel, prefix caching) | multi-GPU team server |
 | `neo4j` | + Neo4j and one-shot graph loader | persistent graph, Cypher exploration |
+| `console` | + engineering console (C++ toolchain and F´ workspace in the image) | engineers' web application, agent runs |
 
 Security defaults: API key required by every model server (`--api-key`), host ports bound to `127.0.0.1`,
 non-root platform image, graph snapshot baked at build time (no network at run time), optional DNS-rebinding
