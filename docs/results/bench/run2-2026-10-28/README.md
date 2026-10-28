@@ -1,6 +1,6 @@
 # Benchmark run 2 — Kaggle 2× Tesla T4
 
-- Notebook `kaggle/01_benchmark` at commit `a91bbdb` (standalone wheel), all stages · 2026-10-28 · 3.36 h
+- Notebook `kaggle/01_benchmark` at commit `eaa641d` (standalone wheel), all stages · 2026-10-28 · 3.36 h
 - llama.cpp `a7af149` (b11953, CUDA, SM 7.5) · vLLM 0.32.0 · 2× Tesla T4 16 GB, driver 580
 - Configurations: Qwen3-Coder-30B-A3B and Devstral-Small-2-24B, both Q4_K_M on llama.cpp (4 slots × 16k
   context); Qwen3-Coder-30B-A3B AWQ on vLLM (tensor parallel 2), serving only
@@ -68,7 +68,7 @@ it is the model's error, not the harness's:
 Concurrency levels 1, 2 and 4 sent the **same 8 requests**, so levels 2 and 4 were answered from the servers'
 prompt / prefix cache. The vLLM agent profile shows it: 2.5 → 35.6 → 48.6 tok/s at 1 → 2 → 4 streams (time to
 first token 8.8 s → 0.26 s on 9.7k-token prompts), then 6.6 tok/s at 8 streams on new requests. Fixed in
-`bf66c9d` (every level uses new requests that start at random lines of the corpus); re-measured in run 3.
+`ce8bd6e` (every level uses new requests that start at random lines of the corpus); re-measured in run 3.
 
 ## Agent v1 — superseded, baseline of agent v2
 
@@ -94,7 +94,7 @@ Failed attempts by primary cause (`agent.runner.failure_causes`, first matching 
 Half of all failed attempts came from one confusion that the agent itself reinforced: the system prompt
 described `this->component.doDispatch()` for active components without saying which kind the component under
 test is (three of the four are passive), and the did-you-mean hints offered `dispatchAll`, a name that does not
-exist in F´ v4. Agent v2 (`bf66c9d`) states the component kind and the exact dispatch call in the task, stops
+exist in F´ v4. Agent v2 (`ce8bd6e`) states the component kind and the exact dispatch call in the task, stops
 suggesting `dispatchAll`, fixes the qualified-definition bug, reuses the block a repair answer leaves out,
 shows the asserted source line for F´ assertions and states the `-Werror` rules. Replaying Qwen3-Coder's last
 answer for SVC-COMSTUB-004 through the fixed patcher: it builds and passes.
@@ -102,7 +102,7 @@ answer for SVC-COMSTUB-004 through the fixed patcher: it builds and passes.
 ## Reproduce
 
 ```bash
-python scripts/build_kaggle_notebook.py kaggle/01_benchmark.py --standalone --out 01_benchmark.ipynb  # at a91bbdb
+python scripts/build_kaggle_notebook.py kaggle/01_benchmark.py --standalone --out 01_benchmark.ipynb  # at eaa641d
 uv run oge eval report docs/results/bench/run2-2026-10-28/eval/*.json
 uv run oge agent report docs/results/bench/run2-2026-10-28/agent-v1/qwen3-coder-30b-a3b__llamacpp.jsonl
 ```

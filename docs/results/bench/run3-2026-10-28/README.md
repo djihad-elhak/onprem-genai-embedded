@@ -1,6 +1,6 @@
 # Benchmark run 3 — Kaggle 2× Tesla T4: serving on new prompts, agent v2
 
-- Notebook `kaggle/01_benchmark` at commit `bf66c9d`, `STAGES = ["serving", "agent"]` · 2026-10-28 · 2.75 h
+- Notebook `kaggle/01_benchmark` at commit `ce8bd6e`, `STAGES = ["serving", "agent"]` · 2026-10-28 · 2.75 h
 - llama.cpp `a7af149` (b11953) · vLLM 0.32.0 · 2× Tesla T4 16 GB
 - Same configurations as run 2: Qwen3-Coder-30B-A3B and Devstral-Small-2-24B, Q4_K_M on llama.cpp (4 slots ×
   16k context), Qwen3-Coder-30B-A3B AWQ on vLLM (tensor parallel 2). Traceability, `oge eval` and the model
@@ -96,7 +96,7 @@ irrelevant. The generated tests are in `agent-v2/*.patch` (`git am` on F´ v4.4.
 
 ```bash
 python scripts/build_kaggle_notebook.py kaggle/01_benchmark.py --standalone \
-    --set 'STAGES=["serving", "agent"]' --out 01_benchmark_rerun.ipynb   # at bf66c9d
+    --set 'STAGES=["serving", "agent"]' --out 01_benchmark_rerun.ipynb   # at ce8bd6e
 uv run oge agent report docs/results/bench/run3-2026-10-28/agent-v2/qwen3-coder-30b-a3b__llamacpp.jsonl
 ```
 
