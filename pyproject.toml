@@ -26,6 +26,10 @@ dependencies = [
   "numpy>=2.0",
 ]
 
+[project.urls]
+Repository = "https://github.com/djihad-elhak/onprem-genai-embedded"
+Documentation = "https://github.com/djihad-elhak/onprem-genai-embedded#readme"
+
 [project.optional-dependencies]
 knowledge = [
   "tree-sitter>=0.25",

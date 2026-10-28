@@ -1,5 +1,7 @@
 # onprem-genai-embedded
 
+[![CI](https://github.com/djihad-elhak/onprem-genai-embedded/actions/workflows/ci.yml/badge.svg)](https://github.com/djihad-elhak/onprem-genai-embedded/actions/workflows/ci.yml) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-green)
+
 **Implémentation de référence d'une plateforme d'IA générative sur site (on-premise) pour équipes logiciel
 embarqué / aéronautique — dimensionnée, mesurée et vérifiée en mode déconnecté (air gap), avec un graphe de
 connaissances code + exigences + tests exposé aux assistants via MCP.**
@@ -146,6 +148,7 @@ sur le CPU d'un portable.
 ## Démarrage rapide
 
 ```bash
+git clone https://github.com/djihad-elhak/onprem-genai-embedded.git && cd onprem-genai-embedded
 uv sync --all-extras && scripts/fetch_fprime.sh
 uv run oge knowledge ingest                  # graphe de connaissances
 uv run oge knowledge trace-eval              # reproduit le tableau ci-dessus

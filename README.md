@@ -1,5 +1,7 @@
 # onprem-genai-embedded
 
+[![CI](https://github.com/djihad-elhak/onprem-genai-embedded/actions/workflows/ci.yml/badge.svg)](https://github.com/djihad-elhak/onprem-genai-embedded/actions/workflows/ci.yml) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-green)
+
 **A reference implementation of an on-premise GenAI platform for embedded / aerospace software teams —
 sized, benchmarked and air-gap verified, with a requirements-aware code knowledge graph exposed to assistants
 over MCP.**
@@ -139,6 +141,9 @@ built in ≈ 3 s on a laptop CPU.
 ## Quickstart
 
 ```bash
+# 0. Get the code
+git clone https://github.com/djihad-elhak/onprem-genai-embedded.git && cd onprem-genai-embedded
+
 # 1. Knowledge graph + MCP server, no GPU, no Docker
 uv sync --all-extras
 scripts/fetch_fprime.sh                                     # pinned F´ v4.4.1
