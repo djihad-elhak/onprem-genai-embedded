@@ -11,21 +11,30 @@ const FILTERS = [
   ["not_by_test", "Verified otherwise"],
 ];
 
-function ModuleList({ modules, current, onPick, total }) {
-  return html`<nav class="panel modlist" aria-label="Components">
-    <button type="button" aria-pressed=${!current} onClick=${() => onPick("")}><span>All components</span><span class="n">${fmtInt(total)}</span></button>
-    ${modules.map((m) => html`<div key=${m.module}>
-      <button type="button" aria-pressed=${current === m.module} onClick=${() => onPick(m.module)} title=${m.module}>
-        <span>${m.module}</span><span class="n">${m.total}</span>
-      </button>
-      ${current === m.module ? html`<div class="mini" aria-hidden="true">${STATE_ORDER.filter((s) => m.counts[s]).map((s) =>
-        html`<i class=${`s-${s}`} style=${`width:${(100 * m.counts[s]) / m.total}%`}></i>`)}</div>` : null}
-    </div>`)}
+function ModuleList({ modules, current, link, total }) {
+  return html`<nav class="modnav" aria-label="Components">
+    <ul class="usa-sidenav">
+      <li class="usa-sidenav__item"><a href=${link("")} class=${!current ? "usa-current" : ""} aria-current=${!current ? "page" : undefined}>
+        <span>All components</span><span class="n">${fmtInt(total)}</span></a></li>
+      ${modules.map((m) => html`<li class="usa-sidenav__item" key=${m.module}>
+        <a href=${link(m.module)} class=${current === m.module ? "usa-current" : ""} aria-current=${current === m.module ? "page" : undefined} title=${m.module}>
+          <span>${m.module}</span><span class="n">${m.total}</span></a>
+        ${current === m.module ? html`<div class="mini" aria-hidden="true">${STATE_ORDER.filter((s) => m.counts[s]).map((s) =>
+          html`<i class=${`s-${s}`} style=${`width:${(100 * m.counts[s]) / m.total}%`}></i>`)}</div>` : null}
+      </li>`)}
+    </ul>
   </nav>`;
 }
 
+function Check({ id, checked, onChange, label, disabled }) {
+  return html`<div class="usa-checkbox cell-check">
+    <input class="usa-checkbox__input" id=${id} type="checkbox" checked=${checked} disabled=${disabled} onChange=${onChange} />
+    <label class="usa-checkbox__label" for=${id}><span class="sr-only">${label}</span></label>
+  </div>`;
+}
+
 function Evidence({ items, empty, render }) {
-  if (!items || !items.length) return html`<div class="empty-inline">${empty}</div>`;
+  if (!items || !items.length) return html`<div class="empty-line">${empty}</div>`;
   return html`<div class="evidence">${items.map(render)}</div>`;
 }
 
@@ -39,16 +48,17 @@ function Drawer({ id, status, onClose, onRun }) {
   if (data) {
     if (!agent.eligible) action = html`<span class="muted">${data.base === "covered" ? "A test already cites this requirement." : "This requirement is not verified by test."}</span>`;
     else if (agent.support) action = html`<span class="muted">The agent cannot work on this component: ${agent.support}.</span>`;
-    else action = html`<button class="btn primary" type="button" onClick=${() => onRun(data)}><${Icon} name="play" size=${15} />Generate a test</button>`;
+    else action = html`<button class="btn act" type="button" onClick=${() => onRun(data)}><${Icon} name="play" />Generate a test</button>`;
   }
   return html`<div class="scrim" onClick=${onClose}></div>
-  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" ref=${ref}>
+  <div class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" ref=${ref}>
     <div class="drawer-head">
-      <div class="stack" style="gap:6px;flex:1;min-width:0">
-        <span class="id" id="drawer-title">${id}</span>
-        ${data ? html`<div class="row"><${State} s=${data.state} big=${true} /><span class="tag">${data.module}</span></div>` : null}
+      <div class="stack" style="gap:0.625rem;flex:1;min-width:0">
+        <span class="overline">Requirement</span>
+        <h2 class="mono" id="drawer-title">${id}</h2>
+        ${data ? html`<div class="row"><${State} s=${data.state} big=${true} /><span class="tag mod">${data.module}</span></div>` : null}
       </div>
-      <button class="btn quiet small" type="button" onClick=${onClose} aria-label="Close" data-autofocus><${Icon} name="x" size=${16} /></button>
+      <button class="icon-btn" type="button" onClick=${onClose} data-autofocus><span class="sr-only">Close</span><${Icon} name="x" /></button>
     </div>
     <div class="drawer-body">
       ${error ? html`<${ErrorNote} error=${error} onRetry=${reload} />` : null}
@@ -60,21 +70,21 @@ function Drawer({ id, status, onClose, onRun }) {
           <dt>Defined in</dt><dd class="mono">${data.file}${data.line ? `:${data.line}` : ""}</dd>
         </dl>
         <section class="section">
-          <h3>Tests that cite it<span class="muted">${t.explicit_tests.length}</span></h3>
+          <h3>Tests that cite it<span class="meta">${t.explicit_tests.length}</span></h3>
           <${Evidence} items=${t.explicit_tests} empty="No test carries this requirement's tag." render=${(x) => html`<div key=${x.id}>
             <span class="t">${x.title}</span><span class="s">${x.location}</span></div>`} />
         </section>
         ${data.results.length ? html`<section class="section">
-          <h3>Agent results<span class="muted">${data.results.length}</span></h3>
+          <h3>Agent results<span class="meta">${data.results.length}</span></h3>
           <div class="evidence">${data.results.map((r) => html`<div key=${r.id}>
-            <span class="row" style="gap:8px"><${ResultTag} status=${r.status} /><b>${r.model_label}</b><span class="muted">${r.source === "console" ? `run ${r.run_id}` : r.source}</span></span>
+            <span class="row" style="gap:0.5rem"><${ResultTag} status=${r.status} /><b>${r.model_label}</b><span class="muted">${r.source === "console" ? `run ${r.run_id}` : r.source}</span></span>
             <span class="s">${r.attempts} attempt${r.attempts === 1 ? "" : "s"}, ${duration(r.wall_seconds)}${r.mutants_valid ? `, ${r.mutants_killed}/${r.mutants_valid} mutants killed` : ""}
               ${r.verdict ? html`<span class="tag ok">reviewed: ${r.verdict.replace("_", " ")}</span>` : null}
               ${r.status === "passed" ? html`<a href=${href("review", r.id)}>${r.verdict ? "Open review" : "Review it"}</a>` : r.run_id ? html`<a href=${href("runs", r.run_id)}>Open run</a>` : null}</span>
           </div>`)}</div>
         </section>` : null}
         <section class="section">
-          <h3>Candidate tests<span class="muted">ranked by the traceability model</span></h3>
+          <h3>Candidate tests<span class="meta">ranked by the traceability model</span></h3>
           <${Evidence} items=${t.suggested_tests} empty="No candidate tests." render=${(x) => html`<div key=${x.id}>
             <span class="t">${x.title.split("::").slice(-1)[0]}</span>
             <span class="s"><span>${x.location}</span><span>${x.graph_relation === "same-module" ? "same component" : x.graph_relation === "calls-into-module" ? "calls into the component" : "other component"}</span>
@@ -89,7 +99,7 @@ function Drawer({ id, status, onClose, onRun }) {
         </section>`}
     </div>
     <div class="drawer-foot">${action}</div>
-  </aside>`;
+  </div>`;
 }
 
 export function Requirements({ route, status }) {
@@ -129,37 +139,40 @@ export function Requirements({ route, status }) {
   const total = mods ? mods.reduce((a, m) => a + m.total, 0) : 0;
   useKey((e) => { if (e.key === "Escape" && selected.size) setSelected(new Set()); }, [selected]);
 
-  return html`<div class="page">
+  return html`<div class="container page">
     <div class="page-head">
-      <div><h1>${module || "Requirements"}</h1>
-        <p class="lede">${module ? "Requirements allocated to this component and the evidence that verifies them." : "Every requirement of the design documents, with the evidence that verifies it."}</p></div>
+      <div class="stack"><span class="overline">${module ? "Component" : "Traceability"}</span>
+        <h1 class=${module ? "mono" : ""}>${module || "Requirements and their evidence"}</h1>
+        <p class="lede">${module ? "Requirements allocated to this component and the evidence that verifies them." : "Open a requirement to see the tests that cite it, the candidates the traceability model ranks, and the related code. Select gaps to generate tests."}</p></div>
     </div>
     <div class="req-layout">
-      ${mods ? html`<${ModuleList} modules=${mods} current=${module} total=${total} onPick=${(m) => go("requirements", null, { module: m, state: stateFilter })} />` : html`<div class="panel panel-body"><${Loading} /></div>`}
-      <section class="panel" aria-label="Requirement list">
+      ${mods ? html`<${ModuleList} modules=${mods} current=${module} total=${total} link=${(m) => href("requirements", null, { module: m, state: stateFilter })} />` : html`<${Loading} />`}
+      <section aria-label="Requirement list" style="min-width:0">
         <div class="toolbar">
-          <input class="input" type="search" placeholder="Filter by ID or text" aria-label="Filter requirements" value=${q}
+          <label class="sr-only" for="req-filter">Filter requirements by ID or text</label>
+          <input id="req-filter" class="usa-input" type="search" placeholder="Filter by ID or text" value=${q}
             onInput=${(e) => setQ(e.target.value)} />
           <div class="seg" role="group" aria-label="State">
             ${FILTERS.map(([key, label]) => html`<button type="button" aria-pressed=${stateFilter === key} onClick=${() => set({ state: key })}>${label}<span class="n">${counts[key]}</span></button>`)}
           </div>
         </div>
-        ${error ? html`<div class="panel-body"><${ErrorNote} error=${error} onRetry=${reload} /></div>` : null}
-        ${!rows ? html`<div class="panel-body"><${Loading} lines=${8} /></div>` : shown.length === 0 ? html`<div class="empty">
+        ${error ? html`<${ErrorNote} error=${error} onRetry=${reload} />` : null}
+        ${!rows ? html`<${Loading} lines=${8} />` : shown.length === 0 ? html`<div class="empty">
           <h3>No requirement matches</h3><p>Change the filter or the component to see more.</p>
           <button class="btn" type="button" onClick=${() => { setQ(""); set({ state: "", q: "" }); }}>Clear filters</button></div>` : html`
         <div class="table-wrap">
-          <table class="grid">
+          <table class="usa-table usa-table--borderless">
+            <caption class="sr-only">${shown.length} requirements</caption>
             <thead><tr>
-              <th class="sel"><label class="check" title="Select every gap the agent can work on"><input type="checkbox" checked=${allSelected} disabled=${!selectable.length} onChange=${toggleAll} aria-label="Select all gaps the agent can work on" /></label></th>
-              <th>ID</th><th>Requirement</th>${module ? null : html`<th>Component</th>`}<th>State</th>
+              <th scope="col" class="cell-check"><${Check} id="sel-all" checked=${allSelected} disabled=${!selectable.length} onChange=${toggleAll} label="Select every gap the agent can work on" /></th>
+              <th scope="col">ID</th><th scope="col">Requirement</th>${module ? null : html`<th scope="col">Component</th>`}<th scope="col">State</th>
             </tr></thead>
             <tbody>
               ${shown.map((r) => html`<tr key=${r.req_id} aria-selected=${openId === r.req_id} onClick=${() => set({ id: r.req_id })}>
-                <td class="sel" onClick=${(e) => e.stopPropagation()}>${r.agent_ready ? html`<label class="check"><input type="checkbox" checked=${selected.has(r.req_id)} onChange=${() => toggle(r.req_id)} aria-label=${`Select ${r.req_id}`} /></label>` : null}</td>
+                <td class="cell-check" onClick=${(e) => e.stopPropagation()}>${r.agent_ready ? html`<${Check} id=${`sel-${r.req_id}`} checked=${selected.has(r.req_id)} onChange=${() => toggle(r.req_id)} label=${`Select ${r.req_id}`} />` : null}</td>
                 <td class="id"><a href=${href("requirements", null, { module, state: stateFilter, id: r.req_id })} onClick=${(e) => e.stopPropagation()}>${r.req_id}</a></td>
                 <td class="text">${r.text}</td>
-                ${module ? null : html`<td class="mono muted">${r.module}</td>`}
+                ${module ? null : html`<td class="comp">${r.module.split("/").map((part, i) => (i ? html`/<wbr />${part}` : part))}</td>`}
                 <td><${State} s=${r.state} /></td>
               </tr>`)}
             </tbody>
@@ -169,8 +182,8 @@ export function Requirements({ route, status }) {
     </div>
     ${selected.size ? html`<div class="selection-bar" role="region" aria-label="Selection">
       <span>${selected.size} selected</span>
-      <button class="btn quiet small" type="button" onClick=${() => setSelected(new Set())}>Clear</button>
-      <button class="btn primary" type="button" onClick=${() => setDialog(rows.filter((r) => selected.has(r.req_id)))}><${Icon} name="play" size=${15} />Generate tests</button>
+      <button class="btn plain small" type="button" onClick=${() => setSelected(new Set())}>Clear</button>
+      <button class="btn act" type="button" onClick=${() => setDialog(rows.filter((r) => selected.has(r.req_id)))}><${Icon} name="play" />Generate tests</button>
     </div>` : null}
     ${openId ? html`<${Drawer} id=${openId} status=${status} onClose=${() => set({ id: "" })} onRun=${(d) => setDialog([{ req_id: d.req_id, replay: d.agent.replay }])} />` : null}
     ${dialog ? html`<${RunDialog} reqs=${dialog} status=${status} onClose=${() => setDialog(null)} />` : null}

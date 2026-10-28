@@ -13,5 +13,8 @@ Third-party open-weight models referenced in benchmarks are governed by their ow
 The engineering console (src/onprem_genai/console/static) redistributes, unmodified:
   htm 3.1.1 with its bundled Preact (htm/preact/standalone), Apache License 2.0 (htm) and MIT License (Preact),
     https://github.com/developit/htm, https://github.com/preactjs/preact
-  Atkinson Hyperlegible Next and JetBrains Mono fonts (latin subsets, woff2), SIL Open Font License 1.1;
-    license texts in static/fonts/
+  NASA Horizon Design System, @nasa-hds/core 0.10.0 (CSS, icon sprites and the images its CSS references),
+    https://github.com/nasa/hds-core, CC0 1.0 Universal public domain dedication; NASA branding assets omitted.
+    NASA's trademarks are not licensed by CC0 and are not used: oge is not affiliated with or endorsed by NASA.
+  Inter, Public Sans and DM Mono fonts (woff2, shipped with the design system), SIL Open Font License 1.1;
+    license texts in static/vendor/hds/assets/fonts/

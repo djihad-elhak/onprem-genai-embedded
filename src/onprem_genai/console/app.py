@@ -23,11 +23,13 @@ from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
+from onprem_genai import __version__
 from onprem_genai.console.catalog import STATES, Catalog, overlay_state
 from onprem_genai.console.db import VERDICTS, ConsoleDb
 from onprem_genai.console.jobs import JobManager, RunRequest, Workspace, display_name, load_replay_answers
@@ -220,6 +222,7 @@ async def status(request: Request) -> JSONResponse:
                 "label": llm["label"],
             },
             "replay": {"requirements": len(c.replay)},
+            "version": __version__,
             "jobs": {"current": c.jobs.current, "queued": c.jobs._queue.qsize()},
         }
     )
@@ -753,7 +756,7 @@ def create_app(cfg: ConsoleConfig) -> Starlette:
         routes=routes,
         lifespan=lifespan,
         exception_handlers={HTTPException: http_error},
-        middleware=[Middleware(SecurityHeaders)],
+        middleware=[Middleware(SecurityHeaders), Middleware(GZipMiddleware, minimum_size=1024)],
     )
     app.state.console = console
     return app

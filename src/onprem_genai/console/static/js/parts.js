@@ -3,17 +3,17 @@ import { html, useState } from "../vendor/htm-preact-standalone.mjs";
 import { Code, Answer, Icon, pct } from "./lib.js";
 
 export function MutantTable({ mutation }) {
-  if (!mutation || !mutation.mutants || !mutation.mutants.length) return html`<div class="empty-inline">No mutation analysis for this test.</div>`;
-  return html`<div class="evidence" style="padding:0"><div style="padding:0;display:block;overflow:auto">
+  if (!mutation || !mutation.mutants || !mutation.mutants.length) return html`<div class="empty-line">No mutation analysis for this test.</div>`;
+  return html`<div class="table-wrap">
     <table class="mut">
       <thead><tr><th>Line</th><th>Seeded bug</th><th>Change</th><th>Result</th></tr></thead>
       <tbody>${mutation.mutants.map((m, i) => html`<tr key=${i}>
-        <td class="mono num">${m.line}</td>
+        <td class="num">${m.line}</td>
         <td>${m.operator}</td>
         <td><code class="was">${m.original.trim()}</code><code>${m.mutated.trim()}</code></td>
         <td>${m.outcome === "killed" ? html`<span class="tag ok">caught</span>` : m.outcome === "survived" ? html`<span class="tag warn">missed</span>` : html`<span class="tag">${m.outcome}</span>`}</td>
       </tr>`)}</tbody>
-    </table></div></div>`;
+    </table></div>`;
 }
 
 const NODE_LABEL = { prepare: "baseline", gather: "context", generate: "model", check: "policy", build: "build", test: "test", commit: "commit", evaluate: "mutants", give_up: "result" };
@@ -31,12 +31,12 @@ function Step({ ev, defaultOpen }) {
   const d = stepDetail(ev);
   const [open, setOpen] = useState(defaultOpen);
   const cls = ev.node === "gather" || ev.node === "generate" ? "info" : ev.ok ? "ok" : "bad";
-  const icon = cls === "info" ? "dot" : ev.ok ? "check" : "x";
+  const icon = cls === "info" ? null : ev.ok ? "check" : "x";
   return html`<li class=${`step ${cls} ${ev.node === "generate" && ev.attempt > 1 ? "attempt-start" : ""}`}>
-    <span class="step-mark"><${Icon} name=${icon} size=${12} /></span>
+    <span class="step-mark">${icon ? html`<${Icon} name=${icon} />` : null}</span>
     <span class="step-node">${NODE_LABEL[ev.node] || ev.node}</span>
     <div class="step-body">
-      <div class="step-line">${ev.line}${d ? html`<button type="button" aria-expanded=${open} onClick=${() => setOpen(!open)}>${open ? "Hide" : d.label}</button>` : null}</div>
+      <div class="step-line">${ev.line}${d ? html`<button class="copy-btn" type="button" aria-expanded=${open} onClick=${() => setOpen(!open)}>${open ? "Hide" : d.label}</button>` : null}</div>
       ${open && d ? d.body : null}
     </div>
   </li>`;
@@ -63,11 +63,11 @@ export function History({ record }) {
 function HistoryStep({ h, ok, label }) {
   const [open, setOpen] = useState(false);
   return html`<li class=${`step ${ok ? "ok" : "bad"}`}>
-    <span class="step-mark"><${Icon} name=${ok ? "check" : "x"} size=${12} /></span>
+    <span class="step-mark"><${Icon} name=${ok ? "check" : "x"} /></span>
     <span class="step-node">attempt ${h.attempt}</span>
     <div class="step-body">
       <div class="step-line">${label}${ok ? html`: <span class="mono">${h.detail}</span>` : null}
-        ${!ok ? html`<button type="button" aria-expanded=${open} onClick=${() => setOpen(!open)}>${open ? "Hide" : "Show output"}</button>` : null}</div>
+        ${!ok ? html`<button class="copy-btn" type="button" aria-expanded=${open} onClick=${() => setOpen(!open)}>${open ? "Hide" : "Show output"}</button>` : null}</div>
       ${open ? html`<${Code} title="Output sent back to the model" text=${h.detail} kind="log" />` : null}
     </div>
   </li>`;

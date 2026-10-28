@@ -1,7 +1,6 @@
-// Applied before first paint so a dark-mode choice never flashes light.
+// Applied before first paint. Light (the HDS White palette) is the default; a dark choice is remembered.
 (function () {
-  try {
-    var t = localStorage.getItem("oge-theme");
-    if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
-  } catch (e) { /* storage unavailable: follow the system */ }
+  var t = "light";
+  try { if (localStorage.getItem("oge-theme") === "dark") t = "dark"; } catch (e) { /* storage unavailable */ }
+  document.documentElement.setAttribute("data-theme", t);
 })();

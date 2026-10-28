@@ -140,8 +140,9 @@ the end.
 ## D20 · A web console for the site, built from the platform's own pieces
 - **Choice**: `oge console` serves a web application on the same machine as the model servers: traceability
   map, requirement evidence, code search, agent runs with live steps, a review queue and GPU sizing. Starlette
-  and server-sent events (already MCP SDK dependencies), SQLite, and a no-build Preact front end with its
-  fonts vendored. Runs are queued on one F´ working copy, each on its own branch from a fixed base commit; a
+  and server-sent events (already MCP SDK dependencies), SQLite, and a no-build Preact front end on the NASA
+  Horizon Design System (public domain), vendored with its fonts; oge keeps its own mark and uses no NASA
+  insignia. Runs are queued on one F´ working copy, each on its own branch from a fixed base commit; a
   stop request finishes the current requirement. The model server's API key is write-only.
 - **Why**: the agent's output is only worth something once a person has reviewed it, and engineers will not
   review from a terminal. Building on the existing graph, MCP server, agent and planner keeps one source of

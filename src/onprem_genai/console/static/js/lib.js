@@ -158,7 +158,7 @@ export const RUN_STATUS = {
 };
 export function RunStatus({ status }) {
   const [label, cls] = RUN_STATUS[status] || [status, ""];
-  return html`<span class="row" style="gap:7px"><span class=${`dot ${cls}`}></span>${label}</span>`;
+  return html`<span class="status"><span class=${`light ${cls}`}></span>${label}</span>`;
 }
 
 export const RESULT = {
@@ -171,31 +171,29 @@ export function ResultTag({ status }) {
   return html`<span class=${`tag ${cls}`}>${label}</span>`;
 }
 
-/* ------------------------------------------------------------------ icons (stroke, 24 grid) */
-const P = {
-  overview: "M4 5h7v6H4zM13 5h7v3h-7zM13 10h7v9h-7zM4 13h7v6H4z",
-  requirements: "M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2",
-  search: "M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14zM20 20l-4-4",
-  runs: "M5 4v16M5 6h9l-2 3 2 3H5M15 15l2 2 4-4",
-  review: "M7 3h7l5 5v13H7zM14 3v5h5M10 14l2 2 4-4",
-  sizing: "M4 5h16v5H4zM4 14h16v5H4zM8 7.5h.01M8 16.5h.01M12 7.5h5M12 16.5h5",
-  settings: "M4 7h10M18 7h2M4 17h4M12 17h8M16 5v4M10 15v4",
-  play: "M8 5l11 7-11 7z",
-  stop: "M7 7h10v10H7z",
-  check: "M5 12.5l4.5 4.5L19 7.5",
-  x: "M6 6l12 12M18 6L6 18",
-  dot: "M12 12h.01",
-  arrowLeft: "M15 6l-6 6 6 6",
-  download: "M12 4v11M7 10l5 5 5-5M5 20h14",
-  external: "M14 4h6v6M20 4l-9 9M18 14v6H4V6h6",
-  copy: "M8 8h11v12H8zM5 16V4h11",
-  sun: "M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4",
-  bolt: "M13 3L5 13h6l-1 8 8-10h-6z",
-  branch: "M6 4v12M6 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM18 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 8c0 5-12 3-12 8",
+/* ------------------------------------------------------------------ icons
+   HDS icon sprite (CC0) for everything it has; two plain shapes it lacks are drawn here. */
+const HDS_SPRITE = "/static/vendor/hds/assets/img/hds-sprite.svg";
+const HDS = {
+  search: "search", settings: "settings", play: "play", check: "check", x: "close", download: "download",
+  arrow: "arrow-line-right", external: "arrow-line-diagonal", moon: "moon", info: "info", filter: "filter",
+  back: "arrow-chevron-left", next: "arrow-chevron-right", down: "arrow-chevron-down", list: "list", error: "error",
 };
-export function Icon({ name, size = 18 }) {
-  return html`<svg viewBox="0 0 24 24" width=${size} height=${size} fill="none" stroke="currentColor" stroke-width="1.7"
-    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d=${P[name] || P.dot} /></svg>`;
+const DRAWN = {
+  stop: "M5 5h14v14H5z",
+  dot: "M8 8h8v8H8z",
+  branch: "M6 3h2v9.6c1-.9 2.6-1.6 4.6-1.6H15c1.1 0 2-.9 2-2V8.8a3 3 0 1 1 2 0V9c0 2.2-1.8 4-4 4h-2.4C9.8 13 8 14.8 8 17v.2a3 3 0 1 1-2 0z",
+  sun: "M11 2h2v3h-2zM11 19h2v3h-2zM2 11h3v2H2zM19 11h3v2h-3zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10z",
+};
+export function Icon({ name, size }) {
+  const st = size ? `width:${size}px;height:${size}px` : undefined;
+  if (DRAWN[name]) return html`<svg class="usa-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style=${st}><path d=${DRAWN[name]} fill="currentColor" /></svg>`;
+  return html`<svg class="usa-icon" aria-hidden="true" focusable="false" style=${st}><use href=${`${HDS_SPRITE}#${HDS[name] || name}`} /></svg>`;
+}
+
+/** HDS call-to-action link: bold label and a red arrow disc. Red means it takes you somewhere. */
+export function ArrowLink({ href: to, children, download }) {
+  return html`<a class="arrow-link" href=${to} download=${download}>${children}<span class="arrow-disc" aria-hidden="true"><${Icon} name="arrow" /></span></a>`;
 }
 
 /* ------------------------------------------------------------------ code rendering */
@@ -236,7 +234,7 @@ export function CopyButton({ text }) {
     try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1400); }
     catch { toast("Copying is blocked here; select the text instead.", { kind: "bad" }); }
   };
-  return html`<button class="btn quiet small" type="button" onClick=${copy}>${done ? "Copied" : "Copy"}</button>`;
+  return html`<button class="copy-btn" type="button" onClick=${copy}>${done ? "Copied" : "Copy"}</button>`;
 }
 
 export function Code({ title, text, kind = "cpp", wrap = false, actions = null }) {
@@ -275,12 +273,12 @@ export function Spinner() { return html`<span class="spinner" role="status" aria
 
 export function Loading({ lines = 4 }) {
   return html`<div class="stack" aria-busy="true">${Array.from({ length: lines }, (_, i) =>
-    html`<div class="skel" style=${`height:${i === 0 ? 22 : 14}px;width:${[42, 88, 76, 64, 80][i % 5]}%`}></div>`)}</div>`;
+    html`<div class="skel" style=${`height:${i === 0 ? 24 : 14}px;width:${[42, 88, 76, 64, 80][i % 5]}%`}></div>`)}</div>`;
 }
 
 export function ErrorNote({ error, onRetry }) {
   if (!error) return null;
-  return html`<div class="callout bad"><b>${error.message}</b>${onRetry ? html`<div><button class="link-btn" onClick=${onRetry}>Try again</button></div>` : null}</div>`;
+  return html`<div class="note bad" role="alert"><b>${error.message}</b>${onRetry ? html`<span><button class="btn plain small" type="button" onClick=${onRetry}>Try again</button></span>` : null}</div>`;
 }
 
 /** Keyboard shortcut that ignores typing in fields. */

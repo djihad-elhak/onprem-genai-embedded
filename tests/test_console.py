@@ -146,6 +146,10 @@ def test_search_node_sizing_and_security_headers(client: TestClient) -> None:
     page = client.get("/")
     assert page.status_code == 200
     assert "default-src 'self'" in page.headers["content-security-policy"]
+    css = client.get("/static/vendor/hds/css/hds.min.css", headers={"Accept-Encoding": "gzip"})
+    assert css.status_code == 200
+    assert css.headers["content-encoding"] == "gzip"  # the 0.5 MB design system stylesheet travels as ~50 kB
+    assert client.get("/api/status").json()["version"]
 
 
 def test_helpers(tmp_path: Path) -> None:

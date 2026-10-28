@@ -1,4 +1,5 @@
-// Application shell: navigation rail, top bar, routing and the global status poll.
+// Application shell: black header with the main navigation, page surface in the HDS White or Dark palette,
+// black footer, routing and the global status poll.
 import { render } from "../vendor/htm-preact-standalone.mjs";
 import { html, useEffect, useState, useRoute, useApi, api, go, href, Icon, Toasts, useKey } from "./lib.js";
 import { Overview } from "./pages/overview.js";
@@ -10,58 +11,36 @@ import { Sizing } from "./pages/sizing.js";
 import { Settings } from "./pages/settings.js";
 
 const NAV = [
-  ["overview", "Overview", "overview"],
-  ["requirements", "Requirements", "requirements"],
-  ["search", "Code search", "search"],
-  ["runs", "Agent runs", "runs"],
-  ["review", "Review", "review"],
-  ["sizing", "GPU sizing", "sizing"],
+  ["overview", "Overview"],
+  ["requirements", "Requirements"],
+  ["search", "Code search"],
+  ["runs", "Agent runs"],
+  ["review", "Review"],
+  ["sizing", "GPU sizing"],
 ];
 const PAGES = { overview: Overview, requirements: Requirements, search: Search, runs: Runs, review: Review, sizing: Sizing, settings: Settings };
 const TITLES = { overview: "Overview", requirements: "Requirements", search: "Code search", runs: "Agent runs", review: "Review", sizing: "GPU sizing", settings: "Settings" };
 
-function ThemeSwitch() {
-  const read = () => document.documentElement.getAttribute("data-theme") || "system";
-  const [mode, setMode] = useState(read());
-  const set = (m) => {
-    if (m === "system") document.documentElement.removeAttribute("data-theme");
-    else document.documentElement.setAttribute("data-theme", m);
-    try { m === "system" ? localStorage.removeItem("oge-theme") : localStorage.setItem("oge-theme", m); } catch { /* ignore */ }
-    setMode(m);
+/** oge's own mark: four requirement ticks, the last one still open. Not a NASA mark. */
+export function Mark() {
+  return html`<svg class="wordmark-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+    <rect x="3" y="5" width="4.5" height="22" fill="#fff" /><rect x="10.5" y="5" width="4.5" height="22" fill="#fff" />
+    <rect x="18" y="5" width="4.5" height="22" fill="#fff" /><rect x="25.5" y="5" width="4.5" height="22" fill="#ea6f24" />
+  </svg>`;
+}
+
+function useTheme() {
+  const read = () => (document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light");
+  const [theme, setTheme] = useState(read());
+  const set = (t) => {
+    document.documentElement.setAttribute("data-theme", t);
+    try { localStorage.setItem("oge-theme", t); } catch { /* storage unavailable: the choice lasts for this page */ }
+    setTheme(t);
   };
-  return html`<div class="theme-switch" role="group" aria-label="Colour theme">
-    ${["light", "system", "dark"].map((m) => html`<button type="button" aria-pressed=${mode === m} onClick=${() => set(m)}>${m[0].toUpperCase() + m.slice(1)}</button>`)}
-  </div>`;
+  return [theme, set];
 }
 
-function Rail({ page, status, counts }) {
-  const ws = status && status.workspace;
-  return html`<nav class="rail" aria-label="Main">
-    <a class="brand" href="#/overview">
-      <img class="brand-mark" src="/static/img/mark.svg" alt="" />
-      <span><span class="brand-name">oge</span><br /><span class="brand-sub">Engineering console</span></span>
-    </a>
-    <div class="nav">
-      ${NAV.map(([key, label, icon]) => html`<a href=${href(key)} aria-current=${page === key ? "page" : undefined}>
-        <${Icon} name=${icon} /><span>${label}</span>
-        ${key === "review" && counts.review ? html`<span class="count" title=${`${counts.review} tests await review`}>${counts.review}</span>` : null}
-        ${key === "runs" && counts.live ? html`<span class="count live" title="A run is in progress">1</span>` : null}
-      </a>`)}
-      <div class="nav-sep"></div>
-      <a href=${href("settings")} aria-current=${page === "settings" ? "page" : undefined}><${Icon} name="settings" /><span>Settings</span></a>
-    </div>
-    <div class="rail-foot">
-      ${ws ? html`<div class="ws">
-        <span>Workspace</span>
-        <b>F´ checkout ${ws.base_commit ? html`<span class="mono">${ws.base_commit.slice(0, 7)}</span>` : ""}</b>
-        <span>${ws.ready ? "Ready for agent runs" : "Agent runs unavailable"}</span>
-      </div>` : null}
-      <${ThemeSwitch} />
-    </div>
-  </nav>`;
-}
-
-function TopBar({ status }) {
+function Header({ page, status, counts, theme, setTheme }) {
   const [q, setQ] = useState("");
   const submit = (e) => {
     e.preventDefault();
@@ -73,28 +52,63 @@ function TopBar({ status }) {
   };
   useKey((e) => { if (e.key === "/") { e.preventDefault(); document.getElementById("omni")?.focus(); } }, []);
   const llm = status && status.llm;
-  let chip = html`<span class="dot"></span><span class="label-text">Checking…</span>`;
+  let model = html`<span class="light"></span><span class="label-text">Checking model server</span>`;
   if (llm) {
-    chip = llm.configured
-      ? html`<span class="dot ok"></span><span class="label-text">${llm.label || llm.model}</span>`
-      : html`<span class="dot warn"></span><span class="label-text">No model server set</span>`;
+    model = llm.configured
+      ? html`<span class="light ok"></span><span class="label-text">${llm.label || llm.model}</span>`
+      : html`<span class="light warn"></span><span class="label-text">No model server</span>`;
   }
-  return html`<header class="topbar">
-    <form class="omni" role="search" onSubmit=${submit}>
-      <${Icon} name="search" />
-      <label class="sr-only" for="omni">Search requirements, code and tests</label>
-      <input id="omni" type="search" autocomplete="off" placeholder="Requirement ID, function, test or a question about the code"
-        value=${q} onInput=${(e) => setQ(e.target.value)} />
-      <kbd>/</kbd>
-    </form>
-    <a class="model-chip" href=${href("settings")} title="Model server used for agent runs">${chip}</a>
+  const dark = theme === "dark";
+  return html`<header class="site-head">
+    <div class="container">
+      <a class="wordmark" href="#/overview" aria-label="oge engineering console, overview">
+        <${Mark} /><span class="wordmark-name">oge</span><span class="wordmark-sub">Engineering<br />console</span>
+      </a>
+      <nav class="site-nav" aria-label="Main">
+        ${NAV.map(([key, label]) => html`<a href=${href(key)} aria-current=${page === key ? "page" : undefined} key=${key}>
+          ${label}
+          ${key === "review" && counts.review ? html`<span class="count" title=${`${counts.review} tests wait for review`}>${counts.review}</span>` : null}
+          ${key === "runs" && counts.live ? html`<span class="count live" title="A run is in progress">1</span>` : null}
+        </a>`)}
+      </nav>
+      <div class="head-tools">
+        <form class="head-search" role="search" onSubmit=${submit}>
+          <${Icon} name="search" />
+          <label class="sr-only" for="omni">Search requirements, code and tests</label>
+          <input id="omni" type="search" autocomplete="off" placeholder="Search"
+            value=${q} onInput=${(e) => setQ(e.target.value)} />
+          <kbd aria-hidden="true">/</kbd>
+        </form>
+        <a class="model-status" href=${href("settings")} title="Model server used by agent runs">${model}</a>
+        <button class="head-icon" type="button" aria-pressed=${dark} title=${dark ? "Use the light theme" : "Use the dark theme"}
+          onClick=${() => setTheme(dark ? "light" : "dark")}><span class="sr-only">Dark theme</span><${Icon} name=${dark ? "sun" : "moon"} /></button>
+        <a class="head-icon" href=${href("settings")} aria-current=${page === "settings" ? "page" : undefined} title="Settings"><span class="sr-only">Settings</span><${Icon} name="settings" /></a>
+      </div>
+    </div>
   </header>`;
+}
+
+function Footer({ status }) {
+  const ws = status && status.workspace;
+  return html`<footer class="site-foot">
+    <div class="container">
+      <div class="wordmark"><${Mark} /><span class="wordmark-name">oge</span></div>
+      <div class="stack">
+        <p>On-premises generative AI for flight software. Every model, index and repository runs on this site.
+          ${ws ? html` F´ workspace ${ws.ready ? "ready" : "not available"}${ws.base_commit ? html`, runs start from <span class="mono">${ws.base_commit.slice(0, 7)}</span>` : ""}.` : null}</p>
+        <p>Built with the <a href="https://github.com/nasa/hds-core" rel="noreferrer">Horizon Design System</a>, released into the public domain.
+          oge is an independent project, not affiliated with or endorsed by NASA.</p>
+      </div>
+      <p class="mono">${status && status.version ? `v${status.version}` : ""}</p>
+    </div>
+  </footer>`;
 }
 
 function App() {
   const route = useRoute();
   const [status, , reloadStatus] = useApi("/status");
   const [counts, setCounts] = useState({ review: 0, live: false });
+  const [theme, setTheme] = useTheme();
 
   useEffect(() => {
     const tick = () => {
@@ -107,14 +121,17 @@ function App() {
     return () => { clearInterval(t); window.removeEventListener("oge:changed", tick); };
   }, []);
 
-  useEffect(() => { document.title = `${TITLES[route.page] || "Console"} | Engineering console`; }, [route.page]);
+  useEffect(() => {
+    document.title = `${TITLES[route.page] || "Console"} | oge engineering console`;
+    window.scrollTo(0, 0);
+  }, [route.page]);
   const Page = PAGES[route.page] || Overview;
-  return html`<div class="shell">
-    <${Rail} page=${route.page} status=${status} counts=${counts} />
-    <div class="main">
-      <${TopBar} status=${status} />
-      <main id="main" tabindex="-1"><${Page} route=${route} status=${status} /></main>
-    </div>
+  const palette = theme === "dark" ? "hds-palette-dark" : "hds-palette-white";
+  return html`<div class=${`app ${palette}`}>
+    <a class="skip-link" href="#main" onClick=${(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to main content</a>
+    <${Header} page=${route.page} status=${status} counts=${counts} theme=${theme} setTheme=${setTheme} />
+    <main id="main" class="page-surface" tabindex="-1"><${Page} route=${route} status=${status} /></main>
+    <${Footer} status=${status} />
     <${Toasts} />
   </div>`;
 }

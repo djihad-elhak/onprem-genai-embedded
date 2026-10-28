@@ -101,10 +101,19 @@ answer, and such an answer cannot pass on its own.
 - **Stack.** Starlette, uvicorn and sse-starlette, which the MCP SDK already depends on, so the console adds
   no new runtime dependency. The front end is Preact with htm, vendored as one 13 kB ES module: no build step,
   no Node.js in the image, nothing fetched at run time.
-- **Look.** Calm document greys; one indigo, the colour of a review pen, for everything that needs a person;
-  a fixed set of traceability colours, always shown with a label. Atkinson Hyperlegible Next for text, chosen
-  for legibility, and JetBrains Mono, with ligatures off, so code reads exactly as written. Light and dark
-  themes, keyboard shortcuts, visible focus, reduced motion respected, usable on a phone.
+- **Look.** Built on the [NASA Horizon Design System](https://github.com/nasa/hds-core) (HDS, public domain),
+  the system behind nasa.gov, served from the package with its fonts: Inter for headings and controls, Public
+  Sans for running text, DM Mono for identifiers, numbers and code. Its rules are kept: black header and
+  footer, squared corners, red only for links that take you somewhere (arrow links, the review sheet), blue
+  for actions on the page (generate, start a run, verdicts), dashed link underlines, USWDS components for
+  forms, tables and navigation. The traceability states use HDS data-visualization colours and are always
+  shown with a label. Light theme by default (HDS White palette), dark theme on request (HDS Dark palette).
+  The stylesheet travels gzip-compressed (about 50 kB).
+- **Identity.** oge has its own mark, four requirement ticks with the last still open, and no NASA insignia,
+  logotype or name as branding: those are trademarks that the design system's public-domain release does not
+  cover. The footer says that oge is not affiliated with or endorsed by NASA.
+- **Accessibility.** axe-core reports no WCAG 2.1 A/AA violation on any page in either theme. Keyboard
+  shortcuts, visible focus, a skip link, reduced motion respected, usable on a phone.
 - **Tests.** `tests/test_console.py` covers the API, persistence and settings validation. On real F´ (marker
   `fprime`) a run is started from the API and replays a recorded answer through the real build, tests, commit
   and mutation analysis. The CI job `console-image` builds the image and runs the agent inside it.
