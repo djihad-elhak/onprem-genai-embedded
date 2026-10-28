@@ -1,8 +1,7 @@
 """F´ workspace operations used by the agent: component layout, unit-test build and run, coverage, git.
 
-Everything here is deterministic and bounded (timeouts, output caps). The LLM never runs commands: the
-agent graph
-calls these functions with arguments derived from the requirement, never from model output.
+Everything here is deterministic and bounded (timeouts, output caps). The LLM never runs commands: the agent
+graph calls these functions with arguments derived from the requirement, never from model output.
 """
 
 from __future__ import annotations

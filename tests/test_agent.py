@@ -1,8 +1,7 @@
-"""Test-generation agent: answer parsing, policy, patching, diagnostics, mutation operators, runner
-bookkeeping.
+"""Test-generation agent: parsing, policy, patching, diagnostics, mutation operators, bookkeeping.
 
-The end-to-end run on real F´ (LangGraph graph + MCP + fprime-util build + gtest + git) is ``test_agent_e2e``,
-marked ``fprime``.
+The end-to-end run on real F´ (LangGraph graph + MCP + fprime-util build + gtest + git) is
+``test_agent_e2e``, marked ``fprime``.
 """
 
 from __future__ import annotations

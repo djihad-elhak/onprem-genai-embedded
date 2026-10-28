@@ -1,11 +1,9 @@
 """Turn a model answer into a policy-checked edit of a component's unit tests.
 
 The model writes only two things: Tester member function definitions and gtest ``TEST()`` cases. Everything
-else
-is done here, deterministically: declarations are derived from the definitions, code is inserted at structural
-anchors found with tree-sitter, the requirement tag is enforced, and the edit is confined to the three test
-files
-(``<C>Tester.hpp``, ``<C>Tester.cpp``, ``<C>TestMain.cpp``).
+else is done here, deterministically: declarations are derived from the definitions, code is inserted at
+structural anchors found with tree-sitter, the requirement tag is enforced, and the edit is confined to the
+three test files (``<C>Tester.hpp``, ``<C>Tester.cpp``, ``<C>TestMain.cpp``).
 """
 
 from __future__ import annotations

@@ -1,8 +1,7 @@
-"""Prompt context for the test-writing agent: requirement, model, harness API, existing tests, implementation.
+"""Prompt context of the test-writing agent: requirement, model, harness API, tests, implementation.
 
 Context is assembled deterministically from the knowledge graph (over MCP) and the component's files, in
-priority
-order under a character budget, so that runs are reproducible and comparable across models.
+priority order under a character budget, so that runs are reproducible and comparable across models.
 """
 
 from __future__ import annotations
@@ -18,8 +17,8 @@ from onprem_genai.agent.knowledge import KnowledgeClient
 
 SYSTEM_PROMPT = """\
 You are a senior flight-software test engineer working on NASA F Prime (F´) components (C++14).
-Your job: write ONE focused unit test that verifies ONE requirement, using the component's existing gtest
-harness.
+Your job: write ONE focused unit test that verifies ONE requirement, using the component's existing
+gtest harness.
 
 Rules (from the F´ unit-testing guidelines):
 - Test through the component's interface only: invoke input ports (invoke_to_*), send commands (sendCmd_*),
@@ -27,8 +26,8 @@ Rules (from the F´ unit-testing guidelines):
   responses (ASSERT_CMD_RESPONSE*). Use only macros and methods listed in the harness API.
 - Call this->clearHistory() before the action you check; call this->component.doDispatch() after each
   asynchronous port invocation or command on an active/queued component.
-- Derive expected values from the requirement and the FPP model, never from guesses. Check values, not only
-sizes.
+- Derive expected values from the requirement and the FPP model, never from guesses. Check values,
+  not only sizes.
 - Reuse the existing Tester helpers, members and constructor modes shown below; do not modify existing code.
 - No dynamic memory, threads, sleeps, file deletion or process control.
 
@@ -38,8 +37,8 @@ Answer format: optionally one short paragraph of reasoning, then exactly two fen
  #include lines allowed at the top of this block>
 ```
 ```cpp main
-<one or more new TEST(Suite, Name) cases that construct the Tester like the existing cases and call your
-method>
+<one or more new TEST(Suite, Name) cases that construct the Tester like the existing cases and call
+ your method>
 ```
 Start the test method with REQUIREMENT("<requirement id>");. Use new, descriptive method and test names.
 If the requirement cannot be verified by a unit test of this component (e.g. it is verified by inspection of
@@ -60,16 +59,15 @@ REPAIR_TEST = """\
 The test compiled but failed:
 {failures}
 Re-read the requirement and the implementation. If the expectation in the test is wrong, fix the test and
-answer
-again with the complete blocks. If you are confident the test is right and the implementation violates the
-requirement, answer SUSPECTED_DEFECT: <one-paragraph explanation> followed by the unchanged blocks."""
+answer again with the complete blocks. If you are confident the test is right and the implementation
+violates the requirement, answer SUSPECTED_DEFECT: <one-paragraph explanation> followed by the unchanged
+blocks."""
 
 REPAIR_REGRESSION = """\
 Your test passes, but the existing unit tests now fail:
 {failures}
-Your change must not affect other tests (shared state, name clashes, history size). Fix it and answer again
-with
-the complete blocks."""
+Your change must not affect other tests (shared state, name clashes, history size). Fix it and answer
+again with the complete blocks."""
 
 
 @dataclass

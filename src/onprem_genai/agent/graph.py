@@ -4,9 +4,10 @@
                             ▲          │         │       │
                             └──────────┴─────────┴───────┘  repair loop (bounded by max_attempts)
 
-The model only writes test code. Retrieval (MCP), patching, building, running, coverage, git and CI are
+The model only writes test code. Retrieval (MCP), patching, building, running, coverage and git are
 deterministic nodes with fixed arguments, so the agent's authority is bounded: it can add unit tests to one
-component's ``test/ut`` directory and nothing else.
+component's ``test/ut`` directory and nothing else. CI (Jenkins over MCP, ``agent.ci``) runs once per batch on
+the run branch.
 """
 
 # Node functions read keys written by earlier nodes; the graph edges guarantee they exist.

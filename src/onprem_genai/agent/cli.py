@@ -12,6 +12,7 @@ from typing import Annotated, Any
 import typer
 from rich.console import Console
 
+from onprem_genai.agent.ci import DEFAULT_JOB, JenkinsCi
 from onprem_genai.agent.fprime import FprimeWorkspace
 from onprem_genai.agent.graph import AgentConfig, AgentDeps
 from onprem_genai.agent.knowledge import KnowledgeClient
@@ -22,6 +23,7 @@ from onprem_genai.agent.runner import (
     run_batch,
     select_targets,
     summarize,
+    verify_with_ci,
 )
 from onprem_genai.llm import ChatModel
 
@@ -35,6 +37,12 @@ GraphOpt = Annotated[Path | None, typer.Option(help="Graph snapshot served in-pr
 McpOpt = Annotated[str | None, typer.Option(envvar="OGE_MCP_URL", help="Knowledge MCP server URL (…/mcp)")]
 ModuleOpt = Annotated[list[str] | None, typer.Option("--module", "-m", help="Component, e.g. Svc/ComStub")]
 ReqOpt = Annotated[list[str] | None, typer.Option("--req", "-r", help="Requirement ID (repeatable)")]
+CiUrlOpt = Annotated[
+    str | None, typer.Option(envvar="OGE_JENKINS_MCP_URL", help="Jenkins MCP endpoint (…/mcp-server/mcp)")
+]
+CiUserOpt = Annotated[str | None, typer.Option(envvar="OGE_JENKINS_USER")]
+CiSecretOpt = Annotated[str | None, typer.Option(envvar="OGE_JENKINS_TOKEN", help="API token or password")]
+CiJobOpt = Annotated[str, typer.Option(help="Jenkins pipeline running the F´ unit tests")]
 
 
 def _mcp_target(mcp_url: str | None, graph: Path | None) -> Any:
@@ -91,8 +99,12 @@ def run(
     ] = None,
     fprime_util: Annotated[str | None, typer.Option(envvar="OGE_FPRIME_UTIL")] = None,
     jobs: Annotated[int | None, typer.Option(help="Parallel build jobs")] = None,
+    ci_url: CiUrlOpt = None,
+    ci_user: CiUserOpt = None,
+    ci_token: CiSecretOpt = None,
+    ci_job: CiJobOpt = DEFAULT_JOB,
 ) -> None:
-    """Generate, build, run and commit one unit test per requirement gap."""
+    """Generate, build, run and commit one unit test per requirement gap, then verify the branch in CI."""
     if scripted:
         answers = {
             k: v for k, v in json.loads(scripted.read_text(encoding="utf-8")).items() if not k.startswith("_")
@@ -139,7 +151,12 @@ def run(
         async with KnowledgeClient(_mcp_target(mcp_url, graph)) as kb:
             ids = await select_targets(kb, module, req)
             console.print(f"{len(ids)} requirement(s) → branch {branch}, results {out}")
-            return await run_batch(AgentDeps(ws, kb, llm, cfg), ids, out, branch, progress)
+            records = await run_batch(AgentDeps(ws, kb, llm, cfg), ids, out, branch, progress)
+        if ci_url:
+            console.print(f"CI: Jenkins job {ci_job} on {branch} …")
+            ci = await verify_with_ci(JenkinsCi(ci_url, ci_user, ci_token, ci_job), records, branch, out)
+            console.print(f"CI: {ci['result'] if ci else 'nothing to verify'}")
+        return records
 
     records = asyncio.run(go())
     _write_reports(records, out, label)
@@ -147,10 +164,13 @@ def run(
 
 def _write_reports(records: list[dict[str, Any]], out: Path, label: str) -> None:
     summary = summarize(records)
-    out.with_suffix(".summary.json").write_text(
-        json.dumps({"label": label, **summary}, indent=1), encoding="utf-8"
-    )
-    out.with_suffix(".review.md").write_text(review_sheet(records, label), encoding="utf-8")
+    ci_file = out.with_suffix(".ci.json")
+    ci = json.loads(ci_file.read_text(encoding="utf-8")) if ci_file.exists() else None
+    if ci:
+        summary["ci"] = {k: ci.get(k) for k in ("job", "build_number", "result", "tests", "url", "seconds")}
+    text = json.dumps({"label": label, **summary}, indent=1)
+    out.with_suffix(".summary.json").write_text(text, encoding="utf-8")
+    out.with_suffix(".review.md").write_text(review_sheet(records, label, ci), encoding="utf-8")
     console.print_json(json.dumps(summary))
     console.print(
         f"summary: {out.with_suffix('.summary.json')}  review sheet: {out.with_suffix('.review.md')}"
@@ -165,3 +185,21 @@ def report(
     """Recompute the summary and review sheet of a run."""
     records = [json.loads(line) for line in results.read_text(encoding="utf-8").splitlines() if line.strip()]
     _write_reports(records, results, label or results.stem)
+
+
+@app.command("ci")
+def ci_cmd(
+    branch: Annotated[str, typer.Option(help="Branch of the F´ repository to test")],
+    module: Annotated[list[str], typer.Option("--module", "-m", help="Component, e.g. Svc/ComStub")],
+    ci_url: CiUrlOpt = None,
+    ci_user: CiUserOpt = None,
+    ci_token: CiSecretOpt = None,
+    ci_job: CiJobOpt = DEFAULT_JOB,
+) -> None:
+    """Run the Jenkins unit-test pipeline on a branch through the Jenkins MCP server and wait for it."""
+    if not ci_url:
+        raise typer.BadParameter("--ci-url (or OGE_JENKINS_MCP_URL) is required")
+    res = asyncio.run(JenkinsCi(ci_url, ci_user, ci_token, ci_job).run(branch, module))
+    console.print_json(json.dumps(res.as_dict()))
+    if not res.passed:
+        raise typer.Exit(1)

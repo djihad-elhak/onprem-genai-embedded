@@ -1,9 +1,7 @@
-"""Batch runs of the agent over traceability gaps: one git branch per run, one commit per verified
-requirement.
+"""Batch runs of the agent: one git branch per run, one commit per verified requirement.
 
 Results are appended to a JSONL file as each requirement finishes, so an interrupted run resumes where it
-stopped
-(the run branch keeps the commits already made).
+stopped (the run branch keeps the commits already made).
 """
 
 from __future__ import annotations
@@ -98,6 +96,18 @@ async def run_batch(
     return [done[r] for r in req_ids if r in done]
 
 
+async def verify_with_ci(
+    ci: Any, records: list[dict[str, Any]], branch: str, out: Path
+) -> dict[str, Any] | None:
+    """Run the CI pipeline once on the run branch for every component that received a verified test."""
+    modules = sorted({r["module"] for r in records if r["status"] == "passed" and r.get("commit")})
+    if not modules:
+        return None
+    result = (await ci.run(branch, modules)).as_dict()
+    out.with_suffix(".ci.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
+    return result
+
+
 # ------------------------------------------------------------------------------------------- summary
 def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
     n = len(records)
@@ -147,14 +157,20 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def review_sheet(records: list[dict[str, Any]], title: str) -> str:
+def review_sheet(records: list[dict[str, Any]], title: str, ci: dict[str, Any] | None = None) -> str:
     """Markdown for the human review of every generated test (relevance cannot be measured automatically)."""
-    lines = [
-        f"# Review sheet — {title}",
-        "",
+    lines = [f"# Review sheet — {title}", ""]
+    if ci:
+        tests = ci.get("tests") or {}
+        passed, total = tests.get("passCount", "?"), tests.get("totalCount", "?")
+        lines += [
+            f"CI: Jenkins `{ci['job']}` #{ci.get('build_number')} on `{ci['branch']}` → "
+            f"**{ci.get('result')}** ({passed}/{total} tests passed)",
+            "",
+        ]
+    lines += [
         "For each verified requirement: does the test exercise the behaviour the requirement states and "
-        "check "
-        "its outcome? Verdict: **relevant** / **partial** / **not relevant**.",
+        "check its outcome? Verdict: **relevant** / **partial** / **not relevant**.",
         "",
     ]
     for r in records:

@@ -81,3 +81,51 @@ jobs:
       - name: Logs on failure
         if: failure()
         run: docker compose -f deploy/compose.yaml -f deploy/compose.offline.yaml --profile cpu --profile smoke logs --tail 200
+
+  jenkins-integration:
+    # Jenkins LTS + MCP Server plugin (deploy/compose.ci.yaml). The agent writes tests on a branch (scripted
+    # model), then triggers the F´ unit-test pipeline over MCP and waits for its verdict.
+    runs-on: ubuntu-latest
+    needs: quality
+    env:
+      JENKINS_ADMIN_PASSWORD: ci-admin-${{ github.run_id }}
+      JENKINS_AGENT_PASSWORD: ci-agent-${{ github.run_id }}
+      OGE_JENKINS_MCP_URL: http://127.0.0.1:8090/mcp-server/mcp
+      OGE_JENKINS_USER: oge-agent
+      OGE_JENKINS_TOKEN: ci-agent-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: uv sync --all-extras --group dev
+      - name: Fetch pinned F´ and prepare its unit-test build
+        run: scripts/setup_fprime_ut.sh
+      - name: Build and start Jenkins
+        run: docker compose -f deploy/compose.ci.yaml up -d --build
+      - name: Build the knowledge graph
+        run: uv run oge knowledge ingest
+      - name: Wait for Jenkins and its MCP endpoint
+        run: |
+          for i in $(seq 1 90); do
+            curl -fsS http://127.0.0.1:8090/mcp-health && exit 0
+            sleep 5
+          done
+          exit 1
+      - name: Agent run, then CI verification over MCP
+        run: >-
+          uv run oge agent run --scripted tests/data/scripted_agent_answers.json
+          -r SVC-COMSTUB-003 -r SVC-COMSTUB-006 --branch oge-agent/ci --out artifacts/agent/ci.jsonl
+          --ci-url "$OGE_JENKINS_MCP_URL"
+      - name: Check the Jenkins verdict (2 new tests on top of the existing ComStub suite)
+        run: >-
+          uv run python -c "import json, sys; ci = json.load(open('artifacts/agent/ci.ci.json')); print(ci);
+          sys.exit(0 if ci['result'] == 'SUCCESS' and ci['tests'].get('totalCount', 0) >= 12 else 1)"
+      - name: Jenkins MCP contract test
+        env:
+          OGE_JENKINS_BRANCH: oge-agent/ci
+        run: uv run pytest -m jenkins
+      - name: Jenkins logs on failure
+        if: failure()
+        run: docker compose -f deploy/compose.ci.yaml logs --tail 300

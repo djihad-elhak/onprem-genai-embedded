@@ -1,0 +1,7 @@
+# Resolved against the Jenkins version of the base image by jenkins-plugin-cli.
+configuration-as-code
+matrix-auth
+workflow-aggregator
+junit
+# official MCP server plugin (tools: triggerBuild, getQueueItem, getBuild, getTestResults, getBuildLog, ...)
+mcp-server:0.221.v42ee125fc488

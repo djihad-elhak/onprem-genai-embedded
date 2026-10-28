@@ -1,0 +1,36 @@
+# CI add-on: Jenkins LTS + the official MCP Server plugin + the F´ unit-test pipeline.
+#
+#   docker compose -f deploy/compose.ci.yaml up -d --build                       # Jenkins alone
+#   docker compose -f deploy/compose.yaml -f deploy/compose.ci.yaml --profile cpu up -d   # with the platform
+#
+# The test-generation agent triggers the pipeline over MCP (http://127.0.0.1:8090/mcp-server/mcp, service
+# account oge-agent: Overall/Read, Job/Read, Job/Build only). The F´ checkout is mounted read-only.
+
+name: onprem-genai
+
+services:
+  jenkins:
+    build: ./jenkins
+    image: onprem-genai/jenkins:0.1.0
+    restart: unless-stopped
+    environment:
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:?set JENKINS_ADMIN_PASSWORD in deploy/.env}
+      JENKINS_AGENT_PASSWORD: ${JENKINS_AGENT_PASSWORD:?set JENKINS_AGENT_PASSWORD in deploy/.env}
+      JENKINS_URL: http://localhost:8090/
+    volumes:
+      - jenkins-home:/var/jenkins_home
+      - ${FPRIME_DIR:-../third_party/fprime}:/repos/fprime:ro
+    ports: ["127.0.0.1:8090:8080"]
+    networks: [platform]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/mcp-health"]
+      interval: 15s
+      timeout: 5s
+      retries: 40
+      start_period: 60s
+
+networks:
+  platform: {}
+
+volumes:
+  jenkins-home: {}

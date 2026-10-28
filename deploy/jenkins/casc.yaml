@@ -1,0 +1,35 @@
+# Jenkins configuration as code. Secrets come from the environment (deploy/.env), never from this file.
+jenkins:
+  systemMessage: "On-prem GenAI platform CI: F´ unit tests, including those written by the test-generation agent"
+  numExecutors: 2
+  mode: NORMAL
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          name: "Administrator"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+        - id: "oge-agent"
+          name: "Test-generation agent (service account)"
+          password: "${JENKINS_AGENT_PASSWORD}"
+  # least privilege for the agent: it can see jobs and builds and start builds, nothing else
+  authorizationStrategy:
+    globalMatrix:
+      entries:
+        - user:
+            name: "admin"
+            permissions:
+              - "Overall/Administer"
+        - user:
+            name: "oge-agent"
+            permissions:
+              - "Overall/Read"
+              - "Job/Read"
+              - "Job/Build"
+  crumbIssuer:
+    standard:
+      excludeClientIPFromCrumb: false
+unclassified:
+  location:
+    url: "${JENKINS_URL:-http://localhost:8090/}"

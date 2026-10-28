@@ -1,11 +1,9 @@
 """Fault-detection check of a generated test: does it fail when the code it exercises is broken?
 
 Mutants are generated only on implementation lines that the new test executes (gcov), with operators that
-model
-typical flight-software faults: inverted conditions, off-by-one bounds, swapped success / failure statuses,
-and
-dropped port calls, events or telemetry writes. A mutant that does not compile is discarded; a valid mutant is
-killed when the new test fails on it. The implementation file is always restored.
+model typical flight-software faults: inverted conditions, off-by-one bounds, swapped success / failure
+statuses, and dropped port calls, events or telemetry writes. A mutant that does not compile is discarded; a
+valid mutant is killed when the new test fails on it. The implementation file is always restored.
 
 This is an evaluation of the agent's output, not something the agent sees or can optimise against.
 """
