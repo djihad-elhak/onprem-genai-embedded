@@ -31,6 +31,12 @@ de Qwen3-Coder-30B-A3B lors de la passe 3, la machine d'enregistrement n'ayant p
 | ![réparation](docs/assets/demo-repair.gif) | ![mcp](docs/assets/demo-mcp.gif) | ![évaluation](docs/assets/demo-eval.gif) |
 | Une macro du harnais mal orthographiée fait échouer la compilation ; l'erreur et une suggestion repartent vers le modèle, qui corrige. | Ce qu'un assistant obtient du serveur MCP : une exigence, les trous d'un composant, des tests candidats, du code et la documentation. | Les 27 tâches C se valident elles-mêmes ; les deux modèles mesurés sur Kaggle, notés par exécution. |
 
+**Rejeu interactif.** Ouvrir [`demo/web/index.html`](demo/web/index.html) dans un navigateur (un seul fichier,
+sans serveur) pour suivre pas à pas trois exécutions réelles de l'agent (une réussite après réparation, une
+réussite du premier coup, un échec) avec les sorties exactes du compilateur et des tests, parcourir chaque
+tentative sur les 28 exigences et explorer les graphiques du benchmark. Page générée depuis les résultats
+stockés par `demo/web/extract.py`.
+
 ## Ce que fait la plateforme
 
 | Couche | Composant | État |

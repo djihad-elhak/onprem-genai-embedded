@@ -13,6 +13,20 @@ with the real knowledge graph, MCP server, `fprime-util` build, gtest run, git a
 No GPU is needed: a model is replayed because the recording machine has none. With a served model, replace
 `--scripted …` by `--base-url http://localhost:8080 --label <model>`; everything else is identical.
 
+## Interactive page
+
+`web/index.html` is a self-contained page (open it in any browser) that replays three agent runs of benchmark
+run 3 step by step (Qwen3-Coder: SVC-COMRETRY-002 repaired twice, SVC-COMSTUB-007 first try, PRMDB-002 gave up),
+with the outcome board of all 28 requirements for both models and the agent, traceability and serving charts.
+Everything on it is read from `docs/results` and the F´ graph; the run log stores only the last answer of each
+requirement, so earlier attempts are shown through the build or test output that sent them back.
+
+```bash
+uv run python demo/web/extract.py   # rebuilds web/data.json and web/index.html from page.html
+```
+
+## Re-record the terminal demos
+
 Re-record (needs `asciinema` and [`agg`](https://github.com/asciinema/agg), and `scripts/setup_fprime_ut.sh`):
 
 ```bash

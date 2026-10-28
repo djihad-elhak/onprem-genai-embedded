@@ -1,0 +1,1599 @@
+{
+ "board": [
+  {
+   "req_id": "SVC-COMSTUB-001",
+   "module": "Svc/ComStub",
+   "text": "Svc::ComStub shall accept Fw::Buffer for transmission and  pass them to a Drv::ByteStreamSend port",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 68.04,
+    "v1": "passed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "test",
+     "passed"
+    ],
+    "seconds": 100.53,
+    "v1": "passed"
+   }
+  },
+  {
+   "req_id": "SVC-COMSTUB-002",
+   "module": "Svc/ComStub",
+   "text": "Svc::ComStub shall send a Fw::Success::SUCCESS signal via comStatusOut on Drv::ByteStreamSend success (in response to data received on dataIn)",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 23.76,
+    "v1": "passed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 49.53,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-COMSTUB-003",
+   "module": "Svc/ComStub",
+   "text": "Svc::ComStub shall send a Fw::Success::FAILURE signal via comStatusOut on Drv::ByteStreamSend failure",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 22.97,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 45.0,
+    "v1": "passed"
+   }
+  },
+  {
+   "req_id": "SVC-COMSTUB-004",
+   "module": "Svc/ComStub",
+   "text": "Svc::ComStub shall retry sending to Drv::ByteStreamSend on Drv::ByteStreamSend retry",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 24.97,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "test",
+     "passed"
+    ],
+    "seconds": 112.1,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-COMSTUB-005",
+   "module": "Svc/ComStub",
+   "text": "Svc::ComStub shall pass-through Fw::Buffer from a  Drv::ByteStreamRead on Drv::ByteStreamSend success",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "policy",
+     "policy",
+     "passed"
+    ],
+    "seconds": 42.97,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "build",
+     "passed"
+    ],
+    "seconds": 67.73,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-COMSTUB-006",
+   "module": "Svc/ComStub",
+   "text": "Svc::ComStub shall emit exactly one Fw::Success::SUCCESS via comStatusOut on start-up / driver connection to initiate data flow",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 21.27,
+    "v1": "passed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 39.75,
+    "v1": "passed"
+   }
+  },
+  {
+   "req_id": "SVC-COMSTUB-007",
+   "module": "Svc/ComStub",
+   "text": "Svc::ComStub shall emit exactly one Fw::Success::SUCCESS via comStatusOut after a driver reconnection following a previous failure to indicate recovery",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 24.5,
+    "v1": "passed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 53.35,
+    "v1": "not_testable"
+   }
+  },
+  {
+   "req_id": "SVC-COMRETRY-001",
+   "module": "Svc/ComRetry",
+   "text": "Svc::ComRetry shall accept incoming downlink data as Fw::Buffer and pass them to an Svc.ComDataWithContext port",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 20.28,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "failed",
+    "steps": [
+     "build",
+     "build",
+     "build"
+    ],
+    "seconds": 71.55,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-COMRETRY-002",
+   "module": "Svc/ComRetry",
+   "text": "Svc::ComRetry shall store Fw::Buffer and its context on receiving buffer ownership through dataReturnIn",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "build",
+     "test",
+     "passed"
+    ],
+    "seconds": 45.11,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "failed",
+    "steps": [
+     "build",
+     "build",
+     "build"
+    ],
+    "seconds": 118.12,
+    "v1": "passed"
+   }
+  },
+  {
+   "req_id": "SVC-COMRETRY-003",
+   "module": "Svc/ComRetry",
+   "text": "Svc::ComRetry shall pause delivery on receiving Fw::Success::FAILURE",
+   "qwen": {
+    "status": "failed",
+    "steps": [
+     "test",
+     "test",
+     "test"
+    ],
+    "seconds": 44.09,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "failed",
+    "steps": [
+     "test",
+     "test",
+     "test"
+    ],
+    "seconds": 107.18,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-COMRETRY-004",
+   "module": "Svc/ComRetry",
+   "text": "Svc::ComRetry shall resend Fw::Buffer on receiving Fw::Success::SUCCESS after prior failure if retries are available",
+   "qwen": {
+    "status": "failed",
+    "steps": [
+     "test",
+     "test",
+     "test"
+    ],
+    "seconds": 45.58,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 48.69,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-COMRETRY-005",
+   "module": "Svc/ComRetry",
+   "text": "Svc::ComRetry shall pass through the initial start-up Fw::Success::SUCCESS and any non-data statuses upstream when no buffer is pending",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 17.45,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 34.3,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-COMRETRY-007",
+   "module": "Svc/ComRetry",
+   "text": "Svc::ComRetry shall return buffer ownership to the upstream component on receiving Fw::Success::SUCCESS or after all retry attempts fail",
+   "qwen": {
+    "status": "failed",
+    "steps": [
+     "test",
+     "test",
+     "test"
+    ],
+    "seconds": 47.67,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "failed",
+    "steps": [
+     "build",
+     "build",
+     "build"
+    ],
+    "seconds": 117.68,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-COMRETRY-008",
+   "module": "Svc/ComRetry",
+   "text": "Svc::ComRetry shall send ComStatus upstream on successful delivery or after all retry attempts fail",
+   "qwen": {
+    "status": "failed",
+    "steps": [
+     "test",
+     "test",
+     "test"
+    ],
+    "seconds": 42.97,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "failed",
+    "steps": [
+     "test",
+     "test",
+     "test"
+    ],
+    "seconds": 138.51,
+    "v1": "passed"
+   }
+  },
+  {
+   "req_id": "PRMDB-001",
+   "module": "Svc/PrmDb",
+   "text": "The Svc::PrmDb component shall load parameter values from a file",
+   "qwen": {
+    "status": "failed",
+    "steps": [
+     "policy",
+     "build",
+     "build"
+    ],
+    "seconds": 46.87,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "failed",
+    "steps": [
+     "policy",
+     "build",
+     "build"
+    ],
+    "seconds": 115.76,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "PRMDB-002",
+   "module": "Svc/PrmDb",
+   "text": "The Svc::PrmDb component shall provide an interface to read parameter values",
+   "qwen": {
+    "status": "failed",
+    "steps": [
+     "build",
+     "build",
+     "build"
+    ],
+    "seconds": 40.12,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "failed",
+    "steps": [
+     "build",
+     "build",
+     "build"
+    ],
+    "seconds": 126.87,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "PRMDB-003",
+   "module": "Svc/PrmDb",
+   "text": "The Svc::PrmDb component shall provide an interface to update parameter values",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 34.24,
+    "v1": "passed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "build",
+     "passed"
+    ],
+    "seconds": 123.59,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "PRMDB-004",
+   "module": "Svc/PrmDb",
+   "text": "The Svc::PrmDb component shall provide a command to save the current parameter values",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "test",
+     "passed"
+    ],
+    "seconds": 50.38,
+    "v1": "passed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 87.96,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "PRMDB-005",
+   "module": "Svc/PrmDb",
+   "text": "The Svc::PrmDb component shall reject a PRM_LOAD_FILE command with an empty file name with a VALIDATION_ERROR response and a PrmDbFileLoadFailed event, without asserting or altering the staging database",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "policy",
+     "passed"
+    ],
+    "seconds": 55.05,
+    "v1": "passed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 105.57,
+    "v1": "passed"
+   }
+  },
+  {
+   "req_id": "SVC-ROUTER-001",
+   "module": "Svc/FprimeRouter",
+   "text": "Svc::FprimeRouter shall route packets based on their packet type as indicated by the packet header",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "policy",
+     "passed"
+    ],
+    "seconds": 29.88,
+    "v1": "passed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 58.1,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-ROUTER-002",
+   "module": "Svc/FprimeRouter",
+   "text": "Svc::FprimeRouter shall route packets of type Fw::ComPacketType::FW_PACKET_COMMAND to the commandOut output port.",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "policy",
+     "passed"
+    ],
+    "seconds": 25.36,
+    "v1": "passed"
+   },
+   "devstral": {
+    "status": "failed",
+    "steps": [
+     "test",
+     "test",
+     "test"
+    ],
+    "seconds": 100.66,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-ROUTER-003",
+   "module": "Svc/FprimeRouter",
+   "text": "Svc::FprimeRouter shall route packets of type Fw::ComPacketType::FW_PACKET_FILE to the fileOut output port.",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "test",
+     "passed"
+    ],
+    "seconds": 42.15,
+    "v1": "passed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 39.0,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-ROUTER-004",
+   "module": "Svc/FprimeRouter",
+   "text": "Svc::FprimeRouter shall route data that is neither Fw::ComPacketType::FW_PACKET_COMMAND nor Fw::ComPacketType::FW_PACKET_FILE to the unknownDataOut output port.",
+   "qwen": {
+    "status": "failed",
+    "steps": [
+     "policy",
+     "build",
+     "policy"
+    ],
+    "seconds": 37.32,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 38.48,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-ROUTER-005",
+   "module": "Svc/FprimeRouter",
+   "text": "Svc::FprimeRouter shall emit warning events if serialization errors occur during processing of incoming packets",
+   "qwen": {
+    "status": "failed",
+    "steps": [
+     "policy",
+     "build",
+     "build"
+    ],
+    "seconds": 45.28,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "failed",
+    "steps": [
+     "build",
+     "test",
+     "test"
+    ],
+    "seconds": 136.67,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-ROUTER-006",
+   "module": "Svc/FprimeRouter",
+   "text": "Svc::FprimeRouter shall pass through buffers for FW_PACKET_FILE and unknown packet types without copying, and defer returning them to the deframer until they are returned via fileBufferReturnIn",
+   "qwen": {
+    "status": "failed",
+    "steps": [
+     "build",
+     "build",
+     "build"
+    ],
+    "seconds": 49.95,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "failed",
+    "steps": [
+     "build",
+     "test",
+     "build"
+    ],
+    "seconds": 131.39,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-ROUTER-007",
+   "module": "Svc/FprimeRouter",
+   "text": "Svc::FprimeRouter shall return ownership of all buffers received on dataIn through dataReturnOut",
+   "qwen": {
+    "status": "failed",
+    "steps": [
+     "build",
+     "build",
+     "build"
+    ],
+    "seconds": 43.83,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "build",
+     "test",
+     "passed"
+    ],
+    "seconds": 125.39,
+    "v1": "failed"
+   }
+  },
+  {
+   "req_id": "SVC-ROUTER-008",
+   "module": "Svc/FprimeRouter",
+   "text": "Svc::FprimeRouter shall preserve the ComCfg::FrameContext received on dataIn and restore it on the corresponding dataReturnOut, including across the fileOut/unknownDataOut → fileBufferReturnIn round-trip",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 27.56,
+    "v1": "failed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 54.79,
+    "v1": "passed"
+   }
+  },
+  {
+   "req_id": "SVC-ROUTER-009",
+   "module": "Svc/FprimeRouter",
+   "text": "Svc::FprimeRouter shall emit a warning event and return the buffer with an empty context when the buffer-to-context table is full on hand-off, or when a returned buffer is not found in the table",
+   "qwen": {
+    "status": "passed",
+    "steps": [
+     "test",
+     "passed"
+    ],
+    "seconds": 47.9,
+    "v1": "passed"
+   },
+   "devstral": {
+    "status": "passed",
+    "steps": [
+     "passed"
+    ],
+    "seconds": 54.95,
+    "v1": "passed"
+   }
+  }
+ ],
+ "replays": [
+  {
+   "model": "qwen",
+   "req_id": "SVC-COMRETRY-002",
+   "module": "Svc/ComRetry",
+   "requirement": {
+    "text": "Svc::ComRetry shall store Fw::Buffer and its context on receiving buffer ownership through dataReturnIn",
+    "verification": "Unit test",
+    "file": "Svc/ComRetry/docs/sdd.md"
+   },
+   "status": "passed",
+   "reason": "",
+   "attempts": 3,
+   "commit": "574cb8d060f41d87771628d541eb88bbd388369a",
+   "wall_seconds": 45.11,
+   "history": [
+    {
+     "attempt": 1,
+     "stage": "build",
+     "detail": "Svc/ComRetry/test/ut/ComRetryTester.cpp:165:13: error: ‘class ComCfg::FrameContext’ has no member named ‘frameType’\n  165 |     context.frameType = ComCfg::FrameType::COMMAND;\n      |             ^~~~~~~~~\nSvc/ComRetry/test/ut/ComRetryTester.cpp:165:33: error: ‘ComCfg::FrameType’ has not been declared\n  165 |     context.frameType = ComCfg::FrameType::COMMAND;\n      |                                 ^~~~~~~~~\nSvc/ComRetry/test/ut/ComRetryTester.cpp:166:13: error: ‘class ComCfg::FrameContext’ has no member named ‘sequence’\n  166 |     context.sequence = 42;\n      |             ^~~~~~~~"
+    },
+    {
+     "attempt": 2,
+     "stage": "test",
+     "detail": "executable exited with code -6: \nRepeating all tests (iteration 1) . . .\n\nNote: Google Test filter = Nominal.BufferStorageOnDataReturnIn\n[==========] Running 1 test from 1 test suite.\n[----------] Global test environment set-up.\n[----------] 1 test from Nominal\n[ RUN      ] Nominal.BufferStorageOnDataReturnIn\nAssert: \"Svc/ComRetry/ComRetry.cpp:85\"\nSvc_ComRetry_ut_exe: Fw/Types/Assert.cpp:128: void Fw::defaultSwAssert(const CHAR*, FwSizeType, FwSizeType, FwAssertArgType, FwAssertArgType, FwAssertArgType, FwAssertArgType, FwAssertArgType, FwAssertArgType): Assertion `false' failed.\n"
+    },
+    {
+     "attempt": 3,
+     "stage": "passed",
+     "detail": "Nominal.BufferStorageOnDataReturnIn"
+    }
+   ],
+   "assert_lines": {
+    "Svc/ComRetry/ComRetry.cpp:85": "FW_ASSERT(this->m_bufferState == Fw::Buffer::OwnershipState::NOT_OWNED);"
+   },
+   "last_answer": "Looking at the assertion failure, I can see the issue. The test is calling `dataReturnIn_handler` when the buffer state is already `OWNED`, but according to the implementation logic, `dataReturnIn_handler` should only be called when `m_bufferState` is `NOT_OWNED`. \n\nLooking at the implementation flow:\n1. `dataIn_handler` sets `m_bufferState` to `NOT_OWNED` \n2. `dataReturnIn_handler` expects `m_bufferState` to be `NOT_OWNED` and sets it to `OWNED`\n\nThe test needs to follow the proper sequence. Let me re-read the requirement and understand what \"store Fw::Buffer and its context\" means in the context of the component's behavior.\n\nLooking more carefully at the requirement and implementation, I think I misunderstood what the test should verify. The requirement says \"store Fw::Buffer and its context on receiving buffer ownership through dataReturnIn\" - this means that when `dataReturnIn` is called, the component should store the buffer and context internally. The assertion failure shows that the component expects to be in `NOT_OWNED` state when receiving a buffer via `dataReturnIn`, but the test is calling it in a state where it's already `OWNED`.\n\nLet me fix this by creating a proper test that follows the component's expected flow:\n\n```cpp tester\nvoid Svc::ComRetryTester::testBufferStorageOnDataReturnIn() {\n    REQUIREMENT(\"SVC-COMRETRY-002\");\n    // Test that ComRetry stores Fw::Buffer and its context on receiving buffer ownership through dataReturnIn\n    \n    U8 data[BUFFER_LENGTH] = DATA_A;\n    Fw::Buffer buffer(&data[0], sizeof(data));\n    ComCfg::FrameContext context;\n    \n    // Clear history before the action\n    this->clearHistory();\n\n    // First, we need to go through the normal flow to get to the state where dataReturnIn can be called\n    // Send a buffer through dataIn to set up the component state\n    this->invoke_to_dataIn(0, buffer, context);\n    \n    // Clear history before next action\n    this->clearHistory();\n    \n    // Now call dataReturnIn - this should store the buffer and context\n    this->invoke_to_dataReturnIn(0, buffer, context);\n\n    // Verify that the buffer and context were stored by checking that a subsequent successful status\n    // properly handles the stored buffer\n    Fw::Success success = Fw::Success::SUCCESS;\n    \n    // Clear history before action\n    this->clearHistory();\n    \n    // Send a successful status - this should trigger return of the stored buffer\n    this->invoke_to_comStatusIn(0, success);\n    \n    // Verify that the stored buffer was returned through dataReturnOut\n    ASSERT_from_dataReturnOut_SIZE(1);\n    ASSERT_from_dataReturnOut(0, buffer, context);\n}\n```",
+   "diff": "diff --git a/Svc/ComRetry/test/ut/ComRetryTestMain.cpp b/Svc/ComRetry/test/ut/ComRetryTestMain.cpp\nindex ec29fd9..270dde8 100644\n--- a/Svc/ComRetry/test/ut/ComRetryTestMain.cpp\n+++ b/Svc/ComRetry/test/ut/ComRetryTestMain.cpp\n@@ -32,6 +32,12 @@ TEST(Nominal, BufferPassThrough) {\n     tester.testBufferPassThrough();\n }\n \n+// Requirement SVC-COMRETRY-002\n+TEST(Nominal, BufferStorageOnDataReturnIn) {\n+    Svc::ComRetryTester tester;\n+    tester.testBufferStorageOnDataReturnIn();\n+}\n+\n int main(int argc, char** argv) {\n     ::testing::InitGoogleTest(&argc, argv);\n     return RUN_ALL_TESTS();\ndiff --git a/Svc/ComRetry/test/ut/ComRetryTester.cpp b/Svc/ComRetry/test/ut/ComRetryTester.cpp\nindex 4ac1276..4ed76bd 100644\n--- a/Svc/ComRetry/test/ut/ComRetryTester.cpp\n+++ b/Svc/ComRetry/test/ut/ComRetryTester.cpp\n@@ -154,4 +154,41 @@ void ComRetryTester ::testBufferPassThrough() {\n     ASSERT_from_dataOut(0, buffer, context);\n }\n \n+// Requirement SVC-COMRETRY-002\n+void ComRetryTester::testBufferStorageOnDataReturnIn() {\n+    REQUIREMENT(\"SVC-COMRETRY-002\");\n+    // Test that ComRetry stores Fw::Buffer and its context on receiving buffer ownership through dataReturnIn\n+    \n+    U8 data[BUFFER_LENGTH] = DATA_A;\n+    Fw::Buffer buffer(&data[0], sizeof(data));\n+    ComCfg::FrameContext context;\n+    \n+    // Clear history before the action\n+    this->clearHistory();\n+\n+    // First, we need to go through the normal flow to get to the state where dataReturnIn can be called\n+    // Send a buffer through dataIn to set up the component state\n+    this->invoke_to_dataIn(0, buffer, context);\n+    \n+    // Clear history before next action\n+    this->clearHistory();\n+    \n+    // Now call dataReturnIn - this should store the buffer and context\n+    this->invoke_to_dataReturnIn(0, buffer, context);\n+\n+    // Verify that the buffer and context were stored by checking that a subsequent successful status\n+    // properly handles the stored buffer\n+    Fw::Success success = Fw::Success::SUCCESS;\n+    \n+    // Clear history before action\n+    this->clearHistory();\n+    \n+    // Send a successful status - this should trigger return of the stored buffer\n+    this->invoke_to_comStatusIn(0, success);\n+    \n+    // Verify that the stored buffer was returned through dataReturnOut\n+    ASSERT_from_dataReturnOut_SIZE(1);\n+    ASSERT_from_dataReturnOut(0, buffer, context);\n+}\n+\n }  // namespace Svc\ndiff --git a/Svc/ComRetry/test/ut/ComRetryTester.hpp b/Svc/ComRetry/test/ut/ComRetryTester.hpp\nindex b0701bc..eadb78f 100644\n--- a/Svc/ComRetry/test/ut/ComRetryTester.hpp\n+++ b/Svc/ComRetry/test/ut/ComRetryTester.hpp\n@@ -83,6 +83,10 @@ class ComRetryTester final : public ComRetryGTestBase {\n   public:\n     //! Tests generated for requirement SVC-COMRETRY-001\n     void testBufferPassThrough();\n+\n+  public:\n+    //! Tests generated for requirement SVC-COMRETRY-002\n+    void testBufferStorageOnDataReturnIn();\n };\n \n }  // namespace Svc",
+   "metrics": {
+    "llm_calls": 3,
+    "prompt_tokens": 13886,
+    "completion_tokens": 1550,
+    "llm_seconds": 27.619,
+    "build_seconds": 9.6,
+    "truncated": 0,
+    "coverage_before": {
+     "line_coverage": 0.9808,
+     "branch_coverage": 0.6167,
+     "lines": 52
+    },
+    "context_chars": 16445,
+    "context_dropped": [],
+    "mcp_calls": 40,
+    "first_attempt_compiled": false,
+    "carried_blocks": 2,
+    "compiled": true,
+    "new_test_coverage": {
+     "line_coverage": 0.6154,
+     "branch_coverage": 0.3,
+     "lines": 52
+    },
+    "coverage_after": {
+     "line_coverage": 0.9808,
+     "branch_coverage": 0.6167,
+     "lines": 52
+    },
+    "coverage_delta": 0.0,
+    "tests_total": 6,
+    "test_names": [
+     "Nominal.BufferStorageOnDataReturnIn"
+    ]
+   },
+   "mutation": {
+    "candidates": 8,
+    "sampled": 4,
+    "valid": 4,
+    "killed": 2,
+    "mutants": [
+     {
+      "file": "Svc/ComRetry/ComRetry.cpp",
+      "line": 42,
+      "operator": "rel ==→!=",
+      "original": "    else if ((this->m_retry_state == WAITING_FOR_STATUS) && (condition == Fw::Success::SUCCESS)) {",
+      "mutated": "    else if ((this->m_retry_state != WAITING_FOR_STATUS) && (condition == Fw::Success::SUCCESS)) {",
+      "outcome": "killed"
+     },
+     {
+      "file": "Svc/ComRetry/ComRetry.cpp",
+      "line": 42,
+      "operator": "status SUCCESS→FAILURE",
+      "original": "    else if ((this->m_retry_state == WAITING_FOR_STATUS) && (condition == Fw::Success::SUCCESS)) {",
+      "mutated": "    else if ((this->m_retry_state == WAITING_FOR_STATUS) && (condition == Fw::Success::FAILURE)) {",
+      "outcome": "killed"
+     },
+     {
+      "file": "Svc/ComRetry/ComRetry.cpp",
+      "line": 42,
+      "operator": "logic &&→||",
+      "original": "    else if ((this->m_retry_state == WAITING_FOR_STATUS) && (condition == Fw::Success::SUCCESS)) {",
+      "mutated": "    else if ((this->m_retry_state == WAITING_FOR_STATUS) || (condition == Fw::Success::SUCCESS)) {",
+      "outcome": "survived"
+     },
+     {
+      "file": "Svc/ComRetry/ComRetry.cpp",
+      "line": 47,
+      "operator": "delete effect statement",
+      "original": "        this->comStatusOut_out(0, condition);",
+      "mutated": "        ;  // mutant: deleted",
+      "outcome": "survived"
+     }
+    ],
+    "score": 0.5
+   }
+  },
+  {
+   "model": "qwen",
+   "req_id": "SVC-COMSTUB-007",
+   "module": "Svc/ComStub",
+   "requirement": {
+    "text": "Svc::ComStub shall emit exactly one Fw::Success::SUCCESS via comStatusOut after a driver reconnection following a previous failure to indicate recovery",
+    "verification": "Unit Test",
+    "file": "Svc/ComStub/docs/sdd.md"
+   },
+   "status": "passed",
+   "reason": "",
+   "attempts": 1,
+   "commit": "79392a2c26acce4714097b5d22463c523d73787a",
+   "wall_seconds": 24.5,
+   "history": [
+    {
+     "attempt": 1,
+     "stage": "passed",
+     "detail": "Sync.RecoveryAfterFailure"
+    }
+   ],
+   "assert_lines": {},
+   "last_answer": "The requirement states that after a driver reconnection following a previous failure, the ComStub must emit exactly one Fw::Success::SUCCESS via comStatusOut to indicate recovery. This requires:\n1. First establishing a connection (which should emit SUCCESS)\n2. Simulating a failure scenario (e.g., retry exhaustion leading to reinitialize flag set)\n3. Simulating a driver reconnection (which should emit exactly one SUCCESS)\n4. Verifying exactly one SUCCESS is emitted during reconnection\n\nThe test needs to:\n- Use the existing test infrastructure\n- Follow the pattern of previous tests\n- Verify the exact behavior described in the requirement\n- Use only the provided macros and methods\n\n```cpp tester\nvoid ComStubTester ::test_recovery_after_failure() {\n    REQUIREMENT(\"SVC-COMSTUB-007\");\n    this->test_initial();\n\n    // Simulate a failure scenario that sets m_reinitialize flag\n    U8 storage[8];\n    Fw::Buffer buffer(storage, sizeof(storage));\n    ComCfg::FrameContext context;\n\n    // Set up a send failure that will cause retry exhaustion\n    this->m_sync_send_status = Drv::ByteStreamStatus::SEND_RETRY;\n    this->m_retry_fail = true;  // Ensure retries fail and exhaust\n\n    // Send data that will fail and set reinitialize flag\n    invoke_to_dataIn(0, buffer, context);\n    \n    // Verify that failure was reported\n    ASSERT_from_comStatusOut_SIZE(1);\n    ASSERT_from_comStatusOut(0, Fw::Success::FAILURE);\n    \n    // Clear history to isolate the recovery test\n    this->clearHistory();\n    \n    // Simulate driver reconnection (this should emit exactly one SUCCESS)\n    invoke_to_drvConnected(0);\n    \n    // Verify exactly one SUCCESS was emitted for recovery\n    ASSERT_from_comStatusOut_SIZE(1);\n    ASSERT_from_comStatusOut(0, Fw::Success::SUCCESS);\n}\n```\n\n```cpp main\nTEST(Sync, RecoveryAfterFailure) {\n    Svc::ComStubTester tester(Svc::ComStubTester::TestMode::SYNC);\n    tester.test_recovery_after_failure();\n}\n```",
+   "diff": "diff --git a/Svc/ComStub/test/ut/ComStubTestMain.cpp b/Svc/ComStub/test/ut/ComStubTestMain.cpp\nindex 3fcc865..8449118 100644\n--- a/Svc/ComStub/test/ut/ComStubTestMain.cpp\n+++ b/Svc/ComStub/test/ut/ComStubTestMain.cpp\n@@ -100,6 +100,12 @@ TEST(Sync, ComStatusSuccessOnDriverConnect) {\n     tester.test_com_status_success_on_driver_connect();\n }\n \n+// Requirement SVC-COMSTUB-007\n+TEST(Sync, RecoveryAfterFailure) {\n+    Svc::ComStubTester tester(Svc::ComStubTester::TestMode::SYNC);\n+    tester.test_recovery_after_failure();\n+}\n+\n int main(int argc, char** argv) {\n     STest::Random::seed();\n     ::testing::InitGoogleTest(&argc, argv);\ndiff --git a/Svc/ComStub/test/ut/ComStubTester.cpp b/Svc/ComStub/test/ut/ComStubTester.cpp\nindex 3b93469..0f34a2b 100644\n--- a/Svc/ComStub/test/ut/ComStubTester.cpp\n+++ b/Svc/ComStub/test/ut/ComStubTester.cpp\n@@ -434,4 +434,36 @@ void ComStubTester ::test_com_status_success_on_driver_connect() {\n     ASSERT_from_comStatusOut(0, Fw::Success::SUCCESS);\n }\n \n+// Requirement SVC-COMSTUB-007\n+void ComStubTester ::test_recovery_after_failure() {\n+    REQUIREMENT(\"SVC-COMSTUB-007\");\n+    this->test_initial();\n+\n+    // Simulate a failure scenario that sets m_reinitialize flag\n+    U8 storage[8];\n+    Fw::Buffer buffer(storage, sizeof(storage));\n+    ComCfg::FrameContext context;\n+\n+    // Set up a send failure that will cause retry exhaustion\n+    this->m_sync_send_status = Drv::ByteStreamStatus::SEND_RETRY;\n+    this->m_retry_fail = true;  // Ensure retries fail and exhaust\n+\n+    // Send data that will fail and set reinitialize flag\n+    invoke_to_dataIn(0, buffer, context);\n+    \n+    // Verify that failure was reported\n+    ASSERT_from_comStatusOut_SIZE(1);\n+    ASSERT_from_comStatusOut(0, Fw::Success::FAILURE);\n+    \n+    // Clear history to isolate the recovery test\n+    this->clearHistory();\n+    \n+    // Simulate driver reconnection (this should emit exactly one SUCCESS)\n+    invoke_to_drvConnected(0);\n+    \n+    // Verify exactly one SUCCESS was emitted for recovery\n+    ASSERT_from_comStatusOut_SIZE(1);\n+    ASSERT_from_comStatusOut(0, Fw::Success::SUCCESS);\n+}\n+\n }  // end namespace Svc\ndiff --git a/Svc/ComStub/test/ut/ComStubTester.hpp b/Svc/ComStub/test/ut/ComStubTester.hpp\nindex 54c216e..a4f90f5 100644\n--- a/Svc/ComStub/test/ut/ComStubTester.hpp\n+++ b/Svc/ComStub/test/ut/ComStubTester.hpp\n@@ -125,6 +125,10 @@ class ComStubTester : public ComStubGTestBase {\n   public:\n     //! Tests generated for requirement SVC-COMSTUB-006\n     void test_com_status_success_on_driver_connect();\n+\n+  public:\n+    //! Tests generated for requirement SVC-COMSTUB-007\n+    void test_recovery_after_failure();\n };\n \n }  // end namespace Svc",
+   "metrics": {
+    "llm_calls": 1,
+    "prompt_tokens": 5952,
+    "completion_tokens": 447,
+    "llm_seconds": 11.442,
+    "build_seconds": 4.78,
+    "truncated": 0,
+    "coverage_before": {
+     "line_coverage": 0.9722,
+     "branch_coverage": 0.5952,
+     "lines": 72
+    },
+    "context_chars": 24565,
+    "context_dropped": [],
+    "mcp_calls": 32,
+    "first_attempt_compiled": true,
+    "compiled": true,
+    "new_test_coverage": {
+     "line_coverage": 0.375,
+     "branch_coverage": 0.2857,
+     "lines": 72
+    },
+    "coverage_after": {
+     "line_coverage": 0.9722,
+     "branch_coverage": 0.5952,
+     "lines": 72
+    },
+    "coverage_delta": 0.0,
+    "tests_total": 19,
+    "test_names": [
+     "Sync.RecoveryAfterFailure"
+    ]
+   },
+   "mutation": {
+    "candidates": 15,
+    "sampled": 4,
+    "valid": 4,
+    "killed": 4,
+    "mutants": [
+     {
+      "file": "Svc/ComStub/ComStub.cpp",
+      "line": 97,
+      "operator": "rel ==→!=",
+      "original": "    if (sendStatus == Drv::ByteStreamStatus::OP_OK) {",
+      "mutated": "    if (sendStatus != Drv::ByteStreamStatus::OP_OK) {",
+      "outcome": "killed"
+     },
+     {
+      "file": "Svc/ComStub/ComStub.cpp",
+      "line": 41,
+      "operator": "bool false→true",
+      "original": "        this->m_reinitialize = false;",
+      "mutated": "        this->m_reinitialize = true;",
+      "outcome": "killed"
+     },
+     {
+      "file": "Svc/ComStub/ComStub.cpp",
+      "line": 101,
+      "operator": "bool true→false",
+      "original": "        this->m_reinitialize = true;",
+      "mutated": "        this->m_reinitialize = false;",
+      "outcome": "killed"
+     },
+     {
+      "file": "Svc/ComStub/ComStub.cpp",
+      "line": 110,
+      "operator": "delete effect statement",
+      "original": "    this->comStatusOut_out(0, comSuccess);",
+      "mutated": "    ;  // mutant: deleted",
+      "outcome": "killed"
+     }
+    ],
+    "score": 1.0
+   }
+  },
+  {
+   "model": "qwen",
+   "req_id": "PRMDB-002",
+   "module": "Svc/PrmDb",
+   "requirement": {
+    "text": "The Svc::PrmDb component shall provide an interface to read parameter values",
+    "verification": "Inspection, Unit Test",
+    "file": "Svc/PrmDb/docs/sdd.md"
+   },
+   "status": "failed",
+   "reason": "no passing test after 3 attempt(s); last failure: build",
+   "attempts": 3,
+   "commit": null,
+   "wall_seconds": 40.12,
+   "history": [
+    {
+     "attempt": 1,
+     "stage": "build",
+     "detail": "Svc/PrmDb/test/ut/PrmDbTester.cpp:1617:91: error: ‘FW_SERIALIZATION_ID’ is not a member of ‘Fw’; did you mean ‘FW_SERIALIZE_OK’?\n 1617 |     testValue.serialize(reinterpret_cast<U8*>(&testValueData), sizeof(testValueData), Fw::FW_SERIALIZATION_ID);\n      |                                                                                           ^~~~~~~~~~~~~~~~~~~\nSvc/PrmDb/test/ut/PrmDbTester.cpp:1635:5: error: ‘ASSERT_from_getPrm_SIZE’ was not declared in this scope; did you mean ‘ASSERT_from_pingOut_SIZE’?\n 1635 |     ASSERT_from_getPrm_SIZE(1);\n      |     ^~~~~~~~~~~~~~~~~~~~~~~\nSvc/PrmDb/test/ut/PrmDbTester.cpp:1636:39: error: ‘PARAM_VALID’ is not a member of ‘Fw::ParamValid’\n 1636 |     ASSERT_EQ(result, Fw::ParamValid::PARAM_VALID);\n      |                                       ^~~~~~~~~~~"
+    },
+    {
+     "attempt": 2,
+     "stage": "build",
+     "detail": "Svc/PrmDb/test/ut/PrmDbTester.cpp:1617:24: error: ‘Fw::SerializeStatus Fw::LinearBufferBase::serialize(const U8*, FwSizeType, bool)’ is deprecated: Use serialize(const U8* buff, FwSizeType length, Serialization::t mode) instead [-Werror=deprecated-declarations]\n 1617 |     testValue.serialize(reinterpret_cast<U8*>(&testValueData), sizeof(testValueData), 0);\n      |     ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nSvc/PrmDb/test/ut/PrmDbTester.cpp:1636:39: error: ‘PARAM_VALID’ is not a member of ‘Fw::ParamValid’\n 1636 |     ASSERT_EQ(result, Fw::ParamValid::PARAM_VALID);\n      |                                       ^~~~~~~~~~~"
+    },
+    {
+     "attempt": 3,
+     "stage": "build",
+     "detail": "Svc/PrmDb/test/ut/PrmDbTester.cpp:1617:106: error: ‘MODE_BIG_ENDIAN’ is not a member of ‘Fw::Serialization’\n 1617 |     testValue.serialize(reinterpret_cast<U8*>(&testValueData), sizeof(testValueData), Fw::Serialization::MODE_BIG_ENDIAN);\n      |                                                                                                          ^~~~~~~~~~~~~~~\nSvc/PrmDb/test/ut/PrmDbTester.cpp:1636:39: error: ‘PARAM_VALID’ is not a member of ‘Fw::ParamValid’\n 1636 |     ASSERT_EQ(result, Fw::ParamValid::PARAM_VALID);\n      |                                       ^~~~~~~~~~~"
+    }
+   ],
+   "assert_lines": {},
+   "last_answer": "Looking at the compilation errors:\n\n1. The `serialize` method is deprecated - I need to use the new signature with `Serialization::t` mode\n2. `PARAM_VALID` is not a member of `Fw::ParamValid` - I need to check the correct enum value\n\nLooking at the F´ codebase patterns and the fact that `Fw::ParamValid` is an enum, I should use the proper serialization mode and check the correct enum value.\n\n```cpp tester\nvoid PrmDbTester::runPrmDbReadInterfaceTest() {\n    REQUIREMENT(\"PRMDB-002\");\n    // Test that the PrmDb component provides an interface to read parameter values\n    \n    // Set up a parameter value\n    const FwPrmIdType testId = 100;\n    Fw::ParamBuffer testValue;\n    U32 testValueData = 0x12345678;\n    testValue.serialize(reinterpret_cast<U8*>(&testValueData), sizeof(testValueData), Fw::Serialization::MODE_BIG_ENDIAN);\n    \n    // Clear any previous history\n    this->clearHistory();\n    \n    // Set the parameter value\n    this->invoke_to_setPrm(0, testId, testValue);\n    \n    // Dispatch the setPrm message to process it\n    this->m_impl.doDispatch();\n    \n    // Clear history before reading\n    this->clearHistory();\n    \n    // Read the parameter value using getPrm port\n    Fw::ParamValid result = this->invoke_to_getPrm(0, testId, testValue);\n    \n    // Verify that the parameter was read successfully\n    // Since getPrm is a guarded port, it doesn't queue messages, so we check the return value directly\n    ASSERT_EQ(result, Fw::ParamValid::PARAM_VALID);\n}\n```\n\n```cpp main\nTEST(ParameterDbTest, PrmDbReadInterfaceTest) {\n    TEST_CASE(105.3.1, \"Parameter database read interface test\");\n    COMMENT(\"Test that the PrmDb component provides an interface to read parameter values\");\n\n    Svc::PrmDbImpl impl(\"PrmDbImpl\");\n\n    impl.init(10, 0);\n    impl.configure(\"/prm/TestFile.prm\");\n    impl.configureSandbox(\"/prm\");\n\n    Svc::PrmDbTester tester(impl);\n\n    tester.init();\n\n    // connect ports\n    connectPorts(impl, tester);\n\n    // run the read interface test\n    tester.runPrmDbReadInterfaceTest();\n}\n```",
+   "diff": "",
+   "metrics": {
+    "llm_calls": 3,
+    "prompt_tokens": 27285,
+    "completion_tokens": 1502,
+    "llm_seconds": 33.117,
+    "build_seconds": 6.65,
+    "truncated": 0,
+    "coverage_before": {
+     "line_coverage": 0.9217,
+     "branch_coverage": 0.5205,
+     "lines": 332
+    },
+    "context_chars": 32006,
+    "context_dropped": [
+     "Design document excerpts"
+    ],
+    "mcp_calls": 84,
+    "first_attempt_compiled": false,
+    "carried_blocks": 1
+   },
+   "mutation": null
+  }
+ ],
+ "summaries": {
+  "v1": {
+   "qwen": {
+    "targets": 28,
+    "status": {
+     "passed": 11,
+     "failed": 17
+    },
+    "first_attempt_compile_rate": 0.5238,
+    "median_wall_seconds": 37.825,
+    "mutation": {
+     "tests_analysed": 11,
+     "valid_mutants": 41,
+     "killed": 25,
+     "mean_score": 0.6212
+    },
+    "failure_causes": null
+   },
+   "devstral": {
+    "targets": 28,
+    "status": {
+     "passed": 8,
+     "failed": 19,
+     "not_testable": 1
+    },
+    "first_attempt_compile_rate": 0.1481,
+    "median_wall_seconds": 112.955,
+    "mutation": {
+     "tests_analysed": 8,
+     "valid_mutants": 32,
+     "killed": 21,
+     "mean_score": 0.6562
+    },
+    "failure_causes": null
+   }
+  },
+  "v2": {
+   "qwen": {
+    "targets": 28,
+    "status": {
+     "passed": 18,
+     "failed": 10
+    },
+    "first_attempt_compile_rate": 0.8095,
+    "median_wall_seconds": 42.56,
+    "mutation": {
+     "tests_analysed": 18,
+     "valid_mutants": 64,
+     "killed": 42,
+     "mean_score": 0.6713
+    },
+    "failure_causes": {
+     "other compile error": {
+      "attempts": 14,
+      "requirements": 7
+     },
+     "F´ assertion in the component (precondition broken)": {
+      "attempts": 10,
+      "requirements": 5
+     },
+     "reused an existing method or test name": {
+      "attempts": 6,
+      "requirements": 6
+     },
+     "wrong expected value": {
+      "attempts": 6,
+      "requirements": 5
+     },
+     "other policy rejection": {
+      "attempts": 2,
+      "requirements": 2
+     },
+     "answer missing a block": {
+      "attempts": 1,
+      "requirements": 1
+     },
+     "-Werror: C-style cast or deprecated API": {
+      "attempts": 1,
+      "requirements": 1
+     }
+    }
+   },
+   "devstral": {
+    "targets": 28,
+    "status": {
+     "passed": 18,
+     "failed": 10
+    },
+    "first_attempt_compile_rate": 0.6667,
+    "median_wall_seconds": 94.245,
+    "mutation": {
+     "tests_analysed": 18,
+     "valid_mutants": 67,
+     "killed": 35,
+     "mean_score": 0.537
+    },
+    "failure_causes": {
+     "other compile error": {
+      "attempts": 20,
+      "requirements": 10
+     },
+     "wrong expected value": {
+      "attempts": 9,
+      "requirements": 5
+     },
+     "F´ assertion in the component (precondition broken)": {
+      "attempts": 6,
+      "requirements": 3
+     },
+     "reused an existing method or test name": {
+      "attempts": 1,
+      "requirements": 1
+     }
+    }
+   }
+  }
+ },
+ "serving": {
+  "qwen": {
+   "engine": "llama.cpp",
+   "profiles": {
+    "completion": [
+     {
+      "concurrency": 1,
+      "output_tps": 29.43,
+      "requests_per_s": 0.584,
+      "ttft_p50_s": 1.064555401000007,
+      "tpot_p50_ms": 12.85997378571275,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 2,
+      "output_tps": 41.77,
+      "requests_per_s": 0.678,
+      "ttft_p50_s": 1.22351508450015,
+      "tpot_p50_ms": 27.705516365080662,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 4,
+      "output_tps": 47.31,
+      "requests_per_s": 0.739,
+      "ttft_p50_s": 2.64151954450017,
+      "tpot_p50_ms": 42.50065097618524,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 8,
+      "output_tps": 42.03,
+      "requests_per_s": 0.758,
+      "ttft_p50_s": 6.229220409500158,
+      "tpot_p50_ms": 72.38847978571054,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 16,
+      "output_tps": 40.14,
+      "requests_per_s": 0.701,
+      "ttft_p50_s": 17.85643597650005,
+      "tpot_p50_ms": 78.13426119047207,
+      "n_errors": 0
+     }
+    ],
+    "chat": [
+     {
+      "concurrency": 1,
+      "output_tps": 51.34,
+      "requests_per_s": 0.131,
+      "ttft_p50_s": 2.322805684000059,
+      "tpot_p50_ms": 13.584753378446115,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 2,
+      "output_tps": 59.42,
+      "requests_per_s": 0.149,
+      "ttft_p50_s": 3.940242443499983,
+      "tpot_p50_ms": 23.46361881453626,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 4,
+      "output_tps": 69.74,
+      "requests_per_s": 0.174,
+      "ttft_p50_s": 5.681975704000024,
+      "tpot_p50_ms": 43.4309346528824,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 8,
+      "output_tps": 67.96,
+      "requests_per_s": 0.171,
+      "ttft_p50_s": 26.479429888999903,
+      "tpot_p50_ms": 52.12475970927329,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 16,
+      "output_tps": 68.97,
+      "requests_per_s": 0.174,
+      "ttft_p50_s": 70.67919150050011,
+      "tpot_p50_ms": 50.03664321553882,
+      "n_errors": 0
+     }
+    ],
+    "agent": [
+     {
+      "concurrency": 1,
+      "output_tps": 12.66,
+      "requests_per_s": 0.294,
+      "ttft_p50_s": 1.9845738624997011,
+      "tpot_p50_ms": 16.10336598148226,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 2,
+      "output_tps": 9.24,
+      "requests_per_s": 0.329,
+      "ttft_p50_s": 2.0106344990001617,
+      "tpot_p50_ms": 98.5575228148129,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 4,
+      "output_tps": 8.68,
+      "requests_per_s": 0.309,
+      "ttft_p50_s": 4.098530361999792,
+      "tpot_p50_ms": 279.9077009814802,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 8,
+      "output_tps": 18.44,
+      "requests_per_s": 0.381,
+      "ttft_p50_s": 12.169074398500015,
+      "tpot_p50_ms": 121.73956892592355,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 16,
+      "output_tps": 16.57,
+      "requests_per_s": 0.438,
+      "ttft_p50_s": 27.683751798000003,
+      "tpot_p50_ms": 173.94212088888878,
+      "n_errors": 0
+     }
+    ]
+   }
+  },
+  "devstral": {
+   "engine": "llama.cpp",
+   "profiles": {
+    "completion": [
+     {
+      "concurrency": 1,
+      "output_tps": 9.66,
+      "requests_per_s": 0.151,
+      "ttft_p50_s": 2.50086946600004,
+      "tpot_p50_ms": 64.40721142063833,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 2,
+      "output_tps": 12.92,
+      "requests_per_s": 0.202,
+      "ttft_p50_s": 3.575007001499671,
+      "tpot_p50_ms": 99.80026876984908,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 4,
+      "output_tps": 15.63,
+      "requests_per_s": 0.244,
+      "ttft_p50_s": 4.441868663999685,
+      "tpot_p50_ms": 187.20644939682484,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 8,
+      "output_tps": 15.37,
+      "requests_per_s": 0.25,
+      "ttft_p50_s": 19.26848700699975,
+      "tpot_p50_ms": 202.19083559524213,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 16,
+      "output_tps": 15.43,
+      "requests_per_s": 0.248,
+      "ttft_p50_s": 50.15045113399947,
+      "tpot_p50_ms": 206.44472746032497,
+      "n_errors": 0
+     }
+    ],
+    "chat": [
+     {
+      "concurrency": 1,
+      "output_tps": 12.73,
+      "requests_per_s": 0.032,
+      "ttft_p50_s": 5.044716110000081,
+      "tpot_p50_ms": 65.84595633208016,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 2,
+      "output_tps": 19.36,
+      "requests_per_s": 0.048,
+      "ttft_p50_s": 8.620827422500042,
+      "tpot_p50_ms": 81.44930336090185,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 4,
+      "output_tps": 21.74,
+      "requests_per_s": 0.054,
+      "ttft_p50_s": 11.16058493699984,
+      "tpot_p50_ms": 155.5276316553888,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 8,
+      "output_tps": 21.74,
+      "requests_per_s": 0.054,
+      "ttft_p50_s": 82.36817448349984,
+      "tpot_p50_ms": 164.9661476115302,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 16,
+      "output_tps": 21.74,
+      "requests_per_s": 0.054,
+      "ttft_p50_s": 226.24554672850036,
+      "tpot_p50_ms": 165.76454515914742,
+      "n_errors": 0
+     }
+    ],
+    "agent": [
+     {
+      "concurrency": 1,
+      "output_tps": 3.8,
+      "requests_per_s": 0.137,
+      "ttft_p50_s": 3.6838799224997274,
+      "tpot_p50_ms": 69.77461782692164,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 2,
+      "output_tps": 6.84,
+      "requests_per_s": 0.122,
+      "ttft_p50_s": 3.8515389909998703,
+      "tpot_p50_ms": 86.49168141176446,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 4,
+      "output_tps": 3.58,
+      "requests_per_s": 0.144,
+      "ttft_p50_s": 7.479032952499892,
+      "tpot_p50_ms": 535.1109320757246,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 8,
+      "output_tps": 5.53,
+      "requests_per_s": 0.199,
+      "ttft_p50_s": 22.29662376899978,
+      "tpot_p50_ms": 517.5768434685101,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 16,
+      "output_tps": 6.33,
+      "requests_per_s": 0.199,
+      "ttft_p50_s": 59.313784460499846,
+      "tpot_p50_ms": 514.6674136103802,
+      "n_errors": 0
+     }
+    ]
+   }
+  },
+  "qwen_vllm": {
+   "engine": "vllm",
+   "profiles": {
+    "completion": [
+     {
+      "concurrency": 1,
+      "output_tps": 43.73,
+      "requests_per_s": 0.767,
+      "ttft_p50_s": 0.6728674879996106,
+      "tpot_p50_ms": 11.57000012700871,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 2,
+      "output_tps": 62.27,
+      "requests_per_s": 1.006,
+      "ttft_p50_s": 0.6512336969999524,
+      "tpot_p50_ms": 22.90582392855694,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 4,
+      "output_tps": 69.47,
+      "requests_per_s": 1.105,
+      "ttft_p50_s": 1.5436752729992804,
+      "tpot_p50_ms": 35.819956936508774,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 8,
+      "output_tps": 91.16,
+      "requests_per_s": 1.424,
+      "ttft_p50_s": 2.2676529794998714,
+      "tpot_p50_ms": 57.88308626984323,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 16,
+      "output_tps": 85.89,
+      "requests_per_s": 1.508,
+      "ttft_p50_s": 2.2849487330004195,
+      "tpot_p50_ms": 129.92220137301854,
+      "n_errors": 0
+     }
+    ],
+    "chat": [
+     {
+      "concurrency": 1,
+      "output_tps": 49.31,
+      "requests_per_s": 0.123,
+      "ttft_p50_s": 2.3816944395002793,
+      "tpot_p50_ms": 14.03161804260288,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 2,
+      "output_tps": 58.2,
+      "requests_per_s": 0.146,
+      "ttft_p50_s": 3.7223339280008076,
+      "tpot_p50_ms": 24.62357627443719,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 4,
+      "output_tps": 73.84,
+      "requests_per_s": 0.185,
+      "ttft_p50_s": 6.792589629500071,
+      "tpot_p50_ms": 37.25578734586344,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 8,
+      "output_tps": 86.61,
+      "requests_per_s": 0.217,
+      "ttft_p50_s": 9.428082915999767,
+      "tpot_p50_ms": 71.15198976566433,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 16,
+      "output_tps": 98.05,
+      "requests_per_s": 0.245,
+      "ttft_p50_s": 7.033008142000654,
+      "tpot_p50_ms": 142.4453134060152,
+      "n_errors": 0
+     }
+    ],
+    "agent": [
+     {
+      "concurrency": 1,
+      "output_tps": 2.76,
+      "requests_per_s": 0.1,
+      "ttft_p50_s": 7.662581847001093,
+      "tpot_p50_ms": 22.599267907396467,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 2,
+      "output_tps": 3.56,
+      "requests_per_s": 0.128,
+      "ttft_p50_s": 7.712898493999091,
+      "tpot_p50_ms": 304.65343875558267,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 4,
+      "output_tps": 3.58,
+      "requests_per_s": 0.128,
+      "ttft_p50_s": 19.07588425999984,
+      "tpot_p50_ms": 437.43304111110234,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 8,
+      "output_tps": 3.71,
+      "requests_per_s": 0.134,
+      "ttft_p50_s": 30.40354848449988,
+      "tpot_p50_ms": 1151.5848044444417,
+      "n_errors": 0
+     },
+     {
+      "concurrency": 16,
+      "output_tps": 3.86,
+      "requests_per_s": 0.139,
+      "ttft_p50_s": 31.624837175500943,
+      "tpot_p50_ms": 2891.661602777782,
+      "n_errors": 0
+     }
+    ]
+   }
+  }
+ },
+ "traceability": {
+  "dataset": {
+   "requirements": 151,
+   "candidates": 3261,
+   "embedder": "Qwen/Qwen3-Embedding-0.6B"
+  },
+  "methods": {
+   "bm25": {
+    "ap": {
+     "mean": 0.4882,
+     "ci95": [
+      0.4273,
+      0.5482
+     ]
+    },
+    "recall@1": {
+     "mean": 0.2966,
+     "ci95": [
+      0.2362,
+      0.3602
+     ]
+    },
+    "recall@10": {
+     "mean": 0.6772,
+     "ci95": [
+      0.6103,
+      0.743
+     ]
+    }
+   },
+   "graph": {
+    "ap": {
+     "mean": 0.2489,
+     "ci95": [
+      0.2204,
+      0.2777
+     ]
+    },
+    "recall@1": {
+     "mean": 0.0733,
+     "ci95": [
+      0.0581,
+      0.0893
+     ]
+    },
+    "recall@10": {
+     "mean": 0.5501,
+     "ci95": [
+      0.4895,
+      0.6087
+     ]
+    }
+   },
+   "graph+bm25": {
+    "ap": {
+     "mean": 0.5686,
+     "ci95": [
+      0.5129,
+      0.6256
+     ]
+    },
+    "recall@1": {
+     "mean": 0.3299,
+     "ci95": [
+      0.271,
+      0.394
+     ]
+    },
+    "recall@10": {
+     "mean": 0.7807,
+     "ci95": [
+      0.7231,
+      0.8354
+     ]
+    }
+   },
+   "dense": {
+    "ap": {
+     "mean": 0.4795,
+     "ci95": [
+      0.4282,
+      0.531
+     ]
+    },
+    "recall@1": {
+     "mean": 0.2608,
+     "ci95": [
+      0.199,
+      0.3217
+     ]
+    },
+    "recall@10": {
+     "mean": 0.7133,
+     "ci95": [
+      0.6533,
+      0.7699
+     ]
+    }
+   },
+   "graph+dense": {
+    "ap": {
+     "mean": 0.5725,
+     "ci95": [
+      0.5211,
+      0.6189
+     ]
+    },
+    "recall@1": {
+     "mean": 0.3028,
+     "ci95": [
+      0.2401,
+      0.3659
+     ]
+    },
+    "recall@10": {
+     "mean": 0.8171,
+     "ci95": [
+      0.7655,
+      0.864
+     ]
+    }
+   },
+   "graph+rrf(bm25,dense)": {
+    "ap": {
+     "mean": 0.6093,
+     "ci95": [
+      0.5531,
+      0.6596
+     ]
+    },
+    "recall@1": {
+     "mean": 0.3504,
+     "ci95": [
+      0.2819,
+      0.4102
+     ]
+    },
+    "recall@10": {
+     "mean": 0.8211,
+     "ci95": [
+      0.7694,
+      0.871
+     ]
+    }
+   },
+   "graph+rrf(bm25,dense)+llm-rerank@10": {
+    "ap": {
+     "mean": 0.5835,
+     "ci95": [
+      0.5353,
+      0.6328
+     ]
+    },
+    "recall@1": {
+     "mean": 0.2972,
+     "ci95": [
+      0.2409,
+      0.3557
+     ]
+    },
+    "recall@10": {
+     "mean": 0.8224,
+     "ci95": [
+      0.7716,
+      0.8726
+     ]
+    }
+   }
+  }
+ }
+}

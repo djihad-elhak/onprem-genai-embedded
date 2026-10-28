@@ -29,6 +29,11 @@ benchmark run 3, because the recording machine has no GPU ([how the demos are ma
 | ![repair](docs/assets/demo-repair.gif) | ![mcp](docs/assets/demo-mcp.gif) | ![eval](docs/assets/demo-eval.gif) |
 | A misspelt harness macro fails the build; the error and a did-you-mean hint go back to the model, which fixes it. | What an assistant gets from the MCP server: a requirement, the gaps of a component, candidate tests, code and design docs. | 27 C tasks validate themselves; the two models measured on Kaggle, scored by execution. |
 
+**Interactive replay.** Open [`demo/web/index.html`](demo/web/index.html) in a browser (one self-contained
+file, no server) to step through three real agent runs (a repaired pass, a first-try pass, a failure) with
+the exact compiler and test output, browse every attempt on all 28 requirements, and explore the benchmark
+charts. It is built from the stored results by `demo/web/extract.py`.
+
 ## What it does
 
 | Layer | Component | Status |

@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>onprem-genai-embedded</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: one 1120px column read like a test log — header with four figures, the replay (event log beside a detail
+   pane), the outcome board of all 28 requirements, then three result charts. Code panes are terminal-dark in both
+   themes on purpose. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --surface-2: #eaeef3; --ink: #111821; --ink-2: #445063; --muted: #687487;
+  --line: #d8dde5; --accent: #2456c9; --accent-soft: #e3eafa;
+  --code-bg: #0f141b; --code-line: #1f2732; --code-fg: #d6dce5; --code-dim: #8794a7; --code-kw: #93b4ff;
+  --code-str: #e3b574; --code-cm: #6e7c90; --code-mac: #7ccfb6; --code-err: #ff7b72; --code-add: #7ee08a;
+  --code-del: #ff9c95; --code-num: #d7a6ff;
+  --s-qwen: #2a78d6; --s-vllm: #1baf7a; --s-dev: #eb6834; --grid: #e4e8ee;
+  --ok: #0ca30c; --warn: #fab219; --serious: #ec835a; --crit: #d03b3b; --chip-ink: #10141a;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117; --surface: #141a22; --surface-2: #1b232d; --ink: #e5e9ef; --ink-2: #a9b3c1; --muted: #808b9b;
+    --line: #27303c; --accent: #82a6f5; --accent-soft: #1b2740; --code-bg: #0a0e13; --code-line: #1a212b;
+    --s-qwen: #3987e5; --s-vllm: #199e70; --s-dev: #d95926; --grid: #222a35; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1117; --surface: #141a22; --surface-2: #1b232d; --ink: #e5e9ef; --ink-2: #a9b3c1; --muted: #808b9b;
+  --line: #27303c; --accent: #82a6f5; --accent-soft: #1b2740; --code-bg: #0a0e13; --code-line: #1a212b;
+  --s-qwen: #3987e5; --s-vllm: #199e70; --s-dev: #d95926; --grid: #222a35; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--f-body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; text-wrap: balance; margin: 0; letter-spacing: -0.005em; }
+h1 { font-size: clamp(28px, 4.4vw, 44px); line-height: 1.08; max-width: 22ch; }
+h2 { font-size: 26px; line-height: 1.15; }
+h3 { font-size: 18px; line-height: 1.25; }
+p { margin: 0; }
+.eyebrow { font: 500 12px/1.4 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.lede { color: var(--ink-2); max-width: 68ch; font-size: 16px; }
+.mono { font-family: var(--f-mono); }
+a { color: var(--accent); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+section { display: grid; gap: 20px; min-width: 0; }
+.sec-head { display: grid; gap: 8px; }
+.sec-head p { color: var(--ink-2); max-width: 70ch; }
+
+/* header */
+header { display: grid; gap: 18px; }
+.figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 8px; }
+.fig { background: var(--surface); padding: 16px 18px; display: grid; gap: 4px; align-content: start; }
+.fig b { font: 600 30px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.fig span { color: var(--ink-2); font-size: 13.5px; line-height: 1.4; }
+@media (max-width: 760px) { .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* replay */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 12px; cursor: pointer;
+  display: grid; gap: 2px; text-align: left; min-width: 0; }
+.tab small { font: 500 12px var(--f-mono); color: var(--muted); }
+.tab[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.req { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 10px; }
+.req q { font-size: 17px; quotes: "“" "”"; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 13px var(--f-mono); color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 500; }
+.replay { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
+@media (max-width: 880px) { .replay { grid-template-columns: minmax(0, 1fr); } }
+.log { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 13.5px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.controls .count { margin-left: auto; font: 12.5px var(--f-mono); color: var(--muted); }
+.events { list-style: none; margin: 0; padding: 6px 0; }
+.ev { display: grid; grid-template-columns: 22px 74px minmax(0, 1fr); gap: 8px; align-items: start; padding: 7px 12px;
+  cursor: pointer; border-left: 3px solid transparent; }
+.ev:hover { background: var(--surface-2); }
+.ev[aria-current="true"] { background: var(--accent-soft); border-left-color: var(--accent); }
+.ev.attempt-break { border-top: 1px dashed var(--line); margin-top: 4px; padding-top: 11px; }
+.ev .ic { width: 18px; height: 18px; border-radius: 4px; display: grid; place-items: center; font: 600 11px var(--f-mono);
+  color: var(--chip-ink); margin-top: 2px; }
+.ev .node { font: 500 12.5px/22px var(--f-mono); color: var(--muted); }
+.ev .txt { font-size: 13.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.ev.hidden-step { display: none; }
+.ic.ok { background: var(--ok); } .ic.crit { background: var(--crit); } .ic.serious { background: var(--serious); }
+.ic.warn { background: var(--warn); } .ic.info { background: var(--surface-2); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); }
+.detail { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid;
+  gap: 12px; min-width: 0; }
+.detail h3 { display: flex; gap: 10px; align-items: center; }
+.detail p, .detail li { color: var(--ink-2); font-size: 14.5px; }
+.detail ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+.note { font-size: 13px; color: var(--muted); }
+.code { background: var(--code-bg); color: var(--code-fg); border-radius: 8px; font: 12.5px/1.55 var(--f-mono);
+  overflow: auto; max-height: 460px; }
+.code pre { margin: 0; padding: 12px 14px; white-space: pre; }
+.code .lbl { position: sticky; top: 0; background: var(--code-line); color: var(--code-dim); font: 500 11.5px var(--f-mono);
+  padding: 5px 14px; letter-spacing: 0.04em; }
+.k { color: var(--code-kw); } .s { color: var(--code-str); } .c { color: var(--code-cm); font-style: italic; }
+.m { color: var(--code-mac); } .n { color: var(--code-num); } .e { color: var(--code-err); font-weight: 500; }
+.add { color: var(--code-add); } .del { color: var(--code-del); } .hunk { color: var(--code-dim); }
+.prose { display: grid; gap: 8px; }
+.prose p { font-size: 13.5px; }
+.callout { border-left: 3px solid var(--serious); background: var(--surface-2); padding: 10px 12px; border-radius: 0 6px 6px 0;
+  display: grid; gap: 6px; font-size: 14px; }
+.callout code, .detail code { font: 12.5px var(--f-mono); background: var(--surface-2); padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+.callout code { background: var(--surface); }
+.stats { display: flex; flex-wrap: wrap; gap: 4px 16px; font: 12.5px var(--f-mono); color: var(--muted); }
+.stats b { color: var(--ink); font-weight: 500; }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th { text-align: left; font: 500 11.5px var(--f-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted);
+  padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.num { font-variant-numeric: tabular-nums; }
+.mut code { display: block; white-space: pre-wrap; font: 12px/1.45 var(--f-mono); background: none; padding: 0; }
+.mut .was { color: var(--muted); text-decoration: line-through; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font: 500 12px var(--f-mono); white-space: nowrap; }
+.pill i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+/* board */
+.board { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.board table td { border-bottom-color: var(--grid); }
+.board .mod td { background: var(--surface-2); font: 600 13px var(--f-mono); color: var(--ink-2); padding-block: 6px; }
+.board .mod td span { color: var(--muted); font-weight: 400; margin-left: 10px; }
+.board .rid { font: 500 12.5px var(--f-mono); white-space: nowrap; }
+.board .rtext { color: var(--ink-2); font-size: 13px; line-height: 1.4; }
+.board .rid button { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.chips { display: inline-flex; gap: 3px; vertical-align: middle; }
+.chip { width: 20px; height: 20px; border-radius: 4px; display: inline-grid; place-items: center; font: 600 11px var(--f-mono); color: var(--chip-ink); }
+.chip.ok { background: var(--ok); } .chip.crit { background: var(--crit); } .chip.serious { background: var(--serious); } .chip.warn { background: var(--warn); }
+.v1 { font: 12px var(--f-mono); color: var(--muted); margin-left: 8px; white-space: nowrap; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); align-items: center; }
+.legend .chip { width: 18px; height: 18px; font-size: 10.5px; margin-right: 5px; }
+.legend > span { display: inline-flex; align-items: center; }
+.totals td { font-weight: 600; background: var(--surface-2); }
+@media (max-width: 640px) { .board .rtext { display: none; } }
+
+/* charts */
+.charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.charts .wide { grid-column: 1 / -1; }
+@media (max-width: 880px) { .charts { grid-template-columns: minmax(0, 1fr); } }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 10px; min-width: 0; position: relative; }
+.chart p.sub { color: var(--ink-2); font-size: 13.5px; }
+.chart .plot { width: 100%; min-height: 120px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart svg text { font-family: var(--f-mono); font-size: 11.5px; fill: var(--muted); }
+.chart svg text.ink { fill: var(--ink); }
+.chart svg text.ink2 { fill: var(--ink-2); }
+.chart svg .gridl { stroke: var(--grid); stroke-width: 1; }
+.chart svg .axis { stroke: var(--line); stroke-width: 1; }
+.chart .takeaway { font-size: 13.5px; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 10px; }
+.keys { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink-2); }
+.keys span { display: inline-flex; align-items: center; gap: 6px; }
+.keys i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.keys i.dot { width: 9px; height: 9px; border-radius: 50%; }
+.keys i.ring { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--muted); background: var(--surface); }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 6px; padding: 8px 10px;
+  font: 12px/1.5 var(--f-mono); white-space: nowrap; z-index: 5; box-shadow: 0 6px 18px rgb(0 0 0 / 0.18); }
+.tip b { font-weight: 600; }
+.tip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+footer { border-top: 1px solid var(--line); padding-top: 20px; display: grid; gap: 8px; color: var(--ink-2); font-size: 13.5px; max-width: 80ch; }
+@media (prefers-reduced-motion: no-preference) {
+  .ev.fresh { animation: rise 0.28s ease-out; }
+  @keyframes rise { from { transform: translateY(4px); background: var(--accent-soft); } to { transform: none; } }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">onprem-genai-embedded · NASA F´ v4.4.1 · runs 2–3 on Kaggle 2× Tesla T4</p>
+    <h1>A local code model writes unit tests for flight software. The build decides what stays.</h1>
+    <p class="lede">Each target is a requirement from NASA's F´ flight-software framework that says it is verified by unit
+      test, yet no test cites it. The agent gathers context from a knowledge graph over MCP, asks a self-hosted model
+      for one GoogleTest case, builds and runs it in F´, repairs from the compiler or assertion output (3 attempts at
+      most), commits passing tests to a review branch, and then seeds bugs to check that the test catches them.</p>
+    <div class="figures" id="figures"></div>
+  </header>
+
+  <section id="replay">
+    <div class="sec-head">
+      <p class="eyebrow">Replay · agent v2 · Qwen3-Coder-30B-A3B · llama.cpp Q4_K_M</p>
+      <h2>Watch one requirement go through the agent</h2>
+      <p>Three real runs from benchmark run 3, replayed from the run log: compiler errors, test output and the final
+        answer are exactly what the model and the build produced. Pick a run, then press Play or click any step.</p>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="req" id="req"></div>
+    <div class="replay">
+      <div class="log">
+        <div class="controls">
+          <button class="btn primary" id="play" type="button">Play</button>
+          <button class="btn" id="step" type="button">Next step</button>
+          <button class="btn" id="all" type="button">Show all</button>
+          <span class="count" id="count"></span>
+        </div>
+        <ol class="events" id="events"></ol>
+      </div>
+      <div class="detail" id="detail" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="board-sec">
+    <div class="sec-head">
+      <p class="eyebrow">Outcome board · 28 requirement gaps · both models · agent v2</p>
+      <h2>Every attempt, for every requirement</h2>
+      <p>One square per attempt, in order. A run stops at the first passing test or after the third failed attempt.
+        The v1 mark is the same requirement with the first version of the agent (run 2).</p>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="board"><div class="tbl-wrap"><table id="board"></table></div></div>
+  </section>
+
+  <section id="results">
+    <div class="sec-head">
+      <p class="eyebrow">Results · hover the charts for values</p>
+      <h2>What the measurements say</h2>
+    </div>
+    <div class="charts">
+      <div class="chart" id="c-agent">
+        <h3>Agent v1 → v2</h3>
+        <p class="sub">Same 28 requirements, same models, same context budget.</p>
+        <div class="keys"><span><i class="ring"></i>v1 (run 2)</span><span><i class="dot" style="background:var(--s-qwen)"></i>Qwen3-Coder v2</span><span><i class="dot" style="background:var(--s-dev)"></i>Devstral v2</span></div>
+        <div class="plot"></div>
+        <p class="takeaway">Both models reach 18 / 28 (McNemar p = 0.016 and 0.013). Together they verify 21. The wrong-dispatch
+          errors that caused half of the v1 failures are gone.</p>
+      </div>
+      <div class="chart" id="c-trace">
+        <h3>Recovering requirement → test links</h3>
+        <p class="sub">Mean average precision over 151 requirements and 3,261 tests, tags masked; 95 % bootstrap interval.</p>
+        <div class="plot"></div>
+        <p class="takeaway">Rank fusion of BM25 and dense retrieval inside the module graph is best (0.609). An LLM reranker
+          lowers it.</p>
+      </div>
+      <div class="chart wide" id="c-serve">
+        <h3>How many people one 2× T4 server can serve</h3>
+        <p class="sub">IDE chat profile (≈ 2.5k-token prompt, 400-token answer): decode speed each user sees, by number of
+          concurrent streams. Each level uses new prompts.</p>
+        <div class="keys" id="serve-keys"></div>
+        <div class="plot"></div>
+        <p class="takeaway">At 20 tok/s per user, about 4 concurrent chat users per server with either engine. llama.cpp
+          queues requests past its 4 slots (first token after 71 s at 16 streams); vLLM keeps batching but each user
+          slows to 7 tok/s. Devstral (dense 24B) stays under 20 tok/s even alone.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>What is real on this page.</b> Every step, error message, answer, commit hash and number comes from the
+      stored results of benchmark runs 2 and 3 (Kaggle, 2× Tesla T4, llama.cpp b11953 and vLLM 0.32). No model runs in
+      your browser: the replay plays back the run log. Earlier answers of a repaired run are not stored, only the
+      final one, so the replay shows the build and test output that sent each attempt back.</p>
+    <p>Source, data and how to reproduce: <span class="mono">github.com/djihad-elhak/onprem-genai-embedded</span>
+      (<span class="mono">docs/results</span>, <span class="mono">demo/web/extract.py</span>).</p>
+  </footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script id="data" type="application/json">{"board": [{"req_id": "SVC-COMSTUB-001", "module": "Svc/ComStub", "text": "Svc::ComStub shall accept Fw::Buffer for transmission and  pass them to a Drv::ByteStreamSend port", "qwen": {"status": "passed", "steps": ["passed"], "seconds": 68.04, "v1": "passed"}, "devstral": {"status": "passed", "steps": ["test", "passed"], "seconds": 100.53, "v1": "passed"}}, {"req_id": "SVC-COMSTUB-002", "module": "Svc/ComStub", "text": "Svc::ComStub shall send a Fw::Success::SUCCESS signal via comStatusOut on Drv::ByteStreamSend success (in response to data received on dataIn)", "qwen": {"status": "passed", "steps": ["passed"], "seconds": 23.76, "v1": "passed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 49.53, "v1": "failed"}}, {"req_id": "SVC-COMSTUB-003", "module": "Svc/ComStub", "text": "Svc::ComStub shall send a Fw::Success::FAILURE signal via comStatusOut on Drv::ByteStreamSend failure", "qwen": {"status": "passed", "steps": ["passed"], "seconds": 22.97, "v1": "failed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 45.0, "v1": "passed"}}, {"req_id": "SVC-COMSTUB-004", "module": "Svc/ComStub", "text": "Svc::ComStub shall retry sending to Drv::ByteStreamSend on Drv::ByteStreamSend retry", "qwen": {"status": "passed", "steps": ["passed"], "seconds": 24.97, "v1": "failed"}, "devstral": {"status": "passed", "steps": ["test", "passed"], "seconds": 112.1, "v1": "failed"}}, {"req_id": "SVC-COMSTUB-005", "module": "Svc/ComStub", "text": "Svc::ComStub shall pass-through Fw::Buffer from a  Drv::ByteStreamRead on Drv::ByteStreamSend success", "qwen": {"status": "passed", "steps": ["policy", "policy", "passed"], "seconds": 42.97, "v1": "failed"}, "devstral": {"status": "passed", "steps": ["build", "passed"], "seconds": 67.73, "v1": "failed"}}, {"req_id": "SVC-COMSTUB-006", "module": "Svc/ComStub", "text": "Svc::ComStub shall emit exactly one Fw::Success::SUCCESS via comStatusOut on start-up / driver connection to initiate data flow", "qwen": {"status": "passed", "steps": ["passed"], "seconds": 21.27, "v1": "passed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 39.75, "v1": "passed"}}, {"req_id": "SVC-COMSTUB-007", "module": "Svc/ComStub", "text": "Svc::ComStub shall emit exactly one Fw::Success::SUCCESS via comStatusOut after a driver reconnection following a previous failure to indicate recovery", "qwen": {"status": "passed", "steps": ["passed"], "seconds": 24.5, "v1": "passed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 53.35, "v1": "not_testable"}}, {"req_id": "SVC-COMRETRY-001", "module": "Svc/ComRetry", "text": "Svc::ComRetry shall accept incoming downlink data as Fw::Buffer and pass them to an Svc.ComDataWithContext port", "qwen": {"status": "passed", "steps": ["passed"], "seconds": 20.28, "v1": "failed"}, "devstral": {"status": "failed", "steps": ["build", "build", "build"], "seconds": 71.55, "v1": "failed"}}, {"req_id": "SVC-COMRETRY-002", "module": "Svc/ComRetry", "text": "Svc::ComRetry shall store Fw::Buffer and its context on receiving buffer ownership through dataReturnIn", "qwen": {"status": "passed", "steps": ["build", "test", "passed"], "seconds": 45.11, "v1": "failed"}, "devstral": {"status": "failed", "steps": ["build", "build", "build"], "seconds": 118.12, "v1": "passed"}}, {"req_id": "SVC-COMRETRY-003", "module": "Svc/ComRetry", "text": "Svc::ComRetry shall pause delivery on receiving Fw::Success::FAILURE", "qwen": {"status": "failed", "steps": ["test", "test", "test"], "seconds": 44.09, "v1": "failed"}, "devstral": {"status": "failed", "steps": ["test", "test", "test"], "seconds": 107.18, "v1": "failed"}}, {"req_id": "SVC-COMRETRY-004", "module": "Svc/ComRetry", "text": "Svc::ComRetry shall resend Fw::Buffer on receiving Fw::Success::SUCCESS after prior failure if retries are available", "qwen": {"status": "failed", "steps": ["test", "test", "test"], "seconds": 45.58, "v1": "failed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 48.69, "v1": "failed"}}, {"req_id": "SVC-COMRETRY-005", "module": "Svc/ComRetry", "text": "Svc::ComRetry shall pass through the initial start-up Fw::Success::SUCCESS and any non-data statuses upstream when no buffer is pending", "qwen": {"status": "passed", "steps": ["passed"], "seconds": 17.45, "v1": "failed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 34.3, "v1": "failed"}}, {"req_id": "SVC-COMRETRY-007", "module": "Svc/ComRetry", "text": "Svc::ComRetry shall return buffer ownership to the upstream component on receiving Fw::Success::SUCCESS or after all retry attempts fail", "qwen": {"status": "failed", "steps": ["test", "test", "test"], "seconds": 47.67, "v1": "failed"}, "devstral": {"status": "failed", "steps": ["build", "build", "build"], "seconds": 117.68, "v1": "failed"}}, {"req_id": "SVC-COMRETRY-008", "module": "Svc/ComRetry", "text": "Svc::ComRetry shall send ComStatus upstream on successful delivery or after all retry attempts fail", "qwen": {"status": "failed", "steps": ["test", "test", "test"], "seconds": 42.97, "v1": "failed"}, "devstral": {"status": "failed", "steps": ["test", "test", "test"], "seconds": 138.51, "v1": "passed"}}, {"req_id": "PRMDB-001", "module": "Svc/PrmDb", "text": "The Svc::PrmDb component shall load parameter values from a file", "qwen": {"status": "failed", "steps": ["policy", "build", "build"], "seconds": 46.87, "v1": "failed"}, "devstral": {"status": "failed", "steps": ["policy", "build", "build"], "seconds": 115.76, "v1": "failed"}}, {"req_id": "PRMDB-002", "module": "Svc/PrmDb", "text": "The Svc::PrmDb component shall provide an interface to read parameter values", "qwen": {"status": "failed", "steps": ["build", "build", "build"], "seconds": 40.12, "v1": "failed"}, "devstral": {"status": "failed", "steps": ["build", "build", "build"], "seconds": 126.87, "v1": "failed"}}, {"req_id": "PRMDB-003", "module": "Svc/PrmDb", "text": "The Svc::PrmDb component shall provide an interface to update parameter values", "qwen": {"status": "passed", "steps": ["passed"], "seconds": 34.24, "v1": "passed"}, "devstral": {"status": "passed", "steps": ["build", "passed"], "seconds": 123.59, "v1": "failed"}}, {"req_id": "PRMDB-004", "module": "Svc/PrmDb", "text": "The Svc::PrmDb component shall provide a command to save the current parameter values", "qwen": {"status": "passed", "steps": ["test", "passed"], "seconds": 50.38, "v1": "passed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 87.96, "v1": "failed"}}, {"req_id": "PRMDB-005", "module": "Svc/PrmDb", "text": "The Svc::PrmDb component shall reject a PRM_LOAD_FILE command with an empty file name with a VALIDATION_ERROR response and a PrmDbFileLoadFailed event, without asserting or altering the staging database", "qwen": {"status": "passed", "steps": ["policy", "passed"], "seconds": 55.05, "v1": "passed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 105.57, "v1": "passed"}}, {"req_id": "SVC-ROUTER-001", "module": "Svc/FprimeRouter", "text": "Svc::FprimeRouter shall route packets based on their packet type as indicated by the packet header", "qwen": {"status": "passed", "steps": ["policy", "passed"], "seconds": 29.88, "v1": "passed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 58.1, "v1": "failed"}}, {"req_id": "SVC-ROUTER-002", "module": "Svc/FprimeRouter", "text": "Svc::FprimeRouter shall route packets of type Fw::ComPacketType::FW_PACKET_COMMAND to the commandOut output port.", "qwen": {"status": "passed", "steps": ["policy", "passed"], "seconds": 25.36, "v1": "passed"}, "devstral": {"status": "failed", "steps": ["test", "test", "test"], "seconds": 100.66, "v1": "failed"}}, {"req_id": "SVC-ROUTER-003", "module": "Svc/FprimeRouter", "text": "Svc::FprimeRouter shall route packets of type Fw::ComPacketType::FW_PACKET_FILE to the fileOut output port.", "qwen": {"status": "passed", "steps": ["test", "passed"], "seconds": 42.15, "v1": "passed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 39.0, "v1": "failed"}}, {"req_id": "SVC-ROUTER-004", "module": "Svc/FprimeRouter", "text": "Svc::FprimeRouter shall route data that is neither Fw::ComPacketType::FW_PACKET_COMMAND nor Fw::ComPacketType::FW_PACKET_FILE to the unknownDataOut output port.", "qwen": {"status": "failed", "steps": ["policy", "build", "policy"], "seconds": 37.32, "v1": "failed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 38.48, "v1": "failed"}}, {"req_id": "SVC-ROUTER-005", "module": "Svc/FprimeRouter", "text": "Svc::FprimeRouter shall emit warning events if serialization errors occur during processing of incoming packets", "qwen": {"status": "failed", "steps": ["policy", "build", "build"], "seconds": 45.28, "v1": "failed"}, "devstral": {"status": "failed", "steps": ["build", "test", "test"], "seconds": 136.67, "v1": "failed"}}, {"req_id": "SVC-ROUTER-006", "module": "Svc/FprimeRouter", "text": "Svc::FprimeRouter shall pass through buffers for FW_PACKET_FILE and unknown packet types without copying, and defer returning them to the deframer until they are returned via fileBufferReturnIn", "qwen": {"status": "failed", "steps": ["build", "build", "build"], "seconds": 49.95, "v1": "failed"}, "devstral": {"status": "failed", "steps": ["build", "test", "build"], "seconds": 131.39, "v1": "failed"}}, {"req_id": "SVC-ROUTER-007", "module": "Svc/FprimeRouter", "text": "Svc::FprimeRouter shall return ownership of all buffers received on dataIn through dataReturnOut", "qwen": {"status": "failed", "steps": ["build", "build", "build"], "seconds": 43.83, "v1": "failed"}, "devstral": {"status": "passed", "steps": ["build", "test", "passed"], "seconds": 125.39, "v1": "failed"}}, {"req_id": "SVC-ROUTER-008", "module": "Svc/FprimeRouter", "text": "Svc::FprimeRouter shall preserve the ComCfg::FrameContext received on dataIn and restore it on the corresponding dataReturnOut, including across the fileOut/unknownDataOut → fileBufferReturnIn round-trip", "qwen": {"status": "passed", "steps": ["passed"], "seconds": 27.56, "v1": "failed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 54.79, "v1": "passed"}}, {"req_id": "SVC-ROUTER-009", "module": "Svc/FprimeRouter", "text": "Svc::FprimeRouter shall emit a warning event and return the buffer with an empty context when the buffer-to-context table is full on hand-off, or when a returned buffer is not found in the table", "qwen": {"status": "passed", "steps": ["test", "passed"], "seconds": 47.9, "v1": "passed"}, "devstral": {"status": "passed", "steps": ["passed"], "seconds": 54.95, "v1": "passed"}}], "replays": [{"model": "qwen", "req_id": "SVC-COMRETRY-002", "module": "Svc/ComRetry", "requirement": {"text": "Svc::ComRetry shall store Fw::Buffer and its context on receiving buffer ownership through dataReturnIn", "verification": "Unit test", "file": "Svc/ComRetry/docs/sdd.md"}, "status": "passed", "reason": "", "attempts": 3, "commit": "574cb8d060f41d87771628d541eb88bbd388369a", "wall_seconds": 45.11, "history": [{"attempt": 1, "stage": "build", "detail": "Svc/ComRetry/test/ut/ComRetryTester.cpp:165:13: error: ‘class ComCfg::FrameContext’ has no member named ‘frameType’\n  165 |     context.frameType = ComCfg::FrameType::COMMAND;\n      |             ^~~~~~~~~\nSvc/ComRetry/test/ut/ComRetryTester.cpp:165:33: error: ‘ComCfg::FrameType’ has not been declared\n  165 |     context.frameType = ComCfg::FrameType::COMMAND;\n      |                                 ^~~~~~~~~\nSvc/ComRetry/test/ut/ComRetryTester.cpp:166:13: error: ‘class ComCfg::FrameContext’ has no member named ‘sequence’\n  166 |     context.sequence = 42;\n      |             ^~~~~~~~"}, {"attempt": 2, "stage": "test", "detail": "executable exited with code -6: \nRepeating all tests (iteration 1) . . .\n\nNote: Google Test filter = Nominal.BufferStorageOnDataReturnIn\n[==========] Running 1 test from 1 test suite.\n[----------] Global test environment set-up.\n[----------] 1 test from Nominal\n[ RUN      ] Nominal.BufferStorageOnDataReturnIn\nAssert: \"Svc/ComRetry/ComRetry.cpp:85\"\nSvc_ComRetry_ut_exe: Fw/Types/Assert.cpp:128: void Fw::defaultSwAssert(const CHAR*, FwSizeType, FwSizeType, FwAssertArgType, FwAssertArgType, FwAssertArgType, FwAssertArgType, FwAssertArgType, FwAssertArgType): Assertion `false' failed.\n"}, {"attempt": 3, "stage": "passed", "detail": "Nominal.BufferStorageOnDataReturnIn"}], "assert_lines": {"Svc/ComRetry/ComRetry.cpp:85": "FW_ASSERT(this->m_bufferState == Fw::Buffer::OwnershipState::NOT_OWNED);"}, "last_answer": "Looking at the assertion failure, I can see the issue. The test is calling `dataReturnIn_handler` when the buffer state is already `OWNED`, but according to the implementation logic, `dataReturnIn_handler` should only be called when `m_bufferState` is `NOT_OWNED`. \n\nLooking at the implementation flow:\n1. `dataIn_handler` sets `m_bufferState` to `NOT_OWNED` \n2. `dataReturnIn_handler` expects `m_bufferState` to be `NOT_OWNED` and sets it to `OWNED`\n\nThe test needs to follow the proper sequence. Let me re-read the requirement and understand what \"store Fw::Buffer and its context\" means in the context of the component's behavior.\n\nLooking more carefully at the requirement and implementation, I think I misunderstood what the test should verify. The requirement says \"store Fw::Buffer and its context on receiving buffer ownership through dataReturnIn\" - this means that when `dataReturnIn` is called, the component should store the buffer and context internally. The assertion failure shows that the component expects to be in `NOT_OWNED` state when receiving a buffer via `dataReturnIn`, but the test is calling it in a state where it's already `OWNED`.\n\nLet me fix this by creating a proper test that follows the component's expected flow:\n\n```cpp tester\nvoid Svc::ComRetryTester::testBufferStorageOnDataReturnIn() {\n    REQUIREMENT(\"SVC-COMRETRY-002\");\n    // Test that ComRetry stores Fw::Buffer and its context on receiving buffer ownership through dataReturnIn\n    \n    U8 data[BUFFER_LENGTH] = DATA_A;\n    Fw::Buffer buffer(&data[0], sizeof(data));\n    ComCfg::FrameContext context;\n    \n    // Clear history before the action\n    this->clearHistory();\n\n    // First, we need to go through the normal flow to get to the state where dataReturnIn can be called\n    // Send a buffer through dataIn to set up the component state\n    this->invoke_to_dataIn(0, buffer, context);\n    \n    // Clear history before next action\n    this->clearHistory();\n    \n    // Now call dataReturnIn - this should store the buffer and context\n    this->invoke_to_dataReturnIn(0, buffer, context);\n\n    // Verify that the buffer and context were stored by checking that a subsequent successful status\n    // properly handles the stored buffer\n    Fw::Success success = Fw::Success::SUCCESS;\n    \n    // Clear history before action\n    this->clearHistory();\n    \n    // Send a successful status - this should trigger return of the stored buffer\n    this->invoke_to_comStatusIn(0, success);\n    \n    // Verify that the stored buffer was returned through dataReturnOut\n    ASSERT_from_dataReturnOut_SIZE(1);\n    ASSERT_from_dataReturnOut(0, buffer, context);\n}\n```", "diff": "diff --git a/Svc/ComRetry/test/ut/ComRetryTestMain.cpp b/Svc/ComRetry/test/ut/ComRetryTestMain.cpp\nindex ec29fd9..270dde8 100644\n--- a/Svc/ComRetry/test/ut/ComRetryTestMain.cpp\n+++ b/Svc/ComRetry/test/ut/ComRetryTestMain.cpp\n@@ -32,6 +32,12 @@ TEST(Nominal, BufferPassThrough) {\n     tester.testBufferPassThrough();\n }\n \n+// Requirement SVC-COMRETRY-002\n+TEST(Nominal, BufferStorageOnDataReturnIn) {\n+    Svc::ComRetryTester tester;\n+    tester.testBufferStorageOnDataReturnIn();\n+}\n+\n int main(int argc, char** argv) {\n     ::testing::InitGoogleTest(&argc, argv);\n     return RUN_ALL_TESTS();\ndiff --git a/Svc/ComRetry/test/ut/ComRetryTester.cpp b/Svc/ComRetry/test/ut/ComRetryTester.cpp\nindex 4ac1276..4ed76bd 100644\n--- a/Svc/ComRetry/test/ut/ComRetryTester.cpp\n+++ b/Svc/ComRetry/test/ut/ComRetryTester.cpp\n@@ -154,4 +154,41 @@ void ComRetryTester ::testBufferPassThrough() {\n     ASSERT_from_dataOut(0, buffer, context);\n }\n \n+// Requirement SVC-COMRETRY-002\n+void ComRetryTester::testBufferStorageOnDataReturnIn() {\n+    REQUIREMENT(\"SVC-COMRETRY-002\");\n+    // Test that ComRetry stores Fw::Buffer and its context on receiving buffer ownership through dataReturnIn\n+    \n+    U8 data[BUFFER_LENGTH] = DATA_A;\n+    Fw::Buffer buffer(&data[0], sizeof(data));\n+    ComCfg::FrameContext context;\n+    \n+    // Clear history before the action\n+    this->clearHistory();\n+\n+    // First, we need to go through the normal flow to get to the state where dataReturnIn can be called\n+    // Send a buffer through dataIn to set up the component state\n+    this->invoke_to_dataIn(0, buffer, context);\n+    \n+    // Clear history before next action\n+    this->clearHistory();\n+    \n+    // Now call dataReturnIn - this should store the buffer and context\n+    this->invoke_to_dataReturnIn(0, buffer, context);\n+\n+    // Verify that the buffer and context were stored by checking that a subsequent successful status\n+    // properly handles the stored buffer\n+    Fw::Success success = Fw::Success::SUCCESS;\n+    \n+    // Clear history before action\n+    this->clearHistory();\n+    \n+    // Send a successful status - this should trigger return of the stored buffer\n+    this->invoke_to_comStatusIn(0, success);\n+    \n+    // Verify that the stored buffer was returned through dataReturnOut\n+    ASSERT_from_dataReturnOut_SIZE(1);\n+    ASSERT_from_dataReturnOut(0, buffer, context);\n+}\n+\n }  // namespace Svc\ndiff --git a/Svc/ComRetry/test/ut/ComRetryTester.hpp b/Svc/ComRetry/test/ut/ComRetryTester.hpp\nindex b0701bc..eadb78f 100644\n--- a/Svc/ComRetry/test/ut/ComRetryTester.hpp\n+++ b/Svc/ComRetry/test/ut/ComRetryTester.hpp\n@@ -83,6 +83,10 @@ class ComRetryTester final : public ComRetryGTestBase {\n   public:\n     //! Tests generated for requirement SVC-COMRETRY-001\n     void testBufferPassThrough();\n+\n+  public:\n+    //! Tests generated for requirement SVC-COMRETRY-002\n+    void testBufferStorageOnDataReturnIn();\n };\n \n }  // namespace Svc", "metrics": {"llm_calls": 3, "prompt_tokens": 13886, "completion_tokens": 1550, "llm_seconds": 27.619, "build_seconds": 9.6, "truncated": 0, "coverage_before": {"line_coverage": 0.9808, "branch_coverage": 0.6167, "lines": 52}, "context_chars": 16445, "context_dropped": [], "mcp_calls": 40, "first_attempt_compiled": false, "carried_blocks": 2, "compiled": true, "new_test_coverage": {"line_coverage": 0.6154, "branch_coverage": 0.3, "lines": 52}, "coverage_after": {"line_coverage": 0.9808, "branch_coverage": 0.6167, "lines": 52}, "coverage_delta": 0.0, "tests_total": 6, "test_names": ["Nominal.BufferStorageOnDataReturnIn"]}, "mutation": {"candidates": 8, "sampled": 4, "valid": 4, "killed": 2, "mutants": [{"file": "Svc/ComRetry/ComRetry.cpp", "line": 42, "operator": "rel ==→!=", "original": "    else if ((this->m_retry_state == WAITING_FOR_STATUS) && (condition == Fw::Success::SUCCESS)) {", "mutated": "    else if ((this->m_retry_state != WAITING_FOR_STATUS) && (condition == Fw::Success::SUCCESS)) {", "outcome": "killed"}, {"file": "Svc/ComRetry/ComRetry.cpp", "line": 42, "operator": "status SUCCESS→FAILURE", "original": "    else if ((this->m_retry_state == WAITING_FOR_STATUS) && (condition == Fw::Success::SUCCESS)) {", "mutated": "    else if ((this->m_retry_state == WAITING_FOR_STATUS) && (condition == Fw::Success::FAILURE)) {", "outcome": "killed"}, {"file": "Svc/ComRetry/ComRetry.cpp", "line": 42, "operator": "logic &&→||", "original": "    else if ((this->m_retry_state == WAITING_FOR_STATUS) && (condition == Fw::Success::SUCCESS)) {", "mutated": "    else if ((this->m_retry_state == WAITING_FOR_STATUS) || (condition == Fw::Success::SUCCESS)) {", "outcome": "survived"}, {"file": "Svc/ComRetry/ComRetry.cpp", "line": 47, "operator": "delete effect statement", "original": "        this->comStatusOut_out(0, condition);", "mutated": "        ;  // mutant: deleted", "outcome": "survived"}], "score": 0.5}}, {"model": "qwen", "req_id": "SVC-COMSTUB-007", "module": "Svc/ComStub", "requirement": {"text": "Svc::ComStub shall emit exactly one Fw::Success::SUCCESS via comStatusOut after a driver reconnection following a previous failure to indicate recovery", "verification": "Unit Test", "file": "Svc/ComStub/docs/sdd.md"}, "status": "passed", "reason": "", "attempts": 1, "commit": "79392a2c26acce4714097b5d22463c523d73787a", "wall_seconds": 24.5, "history": [{"attempt": 1, "stage": "passed", "detail": "Sync.RecoveryAfterFailure"}], "assert_lines": {}, "last_answer": "The requirement states that after a driver reconnection following a previous failure, the ComStub must emit exactly one Fw::Success::SUCCESS via comStatusOut to indicate recovery. This requires:\n1. First establishing a connection (which should emit SUCCESS)\n2. Simulating a failure scenario (e.g., retry exhaustion leading to reinitialize flag set)\n3. Simulating a driver reconnection (which should emit exactly one SUCCESS)\n4. Verifying exactly one SUCCESS is emitted during reconnection\n\nThe test needs to:\n- Use the existing test infrastructure\n- Follow the pattern of previous tests\n- Verify the exact behavior described in the requirement\n- Use only the provided macros and methods\n\n```cpp tester\nvoid ComStubTester ::test_recovery_after_failure() {\n    REQUIREMENT(\"SVC-COMSTUB-007\");\n    this->test_initial();\n\n    // Simulate a failure scenario that sets m_reinitialize flag\n    U8 storage[8];\n    Fw::Buffer buffer(storage, sizeof(storage));\n    ComCfg::FrameContext context;\n\n    // Set up a send failure that will cause retry exhaustion\n    this->m_sync_send_status = Drv::ByteStreamStatus::SEND_RETRY;\n    this->m_retry_fail = true;  // Ensure retries fail and exhaust\n\n    // Send data that will fail and set reinitialize flag\n    invoke_to_dataIn(0, buffer, context);\n    \n    // Verify that failure was reported\n    ASSERT_from_comStatusOut_SIZE(1);\n    ASSERT_from_comStatusOut(0, Fw::Success::FAILURE);\n    \n    // Clear history to isolate the recovery test\n    this->clearHistory();\n    \n    // Simulate driver reconnection (this should emit exactly one SUCCESS)\n    invoke_to_drvConnected(0);\n    \n    // Verify exactly one SUCCESS was emitted for recovery\n    ASSERT_from_comStatusOut_SIZE(1);\n    ASSERT_from_comStatusOut(0, Fw::Success::SUCCESS);\n}\n```\n\n```cpp main\nTEST(Sync, RecoveryAfterFailure) {\n    Svc::ComStubTester tester(Svc::ComStubTester::TestMode::SYNC);\n    tester.test_recovery_after_failure();\n}\n```", "diff": "diff --git a/Svc/ComStub/test/ut/ComStubTestMain.cpp b/Svc/ComStub/test/ut/ComStubTestMain.cpp\nindex 3fcc865..8449118 100644\n--- a/Svc/ComStub/test/ut/ComStubTestMain.cpp\n+++ b/Svc/ComStub/test/ut/ComStubTestMain.cpp\n@@ -100,6 +100,12 @@ TEST(Sync, ComStatusSuccessOnDriverConnect) {\n     tester.test_com_status_success_on_driver_connect();\n }\n \n+// Requirement SVC-COMSTUB-007\n+TEST(Sync, RecoveryAfterFailure) {\n+    Svc::ComStubTester tester(Svc::ComStubTester::TestMode::SYNC);\n+    tester.test_recovery_after_failure();\n+}\n+\n int main(int argc, char** argv) {\n     STest::Random::seed();\n     ::testing::InitGoogleTest(&argc, argv);\ndiff --git a/Svc/ComStub/test/ut/ComStubTester.cpp b/Svc/ComStub/test/ut/ComStubTester.cpp\nindex 3b93469..0f34a2b 100644\n--- a/Svc/ComStub/test/ut/ComStubTester.cpp\n+++ b/Svc/ComStub/test/ut/ComStubTester.cpp\n@@ -434,4 +434,36 @@ void ComStubTester ::test_com_status_success_on_driver_connect() {\n     ASSERT_from_comStatusOut(0, Fw::Success::SUCCESS);\n }\n \n+// Requirement SVC-COMSTUB-007\n+void ComStubTester ::test_recovery_after_failure() {\n+    REQUIREMENT(\"SVC-COMSTUB-007\");\n+    this->test_initial();\n+\n+    // Simulate a failure scenario that sets m_reinitialize flag\n+    U8 storage[8];\n+    Fw::Buffer buffer(storage, sizeof(storage));\n+    ComCfg::FrameContext context;\n+\n+    // Set up a send failure that will cause retry exhaustion\n+    this->m_sync_send_status = Drv::ByteStreamStatus::SEND_RETRY;\n+    this->m_retry_fail = true;  // Ensure retries fail and exhaust\n+\n+    // Send data that will fail and set reinitialize flag\n+    invoke_to_dataIn(0, buffer, context);\n+    \n+    // Verify that failure was reported\n+    ASSERT_from_comStatusOut_SIZE(1);\n+    ASSERT_from_comStatusOut(0, Fw::Success::FAILURE);\n+    \n+    // Clear history to isolate the recovery test\n+    this->clearHistory();\n+    \n+    // Simulate driver reconnection (this should emit exactly one SUCCESS)\n+    invoke_to_drvConnected(0);\n+    \n+    // Verify exactly one SUCCESS was emitted for recovery\n+    ASSERT_from_comStatusOut_SIZE(1);\n+    ASSERT_from_comStatusOut(0, Fw::Success::SUCCESS);\n+}\n+\n }  // end namespace Svc\ndiff --git a/Svc/ComStub/test/ut/ComStubTester.hpp b/Svc/ComStub/test/ut/ComStubTester.hpp\nindex 54c216e..a4f90f5 100644\n--- a/Svc/ComStub/test/ut/ComStubTester.hpp\n+++ b/Svc/ComStub/test/ut/ComStubTester.hpp\n@@ -125,6 +125,10 @@ class ComStubTester : public ComStubGTestBase {\n   public:\n     //! Tests generated for requirement SVC-COMSTUB-006\n     void test_com_status_success_on_driver_connect();\n+\n+  public:\n+    //! Tests generated for requirement SVC-COMSTUB-007\n+    void test_recovery_after_failure();\n };\n \n }  // end namespace Svc", "metrics": {"llm_calls": 1, "prompt_tokens": 5952, "completion_tokens": 447, "llm_seconds": 11.442, "build_seconds": 4.78, "truncated": 0, "coverage_before": {"line_coverage": 0.9722, "branch_coverage": 0.5952, "lines": 72}, "context_chars": 24565, "context_dropped": [], "mcp_calls": 32, "first_attempt_compiled": true, "compiled": true, "new_test_coverage": {"line_coverage": 0.375, "branch_coverage": 0.2857, "lines": 72}, "coverage_after": {"line_coverage": 0.9722, "branch_coverage": 0.5952, "lines": 72}, "coverage_delta": 0.0, "tests_total": 19, "test_names": ["Sync.RecoveryAfterFailure"]}, "mutation": {"candidates": 15, "sampled": 4, "valid": 4, "killed": 4, "mutants": [{"file": "Svc/ComStub/ComStub.cpp", "line": 97, "operator": "rel ==→!=", "original": "    if (sendStatus == Drv::ByteStreamStatus::OP_OK) {", "mutated": "    if (sendStatus != Drv::ByteStreamStatus::OP_OK) {", "outcome": "killed"}, {"file": "Svc/ComStub/ComStub.cpp", "line": 41, "operator": "bool false→true", "original": "        this->m_reinitialize = false;", "mutated": "        this->m_reinitialize = true;", "outcome": "killed"}, {"file": "Svc/ComStub/ComStub.cpp", "line": 101, "operator": "bool true→false", "original": "        this->m_reinitialize = true;", "mutated": "        this->m_reinitialize = false;", "outcome": "killed"}, {"file": "Svc/ComStub/ComStub.cpp", "line": 110, "operator": "delete effect statement", "original": "    this->comStatusOut_out(0, comSuccess);", "mutated": "    ;  // mutant: deleted", "outcome": "killed"}], "score": 1.0}}, {"model": "qwen", "req_id": "PRMDB-002", "module": "Svc/PrmDb", "requirement": {"text": "The Svc::PrmDb component shall provide an interface to read parameter values", "verification": "Inspection, Unit Test", "file": "Svc/PrmDb/docs/sdd.md"}, "status": "failed", "reason": "no passing test after 3 attempt(s); last failure: build", "attempts": 3, "commit": null, "wall_seconds": 40.12, "history": [{"attempt": 1, "stage": "build", "detail": "Svc/PrmDb/test/ut/PrmDbTester.cpp:1617:91: error: ‘FW_SERIALIZATION_ID’ is not a member of ‘Fw’; did you mean ‘FW_SERIALIZE_OK’?\n 1617 |     testValue.serialize(reinterpret_cast<U8*>(&testValueData), sizeof(testValueData), Fw::FW_SERIALIZATION_ID);\n      |                                                                                           ^~~~~~~~~~~~~~~~~~~\nSvc/PrmDb/test/ut/PrmDbTester.cpp:1635:5: error: ‘ASSERT_from_getPrm_SIZE’ was not declared in this scope; did you mean ‘ASSERT_from_pingOut_SIZE’?\n 1635 |     ASSERT_from_getPrm_SIZE(1);\n      |     ^~~~~~~~~~~~~~~~~~~~~~~\nSvc/PrmDb/test/ut/PrmDbTester.cpp:1636:39: error: ‘PARAM_VALID’ is not a member of ‘Fw::ParamValid’\n 1636 |     ASSERT_EQ(result, Fw::ParamValid::PARAM_VALID);\n      |                                       ^~~~~~~~~~~"}, {"attempt": 2, "stage": "build", "detail": "Svc/PrmDb/test/ut/PrmDbTester.cpp:1617:24: error: ‘Fw::SerializeStatus Fw::LinearBufferBase::serialize(const U8*, FwSizeType, bool)’ is deprecated: Use serialize(const U8* buff, FwSizeType length, Serialization::t mode) instead [-Werror=deprecated-declarations]\n 1617 |     testValue.serialize(reinterpret_cast<U8*>(&testValueData), sizeof(testValueData), 0);\n      |     ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nSvc/PrmDb/test/ut/PrmDbTester.cpp:1636:39: error: ‘PARAM_VALID’ is not a member of ‘Fw::ParamValid’\n 1636 |     ASSERT_EQ(result, Fw::ParamValid::PARAM_VALID);\n      |                                       ^~~~~~~~~~~"}, {"attempt": 3, "stage": "build", "detail": "Svc/PrmDb/test/ut/PrmDbTester.cpp:1617:106: error: ‘MODE_BIG_ENDIAN’ is not a member of ‘Fw::Serialization’\n 1617 |     testValue.serialize(reinterpret_cast<U8*>(&testValueData), sizeof(testValueData), Fw::Serialization::MODE_BIG_ENDIAN);\n      |                                                                                                          ^~~~~~~~~~~~~~~\nSvc/PrmDb/test/ut/PrmDbTester.cpp:1636:39: error: ‘PARAM_VALID’ is not a member of ‘Fw::ParamValid’\n 1636 |     ASSERT_EQ(result, Fw::ParamValid::PARAM_VALID);\n      |                                       ^~~~~~~~~~~"}], "assert_lines": {}, "last_answer": "Looking at the compilation errors:\n\n1. The `serialize` method is deprecated - I need to use the new signature with `Serialization::t` mode\n2. `PARAM_VALID` is not a member of `Fw::ParamValid` - I need to check the correct enum value\n\nLooking at the F´ codebase patterns and the fact that `Fw::ParamValid` is an enum, I should use the proper serialization mode and check the correct enum value.\n\n```cpp tester\nvoid PrmDbTester::runPrmDbReadInterfaceTest() {\n    REQUIREMENT(\"PRMDB-002\");\n    // Test that the PrmDb component provides an interface to read parameter values\n    \n    // Set up a parameter value\n    const FwPrmIdType testId = 100;\n    Fw::ParamBuffer testValue;\n    U32 testValueData = 0x12345678;\n    testValue.serialize(reinterpret_cast<U8*>(&testValueData), sizeof(testValueData), Fw::Serialization::MODE_BIG_ENDIAN);\n    \n    // Clear any previous history\n    this->clearHistory();\n    \n    // Set the parameter value\n    this->invoke_to_setPrm(0, testId, testValue);\n    \n    // Dispatch the setPrm message to process it\n    this->m_impl.doDispatch();\n    \n    // Clear history before reading\n    this->clearHistory();\n    \n    // Read the parameter value using getPrm port\n    Fw::ParamValid result = this->invoke_to_getPrm(0, testId, testValue);\n    \n    // Verify that the parameter was read successfully\n    // Since getPrm is a guarded port, it doesn't queue messages, so we check the return value directly\n    ASSERT_EQ(result, Fw::ParamValid::PARAM_VALID);\n}\n```\n\n```cpp main\nTEST(ParameterDbTest, PrmDbReadInterfaceTest) {\n    TEST_CASE(105.3.1, \"Parameter database read interface test\");\n    COMMENT(\"Test that the PrmDb component provides an interface to read parameter values\");\n\n    Svc::PrmDbImpl impl(\"PrmDbImpl\");\n\n    impl.init(10, 0);\n    impl.configure(\"/prm/TestFile.prm\");\n    impl.configureSandbox(\"/prm\");\n\n    Svc::PrmDbTester tester(impl);\n\n    tester.init();\n\n    // connect ports\n    connectPorts(impl, tester);\n\n    // run the read interface test\n    tester.runPrmDbReadInterfaceTest();\n}\n```", "diff": "", "metrics": {"llm_calls": 3, "prompt_tokens": 27285, "completion_tokens": 1502, "llm_seconds": 33.117, "build_seconds": 6.65, "truncated": 0, "coverage_before": {"line_coverage": 0.9217, "branch_coverage": 0.5205, "lines": 332}, "context_chars": 32006, "context_dropped": ["Design document excerpts"], "mcp_calls": 84, "first_attempt_compiled": false, "carried_blocks": 1}, "mutation": null}], "summaries": {"v1": {"qwen": {"targets": 28, "status": {"passed": 11, "failed": 17}, "first_attempt_compile_rate": 0.5238, "median_wall_seconds": 37.825, "mutation": {"tests_analysed": 11, "valid_mutants": 41, "killed": 25, "mean_score": 0.6212}, "failure_causes": null}, "devstral": {"targets": 28, "status": {"passed": 8, "failed": 19, "not_testable": 1}, "first_attempt_compile_rate": 0.1481, "median_wall_seconds": 112.955, "mutation": {"tests_analysed": 8, "valid_mutants": 32, "killed": 21, "mean_score": 0.6562}, "failure_causes": null}}, "v2": {"qwen": {"targets": 28, "status": {"passed": 18, "failed": 10}, "first_attempt_compile_rate": 0.8095, "median_wall_seconds": 42.56, "mutation": {"tests_analysed": 18, "valid_mutants": 64, "killed": 42, "mean_score": 0.6713}, "failure_causes": {"other compile error": {"attempts": 14, "requirements": 7}, "F´ assertion in the component (precondition broken)": {"attempts": 10, "requirements": 5}, "reused an existing method or test name": {"attempts": 6, "requirements": 6}, "wrong expected value": {"attempts": 6, "requirements": 5}, "other policy rejection": {"attempts": 2, "requirements": 2}, "answer missing a block": {"attempts": 1, "requirements": 1}, "-Werror: C-style cast or deprecated API": {"attempts": 1, "requirements": 1}}}, "devstral": {"targets": 28, "status": {"passed": 18, "failed": 10}, "first_attempt_compile_rate": 0.6667, "median_wall_seconds": 94.245, "mutation": {"tests_analysed": 18, "valid_mutants": 67, "killed": 35, "mean_score": 0.537}, "failure_causes": {"other compile error": {"attempts": 20, "requirements": 10}, "wrong expected value": {"attempts": 9, "requirements": 5}, "F´ assertion in the component (precondition broken)": {"attempts": 6, "requirements": 3}, "reused an existing method or test name": {"attempts": 1, "requirements": 1}}}}}, "serving": {"qwen": {"engine": "llama.cpp", "profiles": {"completion": [{"concurrency": 1, "output_tps": 29.43, "requests_per_s": 0.584, "ttft_p50_s": 1.064555401000007, "tpot_p50_ms": 12.85997378571275, "n_errors": 0}, {"concurrency": 2, "output_tps": 41.77, "requests_per_s": 0.678, "ttft_p50_s": 1.22351508450015, "tpot_p50_ms": 27.705516365080662, "n_errors": 0}, {"concurrency": 4, "output_tps": 47.31, "requests_per_s": 0.739, "ttft_p50_s": 2.64151954450017, "tpot_p50_ms": 42.50065097618524, "n_errors": 0}, {"concurrency": 8, "output_tps": 42.03, "requests_per_s": 0.758, "ttft_p50_s": 6.229220409500158, "tpot_p50_ms": 72.38847978571054, "n_errors": 0}, {"concurrency": 16, "output_tps": 40.14, "requests_per_s": 0.701, "ttft_p50_s": 17.85643597650005, "tpot_p50_ms": 78.13426119047207, "n_errors": 0}], "chat": [{"concurrency": 1, "output_tps": 51.34, "requests_per_s": 0.131, "ttft_p50_s": 2.322805684000059, "tpot_p50_ms": 13.584753378446115, "n_errors": 0}, {"concurrency": 2, "output_tps": 59.42, "requests_per_s": 0.149, "ttft_p50_s": 3.940242443499983, "tpot_p50_ms": 23.46361881453626, "n_errors": 0}, {"concurrency": 4, "output_tps": 69.74, "requests_per_s": 0.174, "ttft_p50_s": 5.681975704000024, "tpot_p50_ms": 43.4309346528824, "n_errors": 0}, {"concurrency": 8, "output_tps": 67.96, "requests_per_s": 0.171, "ttft_p50_s": 26.479429888999903, "tpot_p50_ms": 52.12475970927329, "n_errors": 0}, {"concurrency": 16, "output_tps": 68.97, "requests_per_s": 0.174, "ttft_p50_s": 70.67919150050011, "tpot_p50_ms": 50.03664321553882, "n_errors": 0}], "agent": [{"concurrency": 1, "output_tps": 12.66, "requests_per_s": 0.294, "ttft_p50_s": 1.9845738624997011, "tpot_p50_ms": 16.10336598148226, "n_errors": 0}, {"concurrency": 2, "output_tps": 9.24, "requests_per_s": 0.329, "ttft_p50_s": 2.0106344990001617, "tpot_p50_ms": 98.5575228148129, "n_errors": 0}, {"concurrency": 4, "output_tps": 8.68, "requests_per_s": 0.309, "ttft_p50_s": 4.098530361999792, "tpot_p50_ms": 279.9077009814802, "n_errors": 0}, {"concurrency": 8, "output_tps": 18.44, "requests_per_s": 0.381, "ttft_p50_s": 12.169074398500015, "tpot_p50_ms": 121.73956892592355, "n_errors": 0}, {"concurrency": 16, "output_tps": 16.57, "requests_per_s": 0.438, "ttft_p50_s": 27.683751798000003, "tpot_p50_ms": 173.94212088888878, "n_errors": 0}]}}, "devstral": {"engine": "llama.cpp", "profiles": {"completion": [{"concurrency": 1, "output_tps": 9.66, "requests_per_s": 0.151, "ttft_p50_s": 2.50086946600004, "tpot_p50_ms": 64.40721142063833, "n_errors": 0}, {"concurrency": 2, "output_tps": 12.92, "requests_per_s": 0.202, "ttft_p50_s": 3.575007001499671, "tpot_p50_ms": 99.80026876984908, "n_errors": 0}, {"concurrency": 4, "output_tps": 15.63, "requests_per_s": 0.244, "ttft_p50_s": 4.441868663999685, "tpot_p50_ms": 187.20644939682484, "n_errors": 0}, {"concurrency": 8, "output_tps": 15.37, "requests_per_s": 0.25, "ttft_p50_s": 19.26848700699975, "tpot_p50_ms": 202.19083559524213, "n_errors": 0}, {"concurrency": 16, "output_tps": 15.43, "requests_per_s": 0.248, "ttft_p50_s": 50.15045113399947, "tpot_p50_ms": 206.44472746032497, "n_errors": 0}], "chat": [{"concurrency": 1, "output_tps": 12.73, "requests_per_s": 0.032, "ttft_p50_s": 5.044716110000081, "tpot_p50_ms": 65.84595633208016, "n_errors": 0}, {"concurrency": 2, "output_tps": 19.36, "requests_per_s": 0.048, "ttft_p50_s": 8.620827422500042, "tpot_p50_ms": 81.44930336090185, "n_errors": 0}, {"concurrency": 4, "output_tps": 21.74, "requests_per_s": 0.054, "ttft_p50_s": 11.16058493699984, "tpot_p50_ms": 155.5276316553888, "n_errors": 0}, {"concurrency": 8, "output_tps": 21.74, "requests_per_s": 0.054, "ttft_p50_s": 82.36817448349984, "tpot_p50_ms": 164.9661476115302, "n_errors": 0}, {"concurrency": 16, "output_tps": 21.74, "requests_per_s": 0.054, "ttft_p50_s": 226.24554672850036, "tpot_p50_ms": 165.76454515914742, "n_errors": 0}], "agent": [{"concurrency": 1, "output_tps": 3.8, "requests_per_s": 0.137, "ttft_p50_s": 3.6838799224997274, "tpot_p50_ms": 69.77461782692164, "n_errors": 0}, {"concurrency": 2, "output_tps": 6.84, "requests_per_s": 0.122, "ttft_p50_s": 3.8515389909998703, "tpot_p50_ms": 86.49168141176446, "n_errors": 0}, {"concurrency": 4, "output_tps": 3.58, "requests_per_s": 0.144, "ttft_p50_s": 7.479032952499892, "tpot_p50_ms": 535.1109320757246, "n_errors": 0}, {"concurrency": 8, "output_tps": 5.53, "requests_per_s": 0.199, "ttft_p50_s": 22.29662376899978, "tpot_p50_ms": 517.5768434685101, "n_errors": 0}, {"concurrency": 16, "output_tps": 6.33, "requests_per_s": 0.199, "ttft_p50_s": 59.313784460499846, "tpot_p50_ms": 514.6674136103802, "n_errors": 0}]}}, "qwen_vllm": {"engine": "vllm", "profiles": {"completion": [{"concurrency": 1, "output_tps": 43.73, "requests_per_s": 0.767, "ttft_p50_s": 0.6728674879996106, "tpot_p50_ms": 11.57000012700871, "n_errors": 0}, {"concurrency": 2, "output_tps": 62.27, "requests_per_s": 1.006, "ttft_p50_s": 0.6512336969999524, "tpot_p50_ms": 22.90582392855694, "n_errors": 0}, {"concurrency": 4, "output_tps": 69.47, "requests_per_s": 1.105, "ttft_p50_s": 1.5436752729992804, "tpot_p50_ms": 35.819956936508774, "n_errors": 0}, {"concurrency": 8, "output_tps": 91.16, "requests_per_s": 1.424, "ttft_p50_s": 2.2676529794998714, "tpot_p50_ms": 57.88308626984323, "n_errors": 0}, {"concurrency": 16, "output_tps": 85.89, "requests_per_s": 1.508, "ttft_p50_s": 2.2849487330004195, "tpot_p50_ms": 129.92220137301854, "n_errors": 0}], "chat": [{"concurrency": 1, "output_tps": 49.31, "requests_per_s": 0.123, "ttft_p50_s": 2.3816944395002793, "tpot_p50_ms": 14.03161804260288, "n_errors": 0}, {"concurrency": 2, "output_tps": 58.2, "requests_per_s": 0.146, "ttft_p50_s": 3.7223339280008076, "tpot_p50_ms": 24.62357627443719, "n_errors": 0}, {"concurrency": 4, "output_tps": 73.84, "requests_per_s": 0.185, "ttft_p50_s": 6.792589629500071, "tpot_p50_ms": 37.25578734586344, "n_errors": 0}, {"concurrency": 8, "output_tps": 86.61, "requests_per_s": 0.217, "ttft_p50_s": 9.428082915999767, "tpot_p50_ms": 71.15198976566433, "n_errors": 0}, {"concurrency": 16, "output_tps": 98.05, "requests_per_s": 0.245, "ttft_p50_s": 7.033008142000654, "tpot_p50_ms": 142.4453134060152, "n_errors": 0}], "agent": [{"concurrency": 1, "output_tps": 2.76, "requests_per_s": 0.1, "ttft_p50_s": 7.662581847001093, "tpot_p50_ms": 22.599267907396467, "n_errors": 0}, {"concurrency": 2, "output_tps": 3.56, "requests_per_s": 0.128, "ttft_p50_s": 7.712898493999091, "tpot_p50_ms": 304.65343875558267, "n_errors": 0}, {"concurrency": 4, "output_tps": 3.58, "requests_per_s": 0.128, "ttft_p50_s": 19.07588425999984, "tpot_p50_ms": 437.43304111110234, "n_errors": 0}, {"concurrency": 8, "output_tps": 3.71, "requests_per_s": 0.134, "ttft_p50_s": 30.40354848449988, "tpot_p50_ms": 1151.5848044444417, "n_errors": 0}, {"concurrency": 16, "output_tps": 3.86, "requests_per_s": 0.139, "ttft_p50_s": 31.624837175500943, "tpot_p50_ms": 2891.661602777782, "n_errors": 0}]}}}, "traceability": {"dataset": {"requirements": 151, "candidates": 3261, "embedder": "Qwen/Qwen3-Embedding-0.6B"}, "methods": {"bm25": {"ap": {"mean": 0.4882, "ci95": [0.4273, 0.5482]}, "recall@1": {"mean": 0.2966, "ci95": [0.2362, 0.3602]}, "recall@10": {"mean": 0.6772, "ci95": [0.6103, 0.743]}}, "graph": {"ap": {"mean": 0.2489, "ci95": [0.2204, 0.2777]}, "recall@1": {"mean": 0.0733, "ci95": [0.0581, 0.0893]}, "recall@10": {"mean": 0.5501, "ci95": [0.4895, 0.6087]}}, "graph+bm25": {"ap": {"mean": 0.5686, "ci95": [0.5129, 0.6256]}, "recall@1": {"mean": 0.3299, "ci95": [0.271, 0.394]}, "recall@10": {"mean": 0.7807, "ci95": [0.7231, 0.8354]}}, "dense": {"ap": {"mean": 0.4795, "ci95": [0.4282, 0.531]}, "recall@1": {"mean": 0.2608, "ci95": [0.199, 0.3217]}, "recall@10": {"mean": 0.7133, "ci95": [0.6533, 0.7699]}}, "graph+dense": {"ap": {"mean": 0.5725, "ci95": [0.5211, 0.6189]}, "recall@1": {"mean": 0.3028, "ci95": [0.2401, 0.3659]}, "recall@10": {"mean": 0.8171, "ci95": [0.7655, 0.864]}}, "graph+rrf(bm25,dense)": {"ap": {"mean": 0.6093, "ci95": [0.5531, 0.6596]}, "recall@1": {"mean": 0.3504, "ci95": [0.2819, 0.4102]}, "recall@10": {"mean": 0.8211, "ci95": [0.7694, 0.871]}}, "graph+rrf(bm25,dense)+llm-rerank@10": {"ap": {"mean": 0.5835, "ci95": [0.5353, 0.6328]}, "recall@1": {"mean": 0.2972, "ci95": [0.2409, 0.3557]}, "recall@10": {"mean": 0.8224, "ci95": [0.7716, 0.8726]}}}}}</script>
+<script>
+(() => {
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pct = (x) => Math.round(x * 100) + " %";
+const fmt = (n) => Number(n).toLocaleString("en-US");
+const MODEL = { qwen: "Qwen3-Coder-30B-A3B", devstral: "Devstral-Small-2-24B" };
+
+/* ---------- header figures ---------- */
+const union = D.board.filter((r) => r.qwen.status === "passed" || r.devstral.status === "passed").length;
+const sq = D.summaries.v2.qwen, sq1 = D.summaries.v1.qwen;
+const best = D.traceability.methods["graph+rrf(bm25,dense)"].ap.mean;
+$("#figures").innerHTML = [
+  [`${union} / ${D.board.length}`, "requirement gaps closed by a passing, committed test (either model)"],
+  [pct(sq.first_attempt_compile_rate), `of Qwen3-Coder's first answers compile (${pct(sq1.first_attempt_compile_rate)} with agent v1)`],
+  [best.toFixed(3), "mean average precision when recovering which test verifies which requirement"],
+  ["≈ 4", "concurrent chat users at 20 tok/s each on one 2× T4 server"],
+].map(([b, s]) => `<div class="fig"><b>${b}</b><span>${s}</span></div>`).join("");
+
+/* ---------- code rendering ---------- */
+const CPP = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*")|\b(ASSERT_\w+|REQUIREMENT|TEST_CASE|COMMENT|TEST|FW_ASSERT|EXPECT_\w+)\b|\b(void|const|static|bool|true|false|this|return|if|else|for|while|auto|int|char|sizeof|reinterpret_cast|static_cast|U8|U16|U32|I32|F32|namespace|class|public|private|enum|struct|final)\b|\b(0x[0-9A-Fa-f]+|\d+)\b/g;
+function hlCpp(src) {
+  let out = "", last = 0;
+  src.replace(CPP, (m, cm, st, mac, kw, num, i) => {
+    out += esc(src.slice(last, i));
+    const cls = cm ? "c" : st ? "s" : mac ? "m" : kw ? "k" : "n";
+    out += `<span class="${cls}">${esc(m)}</span>`;
+    last = i + m.length;
+    return m;
+  });
+  return out + esc(src.slice(last));
+}
+function hlLog(src) {
+  return src.split("\n").map((ln) => {
+    const e = esc(ln);
+    if (/\berror:/.test(ln) || /Assert(ion)?[: ]/.test(ln) || /exited with code/.test(ln)) return `<span class="e">${e}</span>`;
+    if (/^\s*\d+ \|/.test(ln) || /^\s*\|/.test(ln)) return `<span class="k">${e}</span>`;
+    return e;
+  }).join("\n");
+}
+function hlDiff(src) {
+  return src.split("\n").map((ln) => {
+    const e = esc(ln);
+    if (ln.startsWith("+++") || ln.startsWith("---") || ln.startsWith("diff ") || ln.startsWith("index ")) return `<span class="hunk">${e}</span>`;
+    if (ln.startsWith("@@")) return `<span class="hunk">${e}</span>`;
+    if (ln.startsWith("+")) return `<span class="add">${e}</span>`;
+    if (ln.startsWith("-")) return `<span class="del">${e}</span>`;
+    return e;
+  }).join("\n");
+}
+const codeBox = (label, html) => `<div class="code"><div class="lbl">${esc(label)}</div><pre>${html}</pre></div>`;
+const inlineCode = (t) => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>");
+function renderAnswer(ans) {
+  const parts = [];
+  const re = /```(\w+)?(?:[ \t]+(\w+))?\n([\s\S]*?)```/g;
+  let last = 0, m;
+  const blocks = { tester: "goes into the Tester class (.cpp)", main: "goes into the test main (TEST case)", header: "goes into the Tester header" };
+  while ((m = re.exec(ans))) {
+    const prose = ans.slice(last, m.index).trim();
+    if (prose) parts.push(`<div class="prose">${prose.split(/\n\s*\n/).map((p) => `<p>${inlineCode(p.trim())}</p>`).join("")}</div>`);
+    const tag = m[2] || m[1] || "code";
+    parts.push(codeBox(`${m[1] || "code"} ${tag} · ${blocks[tag] || ""}`, hlCpp(m[3].replace(/\s+$/, ""))));
+    last = re.lastIndex;
+  }
+  const tail = ans.slice(last).trim();
+  if (tail) parts.push(`<div class="prose"><p>${inlineCode(tail)}</p></div>`);
+  return parts.join("");
+}
+
+/* ---------- replay events ---------- */
+// Reading of two runs, checked against the F´ source and the stored outputs.
+const NOTES = {
+  "SVC-COMRETRY-002": { assert: "The test called <code>dataReturnIn</code> before any <code>dataIn</code>, while the component still owns its buffer. The repaired test sends a buffer through <code>dataIn</code> first." },
+  "PRMDB-002": { giveup: "Here the model kept using F´ API names that do not exist (<code>Fw::ParamValid::PARAM_VALID</code>, then a serialization mode that is not in <code>Fw::Serialization</code>). Adding the real enumerators of an unknown enum to the repair hints is the next planned improvement of the agent." },
+};
+const STAGE_FAIL = {
+  policy: { node: "check", cls: "warn", mark: "P", what: "policy rejected" },
+  build: { node: "build", cls: "crit", mark: "B", what: "build failed" },
+  test: { node: "test", cls: "serious", mark: "T", what: "test failed" },
+};
+function firstLine(t) {
+  const ln = String(t).split("\n").find((l) => l.trim()) || "";
+  const s = ln.replace(/\s+/g, " ").trim();
+  return s.length > 120 ? s.slice(0, 119) + "…" : s;
+}
+function shortError(t) {
+  const err = String(t).split("\n").find((l) => /error:/.test(l));
+  if (err) return firstLine(err.replace(/^.*?error:\s*/, ""));
+  const a = String(t).match(/Assert: "([^"]+)"/);
+  if (a) return `F´ assertion in ${a[1]}`;
+  return firstLine(t);
+}
+function buildEvents(r) {
+  const m = r.metrics, ev = [];
+  const cov = m.coverage_before ? m.coverage_before.line_coverage : null;
+  ev.push({ node: "prepare", cls: "ok", mark: "✓",
+    text: `${r.module}: existing unit tests build and pass${cov != null ? `, line coverage ${pct(cov)}` : ""}`,
+    detail: () => `<h3>Baseline</h3><p>The agent checks out F´ v4.4.1, builds the unit tests of <code>${esc(r.module)}</code> with
+      <code>fprime-util build --ut</code> and runs them, so any later failure is the new test's fault.</p>
+      <div class="stats"><span>line coverage before <b>${pct(cov)}</b></span><span>lines <b>${m.coverage_before.lines}</b></span>
+      <span>branch coverage <b>${pct(m.coverage_before.branch_coverage)}</b></span></div>` });
+  ev.push({ node: "gather", cls: "info", mark: "•",
+    text: `context from the knowledge graph over MCP: ${fmt(m.context_chars)} characters`,
+    detail: () => `<h3>Context, gathered over MCP</h3><p>The agent calls the knowledge server's tools
+      (<code>get_requirement</code>, <code>trace_requirement</code>, <code>search</code>, <code>find_symbol</code>) and
+      packs what fits in a 32,000-character budget, in this order:</p>
+      <ul><li>the requirement, the component kind and the exact dispatch call for it</li>
+      <li>the FPP model of the component and the autocoded test-harness API</li>
+      <li>the Tester header and the test main</li>
+      <li>the existing tests most related to the requirement (from the traceability ranking)</li>
+      <li>the implementation, or the functions related to the requirement when it is large</li>
+      <li>design document excerpts</li></ul>
+      <div class="stats"><span>first prompt <b>${fmt(m.context_chars)} chars</b></span>
+      <span>dropped for budget <b>${m.context_dropped && m.context_dropped.length ? esc(m.context_dropped.join(", ")) : "nothing"}</b></span></div>` });
+  r.history.forEach((h, i) => {
+    const last = i === r.history.length - 1;
+    const a = h.attempt;
+    ev.push({ node: "generate", cls: "info", mark: String(a), brk: i > 0,
+      text: a === 1 ? "attempt 1: model writes the test" : `attempt ${a}: model repairs the test from that output`,
+      detail: () => last
+        ? `<h3>Attempt ${a}: the model's answer</h3><p class="note">${MODEL[r.model]} (temperature 0.2), as stored in the run log.
+           Code blocks are applied to the F´ test files; the prose is ignored.</p>${renderAnswer(r.last_answer)}`
+        : `<h3>Attempt ${a}: the model answers</h3><p>${a === 1
+            ? "The model gets the system prompt and the context, and answers with code blocks for the Tester class and the test main."
+            : "The repair prompt carries the previous answer and the exact output below, with hints (did-you-mean names, the asserted source line)."}</p>
+           <p class="note">The run log keeps only the last answer of each requirement, so this attempt's code is not shown. Its build or test output is the next step.</p>` });
+    const f = STAGE_FAIL[h.stage];
+    if (h.stage === "policy") {
+      ev.push({ node: "check", cls: f.cls, mark: f.mark, text: `${f.what} → repair: ${firstLine(h.detail)}`,
+        detail: () => `<h3>Policy check failed</h3><p>Before building, the patch must only add a new test, in test files, with new names.</p>${codeBox("policy", hlLog(h.detail))}` });
+      return;
+    }
+    ev.push({ node: "check", cls: "ok", mark: "✓", text: "policy OK: one new test, only test files touched",
+      detail: () => `<h3>Policy check</h3><p>The patch adds a test method, a <code>TEST(...)</code> case and a declaration, and touches
+        nothing outside <code>${esc(r.module)}/test/ut</code>. Existing names are not reused.</p>` });
+    if (h.stage === "build") {
+      ev.push({ node: "build", cls: f.cls, mark: f.mark, text: `${f.what}: ${shortError(h.detail)}`,
+        detail: () => `<h3>Build failed (attempt ${a})</h3><p><code>fprime-util build --ut</code> with <code>-Werror</code>. The
+          compiler output goes back to the model${last ? "" : " in the repair prompt"}.</p>${codeBox("g++ output", hlLog(h.detail))}` });
+      return;
+    }
+    ev.push({ node: "build", cls: "ok", mark: "✓", text: "fprime-util build --ut: compiles",
+      detail: () => `<h3>Build</h3><p>The unit-test executable compiles with the new test (<code>-Werror</code> on).</p>` });
+    if (h.stage === "test") {
+      const al = Object.entries(r.assert_lines || {});
+      ev.push({ node: "test", cls: f.cls, mark: f.mark, text: `${f.what}: ${shortError(h.detail)}`,
+        detail: () => `<h3>Test failed (attempt ${a})</h3><p>The new test runs under GoogleTest.</p>${codeBox("test output", hlLog(h.detail))}
+          ${al.map(([loc, src]) => `<div class="callout"><span>The asserted line, <code>${esc(loc)}</code>, is added to the repair prompt:</span>
+          <code>${esc(src)}</code>${NOTES[r.req_id] && NOTES[r.req_id].assert ? `<span>${NOTES[r.req_id].assert}</span>` : ""}</div>`).join("")}` });
+      return;
+    }
+    ev.push({ node: "test", cls: "ok", mark: "✓",
+      text: `new test passes 3 runs; full suite passes (${m.tests_total} tests)`,
+      detail: () => `<h3>Test passes</h3><p>The new test passes three runs in a row (flakiness check), then the whole suite
+        passes with it.</p><div class="stats"><span>tests in suite <b>${m.tests_total}</b></span>
+        <span>new test alone covers <b>${pct(m.new_test_coverage.line_coverage)}</b> of the component's lines</span>
+        <span>test <b>${esc(m.test_names.join(", "))}</b></span></div>` });
+  });
+  if (r.status === "passed") {
+    ev.push({ node: "commit", cls: "ok", mark: "✓", text: `committed ${r.commit.slice(0, 10)} to a review branch`,
+      detail: () => `<h3>Committed for review</h3><p>One commit per requirement on a review branch of the F´ fork, with an
+        AI-use disclosure in the message. Nothing reaches the main branch without an engineer.</p>
+        <div class="stats"><span>commit <b>${r.commit.slice(0, 10)}</b></span></div>${codeBox("git diff", hlDiff(r.diff.trim()))}` });
+    const mu = r.mutation;
+    if (mu && mu.valid) {
+      ev.push({ node: "mutate", cls: mu.killed === mu.valid ? "ok" : "serious", mark: `${mu.killed}`,
+        text: `fault detection: ${mu.killed} of ${mu.valid} seeded bugs caught`,
+        detail: () => `<h3>Does the test catch bugs?</h3><p>The agent mutates lines of the implementation that the new test executes,
+          rebuilds, and reruns only the new test. A mutant is killed when the test fails.</p>
+          <div class="tbl-wrap mut"><table><thead><tr><th>Line</th><th>Mutation</th><th>Change</th><th>Result</th></tr></thead><tbody>
+          ${mu.mutants.map((x) => `<tr><td class="num mono">${x.line}</td><td>${esc(x.operator)}</td>
+            <td><code class="was">${esc(x.original.trim())}</code><code>${esc(x.mutated.trim())}</code></td>
+            <td><span class="pill"><i style="background:var(--${x.outcome === "killed" ? "ok" : "serious"})"></i>${x.outcome}</span></td></tr>`).join("")}
+          </tbody></table></div><p class="note">${mu.sampled} of ${mu.candidates} candidate mutants sampled. Survivors show what the test does not check yet.</p>` });
+    }
+  } else {
+    ev.push({ node: "give up", cls: "crit", mark: "✗", text: r.reason,
+      detail: () => `<h3>No passing test: the requirement stays open</h3><p>After 3 failed attempts the agent stops and reports the gap
+        with its last error. Nothing is committed.</p>${NOTES[r.req_id] && NOTES[r.req_id].giveup ? `<p>${NOTES[r.req_id].giveup}</p>` : ""}
+        <p class="note">The last answer (attempt ${r.attempts}), as stored in the run log:</p>${renderAnswer(r.last_answer)}` });
+  }
+  return ev;
+}
+
+/* ---------- replay UI ---------- */
+const tabsEl = $("#tabs"), evEl = $("#events"), detEl = $("#detail");
+let cur = 0, events = [], shown = 0, sel = 0, timer = null;
+function label(r) {
+  if (r.status !== "passed") return "Gave up after 3 attempts";
+  return r.attempts > 1 ? `Repaired ${r.attempts - 1}×, then passed` : "Passed on the first try";
+}
+tabsEl.innerHTML = D.replays.map((r, i) => `<button class="tab" role="tab" type="button" id="tab-${i}" aria-selected="${i === 0}">
+  <span>${label(r)}</span><small>${r.req_id} · ${r.module}</small></button>`).join("");
+tabsEl.addEventListener("click", (e) => { const b = e.target.closest(".tab"); if (b) load(+b.id.slice(4)); });
+
+function load(i, autoplay = false) {
+  stop();
+  cur = i;
+  [...tabsEl.children].forEach((b, j) => b.setAttribute("aria-selected", String(j === i)));
+  const r = D.replays[i], m = r.metrics;
+  $("#req").innerHTML = `<p class="eyebrow">Requirement ${esc(r.req_id)} · ${esc(r.requirement.file || "")}</p>
+    <q>${esc(r.requirement.text)}</q>
+    <div class="meta"><span>verification <b>${esc(r.requirement.verification)}</b></span><span>tests citing it before <b>0</b></span>
+    <span>attempts <b>${r.attempts}</b></span><span>wall time <b>${Math.round(r.wall_seconds)} s</b></span>
+    <span>model time <b>${m.llm_seconds.toFixed(1)} s</b></span><span>builds <b>${m.build_seconds.toFixed(1)} s</b></span>
+    <span>tokens in / out <b>${fmt(m.prompt_tokens)} / ${fmt(m.completion_tokens)}</b></span></div>`;
+  events = buildEvents(r);
+  evEl.innerHTML = events.map((e, j) => `<li class="ev${e.brk ? " attempt-break" : ""}" data-i="${j}" tabindex="0">
+    <span class="ic ${e.cls}" aria-hidden="true">${esc(e.mark)}</span><span class="node">${esc(e.node)}</span>
+    <span class="txt">${esc(e.text)}</span></li>`).join("");
+  reveal(events.length);
+  select(0);
+  if (autoplay) play();
+}
+function reveal(n) {
+  shown = n;
+  [...evEl.children].forEach((li, j) => li.classList.toggle("hidden-step", j >= n));
+  $("#count").textContent = `step ${Math.min(sel + 1, n)} of ${events.length}`;
+  $("#step").disabled = n >= events.length && sel >= events.length - 1;
+}
+function select(j) {
+  sel = j;
+  [...evEl.children].forEach((li, k) => li.setAttribute("aria-current", String(k === j)));
+  detEl.innerHTML = events[j].detail();
+  $("#count").textContent = `step ${j + 1} of ${events.length}`;
+  $("#step").disabled = j >= events.length - 1;
+}
+function advance() {
+  if (sel >= events.length - 1) { stop(); return false; }
+  const j = sel + 1;
+  if (j >= shown) reveal(j + 1);
+  const li = evEl.children[j];
+  li.classList.remove("fresh"); void li.offsetWidth; li.classList.add("fresh");
+  select(j);
+  return true;
+}
+function play() {
+  stop();
+  reveal(1); select(0);
+  $("#play").textContent = "Pause";
+  const tick = () => {
+    if (!advance()) return;
+    const e = events[sel];
+    timer = setTimeout(tick, e.cls === "ok" || e.cls === "info" ? 1300 : 2600);
+  };
+  timer = setTimeout(tick, 1100);
+}
+function stop() {
+  if (timer) clearTimeout(timer);
+  timer = null;
+  $("#play").textContent = "Play";
+}
+$("#play").addEventListener("click", () => (timer ? stop() : play()));
+$("#step").addEventListener("click", () => { stop(); advance(); });
+$("#all").addEventListener("click", () => { stop(); reveal(events.length); select(events.length - 1); });
+evEl.addEventListener("click", (e) => { const li = e.target.closest(".ev"); if (li) { stop(); select(+li.dataset.i); } });
+evEl.addEventListener("keydown", (e) => {
+  const li = e.target.closest(".ev");
+  if (li && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); stop(); select(+li.dataset.i); }
+});
+
+/* ---------- outcome board ---------- */
+const CHIP = { passed: ["ok", "✓", "passed"], policy: ["warn", "P", "policy rejected"], build: ["crit", "B", "build failed"], test: ["serious", "T", "test failed"] };
+$("#legend").innerHTML = Object.values(CHIP).map(([c, g, t]) => `<span><span class="chip ${c}">${g}</span>${t}</span>`).join("")
+  + `<span class="v1">v1 ✓ / v1 ✗ = result with agent v1</span>`;
+const chips = (s) => `<span class="chips">${s.steps.map((st, k) => { const [c, g, t] = CHIP[st] || ["warn", "?", st];
+  return `<span class="chip ${c}" title="attempt ${k + 1}: ${t}">${g}</span>`; }).join("")}</span>`
+  + `<span class="v1" title="agent v1 (run 2): ${s.v1}">v1 ${s.v1 === "passed" ? "✓" : "✗"}</span>`;
+const replayIdx = Object.fromEntries(D.replays.map((r, i) => [r.model + r.req_id, i]));
+let html = `<thead><tr><th>Requirement</th><th>Qwen3-Coder</th><th>Devstral</th></tr></thead><tbody>`;
+let lastMod = null;
+for (const r of D.board) {
+  if (r.module !== lastMod) {
+    lastMod = r.module;
+    const rows = D.board.filter((x) => x.module === r.module);
+    const q = rows.filter((x) => x.qwen.status === "passed").length, d = rows.filter((x) => x.devstral.status === "passed").length;
+    html += `<tr class="mod"><td colspan="3">${esc(r.module)}<span>${rows.length} gaps · Qwen ${q} · Devstral ${d}</span></td></tr>`;
+  }
+  const ri = replayIdx["qwen" + r.req_id];
+  const id = ri != null ? `<button type="button" data-replay="${ri}" title="Open this run in the replay">${esc(r.req_id)}</button>` : esc(r.req_id);
+  html += `<tr><td><div class="rid">${id}</div><div class="rtext">${esc(r.text)}</div></td><td>${chips(r.qwen)}</td><td>${chips(r.devstral)}</td></tr>`;
+}
+const tq = D.board.filter((x) => x.qwen.status === "passed").length, td = D.board.filter((x) => x.devstral.status === "passed").length;
+html += `<tr class="totals"><td>Verified · either model ${union} / ${D.board.length}</td><td>${tq} / ${D.board.length}</td><td>${td} / ${D.board.length}</td></tr></tbody>`;
+$("#board").innerHTML = html;
+$("#board").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-replay]");
+  if (b) { load(+b.dataset.replay); document.getElementById("replay").scrollIntoView({ behavior: "smooth", block: "start" }); }
+});
+
+/* ---------- charts ---------- */
+const tip = $("#tip");
+function showTip(host, html, x, y) {
+  tip.innerHTML = html; tip.hidden = false;
+  const hb = host.getBoundingClientRect(), pb = document.body.getBoundingClientRect();
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let left = hb.left - pb.left + x + 14, top = hb.top - pb.top + y - th - 10;
+  if (left + tw > document.documentElement.clientWidth - 8) left = hb.left - pb.left + x - tw - 14;
+  if (left < 8) left = 8;
+  if (top < hb.top - pb.top) top = hb.top - pb.top + y + 14;
+  tip.style.left = left + "px"; tip.style.top = top + "px";
+}
+const hideTip = () => { tip.hidden = true; };
+const NS = "http://www.w3.org/2000/svg";
+const svgEl = (w, h) => `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img">`;
+
+function agentChart() {
+  const host = $("#c-agent .plot"), W = Math.max(280, host.clientWidth), v1 = D.summaries.v1, v2 = D.summaries.v2;
+  const panels = [
+    { title: "Requirements verified (of 28)", max: 28, ticks: [0, 7, 14, 21, 28], val: (s) => s.status.passed, f: (x) => String(x) },
+    { title: "First answer compiles", max: 1, ticks: [0, 0.25, 0.5, 0.75, 1], val: (s) => s.first_attempt_compile_rate, f: (x) => Math.round(x * 100) + "%" },
+  ];
+  const L = 92, R = 16, rowH = 26, panelH = 24 + rowH * 2 + 26;
+  const H = panelH * 2 + 4;
+  let s = svgEl(W, H);
+  panels.forEach((p, pi) => {
+    const y0 = pi * panelH, x = (v) => L + (W - L - R) * (v / p.max);
+    s += `<text x="0" y="${y0 + 14}" class="ink2" style="font-family:var(--f-body);font-size:13px">${p.title}</text>`;
+    p.ticks.forEach((t) => { s += `<line class="gridl" x1="${x(t)}" x2="${x(t)}" y1="${y0 + 24}" y2="${y0 + 24 + rowH * 2}"/>`
+      + `<text x="${x(t)}" y="${y0 + 24 + rowH * 2 + 15}" text-anchor="middle">${p.f(t)}</text>`; });
+    [["qwen", "Qwen3-Coder", "--s-qwen"], ["devstral", "Devstral", "--s-dev"]].forEach(([k, name, col], ri) => {
+      const cy = y0 + 24 + rowH * ri + rowH / 2, a = p.val(v1[k]), b = p.val(v2[k]);
+      s += `<text x="0" y="${cy + 4}" class="ink">${name}</text>`
+        + `<line x1="${x(a)}" x2="${x(b)}" y1="${cy}" y2="${cy}" stroke="var(${col})" stroke-width="2" stroke-opacity="0.55"/>`
+        + `<circle cx="${x(a)}" cy="${cy}" r="5" fill="var(--surface)" stroke="var(--muted)" stroke-width="2"/>`
+        + `<circle cx="${x(b)}" cy="${cy}" r="6" fill="var(${col})" stroke="var(--surface)" stroke-width="2"/>`
+        + `<rect class="hit" x="${L}" y="${cy - rowH / 2}" width="${W - L - R}" height="${rowH}" fill="transparent"
+            data-tip="<b>${name}</b><br>${p.title}<br>v1 ${p.f(a)} → v2 <b>${p.f(b)}</b>"/>`;
+      const lx = x(b) + (b > a ? 10 : -10);
+      s += `<text x="${Math.min(lx, W - 4)}" y="${cy - 8}" text-anchor="${x(b) > W - 60 ? "end" : "start"}" class="ink" style="font-size:11px">${p.f(a)}→${p.f(b)}</text>`;
+    });
+  });
+  host.innerHTML = s + "</svg>";
+}
+
+const TRACE_NAMES = {
+  graph: "Graph only", dense: "Dense embeddings", bm25: "BM25", "graph+bm25": "Graph + BM25",
+  "graph+dense": "Graph + dense", "graph+rrf(bm25,dense)": "Graph + RRF(BM25, dense)",
+  "graph+rrf(bm25,dense)+llm-rerank@10": "… + LLM rerank of top 10",
+};
+function traceChart() {
+  const host = $("#c-trace .plot"), W = Math.max(280, host.clientWidth);
+  const rows = Object.keys(TRACE_NAMES).map((k) => ({ k, name: TRACE_NAMES[k], ...D.traceability.methods[k] }));
+  const L = Math.min(178, W * 0.45), R = 40, rowH = 26, top = 4, H = top + rows.length * rowH + 22, max = 0.8;
+  const x = (v) => L + (W - L - R) * (v / max);
+  let s = svgEl(W, H);
+  [0, 0.2, 0.4, 0.6, 0.8].forEach((t) => { s += `<line class="gridl" x1="${x(t)}" x2="${x(t)}" y1="${top}" y2="${top + rows.length * rowH}"/>`
+    + `<text x="${x(t)}" y="${H - 6}" text-anchor="middle">${t.toFixed(1)}</text>`; });
+  rows.forEach((r, i) => {
+    const cy = top + rowH * i + rowH / 2, isBest = r.k === "graph+rrf(bm25,dense)", ap = r.ap;
+    const col = isBest ? "var(--s-qwen)" : "var(--muted)";
+    s += `<text x="${L - 10}" y="${cy + 4}" text-anchor="end" class="${isBest ? "ink" : "ink2"}" style="font-family:var(--f-body);font-size:12.5px;${isBest ? "font-weight:600" : ""}">${r.name}</text>`
+      + `<line x1="${x(ap.ci95[0])}" x2="${x(ap.ci95[1])}" y1="${cy}" y2="${cy}" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-opacity="0.6"/>`
+      + `<circle cx="${x(ap.mean)}" cy="${cy}" r="${isBest ? 6 : 5}" fill="${col}" stroke="var(--surface)" stroke-width="2"/>`
+      + `<text x="${x(ap.ci95[1]) + 6}" y="${cy + 4}" class="${isBest ? "ink" : ""}">${ap.mean.toFixed(3)}</text>`
+      + `<rect class="hit" x="0" y="${cy - rowH / 2}" width="${W}" height="${rowH}" fill="transparent"
+          data-tip="<b>${esc(r.name)}</b><br>MAP ${ap.mean.toFixed(3)} [${ap.ci95[0].toFixed(3)}, ${ap.ci95[1].toFixed(3)}]<br>Recall@1 ${r["recall@1"].mean.toFixed(3)} · Recall@10 ${r["recall@10"].mean.toFixed(3)}"/>`;
+  });
+  host.innerHTML = s + "</svg>";
+}
+
+const SERIES = [
+  { k: "qwen", name: "Qwen3-Coder · llama.cpp", col: "--s-qwen" },
+  { k: "qwen_vllm", name: "Qwen3-Coder · vLLM", col: "--s-vllm" },
+  { k: "devstral", name: "Devstral · llama.cpp", col: "--s-dev" },
+];
+$("#serve-keys").innerHTML = SERIES.map((s) => `<span><i style="background:var(${s.col})"></i>${s.name}</span>`).join("")
+  + `<span><i style="background:repeating-linear-gradient(90deg,var(--muted) 0 4px,transparent 4px 7px)"></i>20 tok/s per user</span>`;
+function serveChart() {
+  const host = $("#c-serve .plot"), W = Math.max(300, host.clientWidth), narrow = W < 560;
+  const H = narrow ? 240 : 280, L = 40, R = narrow ? 64 : 170, T = 10, B = 34, max = 80;
+  const levels = D.serving.qwen.profiles.chat.map((l) => l.concurrency);
+  const x = (i) => L + (W - L - R) * (i / (levels.length - 1)), y = (v) => T + (H - T - B) * (1 - v / max);
+  let s = svgEl(W, H);
+  [0, 20, 40, 60, 80].forEach((t) => { s += `<line class="gridl" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/>`
+    + `<text x="${L - 8}" y="${y(t) + 4}" text-anchor="end">${t}</text>`; });
+  levels.forEach((c, i) => { s += `<text x="${x(i)}" y="${H - B + 18}" text-anchor="middle">${c}</text>`; });
+  s += `<text x="${(L + W - R) / 2}" y="${H - 2}" text-anchor="middle">concurrent streams</text>`;
+  s += `<line x1="${L}" x2="${W - R}" y1="${y(20)}" y2="${y(20)}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  const ends = [];
+  SERIES.forEach((se) => {
+    const pts = D.serving[se.k].profiles.chat.map((l, i) => [x(i), y(1000 / l.tpot_p50_ms)]);
+    s += `<polyline points="${pts.map((p) => p.join(",")).join(" ")}" fill="none" stroke="var(${se.col})" stroke-width="2" stroke-linejoin="round"/>`;
+    pts.forEach((p) => { s += `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="var(${se.col})" stroke="var(--surface)" stroke-width="2"/>`; });
+    ends.push({ y: pts[pts.length - 1][1], se, v: 1000 / D.serving[se.k].profiles.chat.at(-1).tpot_p50_ms });
+  });
+  ends.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 15) ends[i].y = ends[i - 1].y + 15;
+  ends.forEach((e) => { s += `<text x="${W - R + 10}" y="${e.y + 4}" class="ink" style="font-size:11.5px">${narrow ? Math.round(e.v) : `${Math.round(e.v)} · ${e.se.name.split(" · ")[0].replace("Qwen3-Coder", "Qwen")} ${e.se.name.split(" · ")[1]}`}</text>`; });
+  s += `<line id="xhair" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--ink-2)" stroke-width="1" visibility="hidden"/>`;
+  s += `<rect id="serve-hit" x="${L - 20}" y="${T}" width="${W - L - R + 40}" height="${H - T - B}" fill="transparent"/>`;
+  s += `<text x="${L + 6}" y="${y(80) + 14}" style="font-size:11px">tok/s per user</text>`;
+  host.innerHTML = s + "</svg>";
+  const svg = host.querySelector("svg"), hit = svg.querySelector("#serve-hit"), xh = svg.querySelector("#xhair");
+  const move = (ev) => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * (W / r.width);
+    const i = Math.max(0, Math.min(levels.length - 1, Math.round(((px - L) / (W - L - R)) * (levels.length - 1))));
+    xh.setAttribute("x1", x(i)); xh.setAttribute("x2", x(i)); xh.setAttribute("visibility", "visible");
+    const rows = SERIES.map((se) => { const l = D.serving[se.k].profiles.chat[i];
+      return `<i style="background:var(${se.col})"></i>${se.name}: <b>${(1000 / l.tpot_p50_ms).toFixed(0)}</b> tok/s/user · ${l.output_tps.toFixed(0)} total · 1st token ${l.ttft_p50_s.toFixed(1)} s`; });
+    showTip(host, `<b>${levels[i]} concurrent stream${levels[i] > 1 ? "s" : ""}</b><br>${rows.join("<br>")}`, x(i) * (r.width / W), (ev.clientY - r.top));
+  };
+  hit.addEventListener("pointermove", move);
+  hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); hideTip(); });
+}
+function wireHits(sel) {
+  const host = $(sel + " .plot");
+  host.addEventListener("pointermove", (ev) => {
+    const t = ev.target.closest("[data-tip]");
+    if (!t) { hideTip(); return; }
+    const r = host.getBoundingClientRect();
+    showTip(host, t.getAttribute("data-tip"), ev.clientX - r.left, ev.clientY - r.top);
+  });
+  host.addEventListener("pointerleave", hideTip);
+}
+function drawCharts() { agentChart(); traceChart(); serveChart(); }
+wireHits("#c-agent"); wireHits("#c-trace");
+drawCharts();
+let rz;
+window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawCharts, 120); });
+
+load(0);
+})();
+</script>
+
+</body>
+</html>

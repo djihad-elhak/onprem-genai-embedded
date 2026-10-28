@@ -1,0 +1,691 @@
+<title>onprem-genai-embedded</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: one 1120px column read like a test log — header with four figures, the replay (event log beside a detail
+   pane), the outcome board of all 28 requirements, then three result charts. Code panes are terminal-dark in both
+   themes on purpose. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --surface-2: #eaeef3; --ink: #111821; --ink-2: #445063; --muted: #687487;
+  --line: #d8dde5; --accent: #2456c9; --accent-soft: #e3eafa;
+  --code-bg: #0f141b; --code-line: #1f2732; --code-fg: #d6dce5; --code-dim: #8794a7; --code-kw: #93b4ff;
+  --code-str: #e3b574; --code-cm: #6e7c90; --code-mac: #7ccfb6; --code-err: #ff7b72; --code-add: #7ee08a;
+  --code-del: #ff9c95; --code-num: #d7a6ff;
+  --s-qwen: #2a78d6; --s-vllm: #1baf7a; --s-dev: #eb6834; --grid: #e4e8ee;
+  --ok: #0ca30c; --warn: #fab219; --serious: #ec835a; --crit: #d03b3b; --chip-ink: #10141a;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117; --surface: #141a22; --surface-2: #1b232d; --ink: #e5e9ef; --ink-2: #a9b3c1; --muted: #808b9b;
+    --line: #27303c; --accent: #82a6f5; --accent-soft: #1b2740; --code-bg: #0a0e13; --code-line: #1a212b;
+    --s-qwen: #3987e5; --s-vllm: #199e70; --s-dev: #d95926; --grid: #222a35; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1117; --surface: #141a22; --surface-2: #1b232d; --ink: #e5e9ef; --ink-2: #a9b3c1; --muted: #808b9b;
+  --line: #27303c; --accent: #82a6f5; --accent-soft: #1b2740; --code-bg: #0a0e13; --code-line: #1a212b;
+  --s-qwen: #3987e5; --s-vllm: #199e70; --s-dev: #d95926; --grid: #222a35; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--f-body); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; text-wrap: balance; margin: 0; letter-spacing: -0.005em; }
+h1 { font-size: clamp(28px, 4.4vw, 44px); line-height: 1.08; max-width: 22ch; }
+h2 { font-size: 26px; line-height: 1.15; }
+h3 { font-size: 18px; line-height: 1.25; }
+p { margin: 0; }
+.eyebrow { font: 500 12px/1.4 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.lede { color: var(--ink-2); max-width: 68ch; font-size: 16px; }
+.mono { font-family: var(--f-mono); }
+a { color: var(--accent); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+section { display: grid; gap: 20px; min-width: 0; }
+.sec-head { display: grid; gap: 8px; }
+.sec-head p { color: var(--ink-2); max-width: 70ch; }
+
+/* header */
+header { display: grid; gap: 18px; }
+.figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-top: 8px; }
+.fig { background: var(--surface); padding: 16px 18px; display: grid; gap: 4px; align-content: start; }
+.fig b { font: 600 30px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.fig span { color: var(--ink-2); font-size: 13.5px; line-height: 1.4; }
+@media (max-width: 760px) { .figures { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* replay */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 12px; cursor: pointer;
+  display: grid; gap: 2px; text-align: left; min-width: 0; }
+.tab small { font: 500 12px var(--f-mono); color: var(--muted); }
+.tab[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.req { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 10px; }
+.req q { font-size: 17px; quotes: "“" "”"; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 13px var(--f-mono); color: var(--muted); }
+.meta b { color: var(--ink); font-weight: 500; }
+.replay { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 16px; align-items: start; }
+@media (max-width: 880px) { .replay { grid-template-columns: minmax(0, 1fr); } }
+.log { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 13.5px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.controls .count { margin-left: auto; font: 12.5px var(--f-mono); color: var(--muted); }
+.events { list-style: none; margin: 0; padding: 6px 0; }
+.ev { display: grid; grid-template-columns: 22px 74px minmax(0, 1fr); gap: 8px; align-items: start; padding: 7px 12px;
+  cursor: pointer; border-left: 3px solid transparent; }
+.ev:hover { background: var(--surface-2); }
+.ev[aria-current="true"] { background: var(--accent-soft); border-left-color: var(--accent); }
+.ev.attempt-break { border-top: 1px dashed var(--line); margin-top: 4px; padding-top: 11px; }
+.ev .ic { width: 18px; height: 18px; border-radius: 4px; display: grid; place-items: center; font: 600 11px var(--f-mono);
+  color: var(--chip-ink); margin-top: 2px; }
+.ev .node { font: 500 12.5px/22px var(--f-mono); color: var(--muted); }
+.ev .txt { font-size: 13.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.ev.hidden-step { display: none; }
+.ic.ok { background: var(--ok); } .ic.crit { background: var(--crit); } .ic.serious { background: var(--serious); }
+.ic.warn { background: var(--warn); } .ic.info { background: var(--surface-2); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); }
+.detail { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid;
+  gap: 12px; min-width: 0; }
+.detail h3 { display: flex; gap: 10px; align-items: center; }
+.detail p, .detail li { color: var(--ink-2); font-size: 14.5px; }
+.detail ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+.note { font-size: 13px; color: var(--muted); }
+.code { background: var(--code-bg); color: var(--code-fg); border-radius: 8px; font: 12.5px/1.55 var(--f-mono);
+  overflow: auto; max-height: 460px; }
+.code pre { margin: 0; padding: 12px 14px; white-space: pre; }
+.code .lbl { position: sticky; top: 0; background: var(--code-line); color: var(--code-dim); font: 500 11.5px var(--f-mono);
+  padding: 5px 14px; letter-spacing: 0.04em; }
+.k { color: var(--code-kw); } .s { color: var(--code-str); } .c { color: var(--code-cm); font-style: italic; }
+.m { color: var(--code-mac); } .n { color: var(--code-num); } .e { color: var(--code-err); font-weight: 500; }
+.add { color: var(--code-add); } .del { color: var(--code-del); } .hunk { color: var(--code-dim); }
+.prose { display: grid; gap: 8px; }
+.prose p { font-size: 13.5px; }
+.callout { border-left: 3px solid var(--serious); background: var(--surface-2); padding: 10px 12px; border-radius: 0 6px 6px 0;
+  display: grid; gap: 6px; font-size: 14px; }
+.callout code, .detail code { font: 12.5px var(--f-mono); background: var(--surface-2); padding: 1px 4px; border-radius: 4px; overflow-wrap: anywhere; }
+.callout code { background: var(--surface); }
+.stats { display: flex; flex-wrap: wrap; gap: 4px 16px; font: 12.5px var(--f-mono); color: var(--muted); }
+.stats b { color: var(--ink); font-weight: 500; }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th { text-align: left; font: 500 11.5px var(--f-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted);
+  padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.num { font-variant-numeric: tabular-nums; }
+.mut code { display: block; white-space: pre-wrap; font: 12px/1.45 var(--f-mono); background: none; padding: 0; }
+.mut .was { color: var(--muted); text-decoration: line-through; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font: 500 12px var(--f-mono); white-space: nowrap; }
+.pill i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+/* board */
+.board { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.board table td { border-bottom-color: var(--grid); }
+.board .mod td { background: var(--surface-2); font: 600 13px var(--f-mono); color: var(--ink-2); padding-block: 6px; }
+.board .mod td span { color: var(--muted); font-weight: 400; margin-left: 10px; }
+.board .rid { font: 500 12.5px var(--f-mono); white-space: nowrap; }
+.board .rtext { color: var(--ink-2); font-size: 13px; line-height: 1.4; }
+.board .rid button { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.chips { display: inline-flex; gap: 3px; vertical-align: middle; }
+.chip { width: 20px; height: 20px; border-radius: 4px; display: inline-grid; place-items: center; font: 600 11px var(--f-mono); color: var(--chip-ink); }
+.chip.ok { background: var(--ok); } .chip.crit { background: var(--crit); } .chip.serious { background: var(--serious); } .chip.warn { background: var(--warn); }
+.v1 { font: 12px var(--f-mono); color: var(--muted); margin-left: 8px; white-space: nowrap; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); align-items: center; }
+.legend .chip { width: 18px; height: 18px; font-size: 10.5px; margin-right: 5px; }
+.legend > span { display: inline-flex; align-items: center; }
+.totals td { font-weight: 600; background: var(--surface-2); }
+@media (max-width: 640px) { .board .rtext { display: none; } }
+
+/* charts */
+.charts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.charts .wide { grid-column: 1 / -1; }
+@media (max-width: 880px) { .charts { grid-template-columns: minmax(0, 1fr); } }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 10px; min-width: 0; position: relative; }
+.chart p.sub { color: var(--ink-2); font-size: 13.5px; }
+.chart .plot { width: 100%; min-height: 120px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart svg text { font-family: var(--f-mono); font-size: 11.5px; fill: var(--muted); }
+.chart svg text.ink { fill: var(--ink); }
+.chart svg text.ink2 { fill: var(--ink-2); }
+.chart svg .gridl { stroke: var(--grid); stroke-width: 1; }
+.chart svg .axis { stroke: var(--line); stroke-width: 1; }
+.chart .takeaway { font-size: 13.5px; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 10px; }
+.keys { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink-2); }
+.keys span { display: inline-flex; align-items: center; gap: 6px; }
+.keys i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.keys i.dot { width: 9px; height: 9px; border-radius: 50%; }
+.keys i.ring { width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--muted); background: var(--surface); }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); border-radius: 6px; padding: 8px 10px;
+  font: 12px/1.5 var(--f-mono); white-space: nowrap; z-index: 5; box-shadow: 0 6px 18px rgb(0 0 0 / 0.18); }
+.tip b { font-weight: 600; }
+.tip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+footer { border-top: 1px solid var(--line); padding-top: 20px; display: grid; gap: 8px; color: var(--ink-2); font-size: 13.5px; max-width: 80ch; }
+@media (prefers-reduced-motion: no-preference) {
+  .ev.fresh { animation: rise 0.28s ease-out; }
+  @keyframes rise { from { transform: translateY(4px); background: var(--accent-soft); } to { transform: none; } }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">onprem-genai-embedded · NASA F´ v4.4.1 · runs 2–3 on Kaggle 2× Tesla T4</p>
+    <h1>A local code model writes unit tests for flight software. The build decides what stays.</h1>
+    <p class="lede">Each target is a requirement from NASA's F´ flight-software framework that says it is verified by unit
+      test, yet no test cites it. The agent gathers context from a knowledge graph over MCP, asks a self-hosted model
+      for one GoogleTest case, builds and runs it in F´, repairs from the compiler or assertion output (3 attempts at
+      most), commits passing tests to a review branch, and then seeds bugs to check that the test catches them.</p>
+    <div class="figures" id="figures"></div>
+  </header>
+
+  <section id="replay">
+    <div class="sec-head">
+      <p class="eyebrow">Replay · agent v2 · Qwen3-Coder-30B-A3B · llama.cpp Q4_K_M</p>
+      <h2>Watch one requirement go through the agent</h2>
+      <p>Three real runs from benchmark run 3, replayed from the run log: compiler errors, test output and the final
+        answer are exactly what the model and the build produced. Pick a run, then press Play or click any step.</p>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="req" id="req"></div>
+    <div class="replay">
+      <div class="log">
+        <div class="controls">
+          <button class="btn primary" id="play" type="button">Play</button>
+          <button class="btn" id="step" type="button">Next step</button>
+          <button class="btn" id="all" type="button">Show all</button>
+          <span class="count" id="count"></span>
+        </div>
+        <ol class="events" id="events"></ol>
+      </div>
+      <div class="detail" id="detail" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="board-sec">
+    <div class="sec-head">
+      <p class="eyebrow">Outcome board · 28 requirement gaps · both models · agent v2</p>
+      <h2>Every attempt, for every requirement</h2>
+      <p>One square per attempt, in order. A run stops at the first passing test or after the third failed attempt.
+        The v1 mark is the same requirement with the first version of the agent (run 2).</p>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="board"><div class="tbl-wrap"><table id="board"></table></div></div>
+  </section>
+
+  <section id="results">
+    <div class="sec-head">
+      <p class="eyebrow">Results · hover the charts for values</p>
+      <h2>What the measurements say</h2>
+    </div>
+    <div class="charts">
+      <div class="chart" id="c-agent">
+        <h3>Agent v1 → v2</h3>
+        <p class="sub">Same 28 requirements, same models, same context budget.</p>
+        <div class="keys"><span><i class="ring"></i>v1 (run 2)</span><span><i class="dot" style="background:var(--s-qwen)"></i>Qwen3-Coder v2</span><span><i class="dot" style="background:var(--s-dev)"></i>Devstral v2</span></div>
+        <div class="plot"></div>
+        <p class="takeaway">Both models reach 18 / 28 (McNemar p = 0.016 and 0.013). Together they verify 21. The wrong-dispatch
+          errors that caused half of the v1 failures are gone.</p>
+      </div>
+      <div class="chart" id="c-trace">
+        <h3>Recovering requirement → test links</h3>
+        <p class="sub">Mean average precision over 151 requirements and 3,261 tests, tags masked; 95 % bootstrap interval.</p>
+        <div class="plot"></div>
+        <p class="takeaway">Rank fusion of BM25 and dense retrieval inside the module graph is best (0.609). An LLM reranker
+          lowers it.</p>
+      </div>
+      <div class="chart wide" id="c-serve">
+        <h3>How many people one 2× T4 server can serve</h3>
+        <p class="sub">IDE chat profile (≈ 2.5k-token prompt, 400-token answer): decode speed each user sees, by number of
+          concurrent streams. Each level uses new prompts.</p>
+        <div class="keys" id="serve-keys"></div>
+        <div class="plot"></div>
+        <p class="takeaway">At 20 tok/s per user, about 4 concurrent chat users per server with either engine. llama.cpp
+          queues requests past its 4 slots (first token after 71 s at 16 streams); vLLM keeps batching but each user
+          slows to 7 tok/s. Devstral (dense 24B) stays under 20 tok/s even alone.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>What is real on this page.</b> Every step, error message, answer, commit hash and number comes from the
+      stored results of benchmark runs 2 and 3 (Kaggle, 2× Tesla T4, llama.cpp b11953 and vLLM 0.32). No model runs in
+      your browser: the replay plays back the run log. Earlier answers of a repaired run are not stored, only the
+      final one, so the replay shows the build and test output that sent each attempt back.</p>
+    <p>Source, data and how to reproduce: <span class="mono">github.com/djihad-elhak/onprem-genai-embedded</span>
+      (<span class="mono">docs/results</span>, <span class="mono">demo/web/extract.py</span>).</p>
+  </footer>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script id="data" type="application/json">/*DATA*/</script>
+<script>
+(() => {
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const pct = (x) => Math.round(x * 100) + " %";
+const fmt = (n) => Number(n).toLocaleString("en-US");
+const MODEL = { qwen: "Qwen3-Coder-30B-A3B", devstral: "Devstral-Small-2-24B" };
+
+/* ---------- header figures ---------- */
+const union = D.board.filter((r) => r.qwen.status === "passed" || r.devstral.status === "passed").length;
+const sq = D.summaries.v2.qwen, sq1 = D.summaries.v1.qwen;
+const best = D.traceability.methods["graph+rrf(bm25,dense)"].ap.mean;
+$("#figures").innerHTML = [
+  [`${union} / ${D.board.length}`, "requirement gaps closed by a passing, committed test (either model)"],
+  [pct(sq.first_attempt_compile_rate), `of Qwen3-Coder's first answers compile (${pct(sq1.first_attempt_compile_rate)} with agent v1)`],
+  [best.toFixed(3), "mean average precision when recovering which test verifies which requirement"],
+  ["≈ 4", "concurrent chat users at 20 tok/s each on one 2× T4 server"],
+].map(([b, s]) => `<div class="fig"><b>${b}</b><span>${s}</span></div>`).join("");
+
+/* ---------- code rendering ---------- */
+const CPP = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*")|\b(ASSERT_\w+|REQUIREMENT|TEST_CASE|COMMENT|TEST|FW_ASSERT|EXPECT_\w+)\b|\b(void|const|static|bool|true|false|this|return|if|else|for|while|auto|int|char|sizeof|reinterpret_cast|static_cast|U8|U16|U32|I32|F32|namespace|class|public|private|enum|struct|final)\b|\b(0x[0-9A-Fa-f]+|\d+)\b/g;
+function hlCpp(src) {
+  let out = "", last = 0;
+  src.replace(CPP, (m, cm, st, mac, kw, num, i) => {
+    out += esc(src.slice(last, i));
+    const cls = cm ? "c" : st ? "s" : mac ? "m" : kw ? "k" : "n";
+    out += `<span class="${cls}">${esc(m)}</span>`;
+    last = i + m.length;
+    return m;
+  });
+  return out + esc(src.slice(last));
+}
+function hlLog(src) {
+  return src.split("\n").map((ln) => {
+    const e = esc(ln);
+    if (/\berror:/.test(ln) || /Assert(ion)?[: ]/.test(ln) || /exited with code/.test(ln)) return `<span class="e">${e}</span>`;
+    if (/^\s*\d+ \|/.test(ln) || /^\s*\|/.test(ln)) return `<span class="k">${e}</span>`;
+    return e;
+  }).join("\n");
+}
+function hlDiff(src) {
+  return src.split("\n").map((ln) => {
+    const e = esc(ln);
+    if (ln.startsWith("+++") || ln.startsWith("---") || ln.startsWith("diff ") || ln.startsWith("index ")) return `<span class="hunk">${e}</span>`;
+    if (ln.startsWith("@@")) return `<span class="hunk">${e}</span>`;
+    if (ln.startsWith("+")) return `<span class="add">${e}</span>`;
+    if (ln.startsWith("-")) return `<span class="del">${e}</span>`;
+    return e;
+  }).join("\n");
+}
+const codeBox = (label, html) => `<div class="code"><div class="lbl">${esc(label)}</div><pre>${html}</pre></div>`;
+const inlineCode = (t) => esc(t).replace(/`([^`]+)`/g, "<code>$1</code>");
+function renderAnswer(ans) {
+  const parts = [];
+  const re = /```(\w+)?(?:[ \t]+(\w+))?\n([\s\S]*?)```/g;
+  let last = 0, m;
+  const blocks = { tester: "goes into the Tester class (.cpp)", main: "goes into the test main (TEST case)", header: "goes into the Tester header" };
+  while ((m = re.exec(ans))) {
+    const prose = ans.slice(last, m.index).trim();
+    if (prose) parts.push(`<div class="prose">${prose.split(/\n\s*\n/).map((p) => `<p>${inlineCode(p.trim())}</p>`).join("")}</div>`);
+    const tag = m[2] || m[1] || "code";
+    parts.push(codeBox(`${m[1] || "code"} ${tag} · ${blocks[tag] || ""}`, hlCpp(m[3].replace(/\s+$/, ""))));
+    last = re.lastIndex;
+  }
+  const tail = ans.slice(last).trim();
+  if (tail) parts.push(`<div class="prose"><p>${inlineCode(tail)}</p></div>`);
+  return parts.join("");
+}
+
+/* ---------- replay events ---------- */
+// Reading of two runs, checked against the F´ source and the stored outputs.
+const NOTES = {
+  "SVC-COMRETRY-002": { assert: "The test called <code>dataReturnIn</code> before any <code>dataIn</code>, while the component still owns its buffer. The repaired test sends a buffer through <code>dataIn</code> first." },
+  "PRMDB-002": { giveup: "Here the model kept using F´ API names that do not exist (<code>Fw::ParamValid::PARAM_VALID</code>, then a serialization mode that is not in <code>Fw::Serialization</code>). Adding the real enumerators of an unknown enum to the repair hints is the next planned improvement of the agent." },
+};
+const STAGE_FAIL = {
+  policy: { node: "check", cls: "warn", mark: "P", what: "policy rejected" },
+  build: { node: "build", cls: "crit", mark: "B", what: "build failed" },
+  test: { node: "test", cls: "serious", mark: "T", what: "test failed" },
+};
+function firstLine(t) {
+  const ln = String(t).split("\n").find((l) => l.trim()) || "";
+  const s = ln.replace(/\s+/g, " ").trim();
+  return s.length > 120 ? s.slice(0, 119) + "…" : s;
+}
+function shortError(t) {
+  const err = String(t).split("\n").find((l) => /error:/.test(l));
+  if (err) return firstLine(err.replace(/^.*?error:\s*/, ""));
+  const a = String(t).match(/Assert: "([^"]+)"/);
+  if (a) return `F´ assertion in ${a[1]}`;
+  return firstLine(t);
+}
+function buildEvents(r) {
+  const m = r.metrics, ev = [];
+  const cov = m.coverage_before ? m.coverage_before.line_coverage : null;
+  ev.push({ node: "prepare", cls: "ok", mark: "✓",
+    text: `${r.module}: existing unit tests build and pass${cov != null ? `, line coverage ${pct(cov)}` : ""}`,
+    detail: () => `<h3>Baseline</h3><p>The agent checks out F´ v4.4.1, builds the unit tests of <code>${esc(r.module)}</code> with
+      <code>fprime-util build --ut</code> and runs them, so any later failure is the new test's fault.</p>
+      <div class="stats"><span>line coverage before <b>${pct(cov)}</b></span><span>lines <b>${m.coverage_before.lines}</b></span>
+      <span>branch coverage <b>${pct(m.coverage_before.branch_coverage)}</b></span></div>` });
+  ev.push({ node: "gather", cls: "info", mark: "•",
+    text: `context from the knowledge graph over MCP: ${fmt(m.context_chars)} characters`,
+    detail: () => `<h3>Context, gathered over MCP</h3><p>The agent calls the knowledge server's tools
+      (<code>get_requirement</code>, <code>trace_requirement</code>, <code>search</code>, <code>find_symbol</code>) and
+      packs what fits in a 32,000-character budget, in this order:</p>
+      <ul><li>the requirement, the component kind and the exact dispatch call for it</li>
+      <li>the FPP model of the component and the autocoded test-harness API</li>
+      <li>the Tester header and the test main</li>
+      <li>the existing tests most related to the requirement (from the traceability ranking)</li>
+      <li>the implementation, or the functions related to the requirement when it is large</li>
+      <li>design document excerpts</li></ul>
+      <div class="stats"><span>first prompt <b>${fmt(m.context_chars)} chars</b></span>
+      <span>dropped for budget <b>${m.context_dropped && m.context_dropped.length ? esc(m.context_dropped.join(", ")) : "nothing"}</b></span></div>` });
+  r.history.forEach((h, i) => {
+    const last = i === r.history.length - 1;
+    const a = h.attempt;
+    ev.push({ node: "generate", cls: "info", mark: String(a), brk: i > 0,
+      text: a === 1 ? "attempt 1: model writes the test" : `attempt ${a}: model repairs the test from that output`,
+      detail: () => last
+        ? `<h3>Attempt ${a}: the model's answer</h3><p class="note">${MODEL[r.model]} (temperature 0.2), as stored in the run log.
+           Code blocks are applied to the F´ test files; the prose is ignored.</p>${renderAnswer(r.last_answer)}`
+        : `<h3>Attempt ${a}: the model answers</h3><p>${a === 1
+            ? "The model gets the system prompt and the context, and answers with code blocks for the Tester class and the test main."
+            : "The repair prompt carries the previous answer and the exact output below, with hints (did-you-mean names, the asserted source line)."}</p>
+           <p class="note">The run log keeps only the last answer of each requirement, so this attempt's code is not shown. Its build or test output is the next step.</p>` });
+    const f = STAGE_FAIL[h.stage];
+    if (h.stage === "policy") {
+      ev.push({ node: "check", cls: f.cls, mark: f.mark, text: `${f.what} → repair: ${firstLine(h.detail)}`,
+        detail: () => `<h3>Policy check failed</h3><p>Before building, the patch must only add a new test, in test files, with new names.</p>${codeBox("policy", hlLog(h.detail))}` });
+      return;
+    }
+    ev.push({ node: "check", cls: "ok", mark: "✓", text: "policy OK: one new test, only test files touched",
+      detail: () => `<h3>Policy check</h3><p>The patch adds a test method, a <code>TEST(...)</code> case and a declaration, and touches
+        nothing outside <code>${esc(r.module)}/test/ut</code>. Existing names are not reused.</p>` });
+    if (h.stage === "build") {
+      ev.push({ node: "build", cls: f.cls, mark: f.mark, text: `${f.what}: ${shortError(h.detail)}`,
+        detail: () => `<h3>Build failed (attempt ${a})</h3><p><code>fprime-util build --ut</code> with <code>-Werror</code>. The
+          compiler output goes back to the model${last ? "" : " in the repair prompt"}.</p>${codeBox("g++ output", hlLog(h.detail))}` });
+      return;
+    }
+    ev.push({ node: "build", cls: "ok", mark: "✓", text: "fprime-util build --ut: compiles",
+      detail: () => `<h3>Build</h3><p>The unit-test executable compiles with the new test (<code>-Werror</code> on).</p>` });
+    if (h.stage === "test") {
+      const al = Object.entries(r.assert_lines || {});
+      ev.push({ node: "test", cls: f.cls, mark: f.mark, text: `${f.what}: ${shortError(h.detail)}`,
+        detail: () => `<h3>Test failed (attempt ${a})</h3><p>The new test runs under GoogleTest.</p>${codeBox("test output", hlLog(h.detail))}
+          ${al.map(([loc, src]) => `<div class="callout"><span>The asserted line, <code>${esc(loc)}</code>, is added to the repair prompt:</span>
+          <code>${esc(src)}</code>${NOTES[r.req_id] && NOTES[r.req_id].assert ? `<span>${NOTES[r.req_id].assert}</span>` : ""}</div>`).join("")}` });
+      return;
+    }
+    ev.push({ node: "test", cls: "ok", mark: "✓",
+      text: `new test passes 3 runs; full suite passes (${m.tests_total} tests)`,
+      detail: () => `<h3>Test passes</h3><p>The new test passes three runs in a row (flakiness check), then the whole suite
+        passes with it.</p><div class="stats"><span>tests in suite <b>${m.tests_total}</b></span>
+        <span>new test alone covers <b>${pct(m.new_test_coverage.line_coverage)}</b> of the component's lines</span>
+        <span>test <b>${esc(m.test_names.join(", "))}</b></span></div>` });
+  });
+  if (r.status === "passed") {
+    ev.push({ node: "commit", cls: "ok", mark: "✓", text: `committed ${r.commit.slice(0, 10)} to a review branch`,
+      detail: () => `<h3>Committed for review</h3><p>One commit per requirement on a review branch of the F´ fork, with an
+        AI-use disclosure in the message. Nothing reaches the main branch without an engineer.</p>
+        <div class="stats"><span>commit <b>${r.commit.slice(0, 10)}</b></span></div>${codeBox("git diff", hlDiff(r.diff.trim()))}` });
+    const mu = r.mutation;
+    if (mu && mu.valid) {
+      ev.push({ node: "mutate", cls: mu.killed === mu.valid ? "ok" : "serious", mark: `${mu.killed}`,
+        text: `fault detection: ${mu.killed} of ${mu.valid} seeded bugs caught`,
+        detail: () => `<h3>Does the test catch bugs?</h3><p>The agent mutates lines of the implementation that the new test executes,
+          rebuilds, and reruns only the new test. A mutant is killed when the test fails.</p>
+          <div class="tbl-wrap mut"><table><thead><tr><th>Line</th><th>Mutation</th><th>Change</th><th>Result</th></tr></thead><tbody>
+          ${mu.mutants.map((x) => `<tr><td class="num mono">${x.line}</td><td>${esc(x.operator)}</td>
+            <td><code class="was">${esc(x.original.trim())}</code><code>${esc(x.mutated.trim())}</code></td>
+            <td><span class="pill"><i style="background:var(--${x.outcome === "killed" ? "ok" : "serious"})"></i>${x.outcome}</span></td></tr>`).join("")}
+          </tbody></table></div><p class="note">${mu.sampled} of ${mu.candidates} candidate mutants sampled. Survivors show what the test does not check yet.</p>` });
+    }
+  } else {
+    ev.push({ node: "give up", cls: "crit", mark: "✗", text: r.reason,
+      detail: () => `<h3>No passing test: the requirement stays open</h3><p>After 3 failed attempts the agent stops and reports the gap
+        with its last error. Nothing is committed.</p>${NOTES[r.req_id] && NOTES[r.req_id].giveup ? `<p>${NOTES[r.req_id].giveup}</p>` : ""}
+        <p class="note">The last answer (attempt ${r.attempts}), as stored in the run log:</p>${renderAnswer(r.last_answer)}` });
+  }
+  return ev;
+}
+
+/* ---------- replay UI ---------- */
+const tabsEl = $("#tabs"), evEl = $("#events"), detEl = $("#detail");
+let cur = 0, events = [], shown = 0, sel = 0, timer = null;
+function label(r) {
+  if (r.status !== "passed") return "Gave up after 3 attempts";
+  return r.attempts > 1 ? `Repaired ${r.attempts - 1}×, then passed` : "Passed on the first try";
+}
+tabsEl.innerHTML = D.replays.map((r, i) => `<button class="tab" role="tab" type="button" id="tab-${i}" aria-selected="${i === 0}">
+  <span>${label(r)}</span><small>${r.req_id} · ${r.module}</small></button>`).join("");
+tabsEl.addEventListener("click", (e) => { const b = e.target.closest(".tab"); if (b) load(+b.id.slice(4)); });
+
+function load(i, autoplay = false) {
+  stop();
+  cur = i;
+  [...tabsEl.children].forEach((b, j) => b.setAttribute("aria-selected", String(j === i)));
+  const r = D.replays[i], m = r.metrics;
+  $("#req").innerHTML = `<p class="eyebrow">Requirement ${esc(r.req_id)} · ${esc(r.requirement.file || "")}</p>
+    <q>${esc(r.requirement.text)}</q>
+    <div class="meta"><span>verification <b>${esc(r.requirement.verification)}</b></span><span>tests citing it before <b>0</b></span>
+    <span>attempts <b>${r.attempts}</b></span><span>wall time <b>${Math.round(r.wall_seconds)} s</b></span>
+    <span>model time <b>${m.llm_seconds.toFixed(1)} s</b></span><span>builds <b>${m.build_seconds.toFixed(1)} s</b></span>
+    <span>tokens in / out <b>${fmt(m.prompt_tokens)} / ${fmt(m.completion_tokens)}</b></span></div>`;
+  events = buildEvents(r);
+  evEl.innerHTML = events.map((e, j) => `<li class="ev${e.brk ? " attempt-break" : ""}" data-i="${j}" tabindex="0">
+    <span class="ic ${e.cls}" aria-hidden="true">${esc(e.mark)}</span><span class="node">${esc(e.node)}</span>
+    <span class="txt">${esc(e.text)}</span></li>`).join("");
+  reveal(events.length);
+  select(0);
+  if (autoplay) play();
+}
+function reveal(n) {
+  shown = n;
+  [...evEl.children].forEach((li, j) => li.classList.toggle("hidden-step", j >= n));
+  $("#count").textContent = `step ${Math.min(sel + 1, n)} of ${events.length}`;
+  $("#step").disabled = n >= events.length && sel >= events.length - 1;
+}
+function select(j) {
+  sel = j;
+  [...evEl.children].forEach((li, k) => li.setAttribute("aria-current", String(k === j)));
+  detEl.innerHTML = events[j].detail();
+  $("#count").textContent = `step ${j + 1} of ${events.length}`;
+  $("#step").disabled = j >= events.length - 1;
+}
+function advance() {
+  if (sel >= events.length - 1) { stop(); return false; }
+  const j = sel + 1;
+  if (j >= shown) reveal(j + 1);
+  const li = evEl.children[j];
+  li.classList.remove("fresh"); void li.offsetWidth; li.classList.add("fresh");
+  select(j);
+  return true;
+}
+function play() {
+  stop();
+  reveal(1); select(0);
+  $("#play").textContent = "Pause";
+  const tick = () => {
+    if (!advance()) return;
+    const e = events[sel];
+    timer = setTimeout(tick, e.cls === "ok" || e.cls === "info" ? 1300 : 2600);
+  };
+  timer = setTimeout(tick, 1100);
+}
+function stop() {
+  if (timer) clearTimeout(timer);
+  timer = null;
+  $("#play").textContent = "Play";
+}
+$("#play").addEventListener("click", () => (timer ? stop() : play()));
+$("#step").addEventListener("click", () => { stop(); advance(); });
+$("#all").addEventListener("click", () => { stop(); reveal(events.length); select(events.length - 1); });
+evEl.addEventListener("click", (e) => { const li = e.target.closest(".ev"); if (li) { stop(); select(+li.dataset.i); } });
+evEl.addEventListener("keydown", (e) => {
+  const li = e.target.closest(".ev");
+  if (li && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); stop(); select(+li.dataset.i); }
+});
+
+/* ---------- outcome board ---------- */
+const CHIP = { passed: ["ok", "✓", "passed"], policy: ["warn", "P", "policy rejected"], build: ["crit", "B", "build failed"], test: ["serious", "T", "test failed"] };
+$("#legend").innerHTML = Object.values(CHIP).map(([c, g, t]) => `<span><span class="chip ${c}">${g}</span>${t}</span>`).join("")
+  + `<span class="v1">v1 ✓ / v1 ✗ = result with agent v1</span>`;
+const chips = (s) => `<span class="chips">${s.steps.map((st, k) => { const [c, g, t] = CHIP[st] || ["warn", "?", st];
+  return `<span class="chip ${c}" title="attempt ${k + 1}: ${t}">${g}</span>`; }).join("")}</span>`
+  + `<span class="v1" title="agent v1 (run 2): ${s.v1}">v1 ${s.v1 === "passed" ? "✓" : "✗"}</span>`;
+const replayIdx = Object.fromEntries(D.replays.map((r, i) => [r.model + r.req_id, i]));
+let html = `<thead><tr><th>Requirement</th><th>Qwen3-Coder</th><th>Devstral</th></tr></thead><tbody>`;
+let lastMod = null;
+for (const r of D.board) {
+  if (r.module !== lastMod) {
+    lastMod = r.module;
+    const rows = D.board.filter((x) => x.module === r.module);
+    const q = rows.filter((x) => x.qwen.status === "passed").length, d = rows.filter((x) => x.devstral.status === "passed").length;
+    html += `<tr class="mod"><td colspan="3">${esc(r.module)}<span>${rows.length} gaps · Qwen ${q} · Devstral ${d}</span></td></tr>`;
+  }
+  const ri = replayIdx["qwen" + r.req_id];
+  const id = ri != null ? `<button type="button" data-replay="${ri}" title="Open this run in the replay">${esc(r.req_id)}</button>` : esc(r.req_id);
+  html += `<tr><td><div class="rid">${id}</div><div class="rtext">${esc(r.text)}</div></td><td>${chips(r.qwen)}</td><td>${chips(r.devstral)}</td></tr>`;
+}
+const tq = D.board.filter((x) => x.qwen.status === "passed").length, td = D.board.filter((x) => x.devstral.status === "passed").length;
+html += `<tr class="totals"><td>Verified · either model ${union} / ${D.board.length}</td><td>${tq} / ${D.board.length}</td><td>${td} / ${D.board.length}</td></tr></tbody>`;
+$("#board").innerHTML = html;
+$("#board").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-replay]");
+  if (b) { load(+b.dataset.replay); document.getElementById("replay").scrollIntoView({ behavior: "smooth", block: "start" }); }
+});
+
+/* ---------- charts ---------- */
+const tip = $("#tip");
+function showTip(host, html, x, y) {
+  tip.innerHTML = html; tip.hidden = false;
+  const hb = host.getBoundingClientRect(), pb = document.body.getBoundingClientRect();
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let left = hb.left - pb.left + x + 14, top = hb.top - pb.top + y - th - 10;
+  if (left + tw > document.documentElement.clientWidth - 8) left = hb.left - pb.left + x - tw - 14;
+  if (left < 8) left = 8;
+  if (top < hb.top - pb.top) top = hb.top - pb.top + y + 14;
+  tip.style.left = left + "px"; tip.style.top = top + "px";
+}
+const hideTip = () => { tip.hidden = true; };
+const NS = "http://www.w3.org/2000/svg";
+const svgEl = (w, h) => `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img">`;
+
+function agentChart() {
+  const host = $("#c-agent .plot"), W = Math.max(280, host.clientWidth), v1 = D.summaries.v1, v2 = D.summaries.v2;
+  const panels = [
+    { title: "Requirements verified (of 28)", max: 28, ticks: [0, 7, 14, 21, 28], val: (s) => s.status.passed, f: (x) => String(x) },
+    { title: "First answer compiles", max: 1, ticks: [0, 0.25, 0.5, 0.75, 1], val: (s) => s.first_attempt_compile_rate, f: (x) => Math.round(x * 100) + "%" },
+  ];
+  const L = 92, R = 16, rowH = 26, panelH = 24 + rowH * 2 + 26;
+  const H = panelH * 2 + 4;
+  let s = svgEl(W, H);
+  panels.forEach((p, pi) => {
+    const y0 = pi * panelH, x = (v) => L + (W - L - R) * (v / p.max);
+    s += `<text x="0" y="${y0 + 14}" class="ink2" style="font-family:var(--f-body);font-size:13px">${p.title}</text>`;
+    p.ticks.forEach((t) => { s += `<line class="gridl" x1="${x(t)}" x2="${x(t)}" y1="${y0 + 24}" y2="${y0 + 24 + rowH * 2}"/>`
+      + `<text x="${x(t)}" y="${y0 + 24 + rowH * 2 + 15}" text-anchor="middle">${p.f(t)}</text>`; });
+    [["qwen", "Qwen3-Coder", "--s-qwen"], ["devstral", "Devstral", "--s-dev"]].forEach(([k, name, col], ri) => {
+      const cy = y0 + 24 + rowH * ri + rowH / 2, a = p.val(v1[k]), b = p.val(v2[k]);
+      s += `<text x="0" y="${cy + 4}" class="ink">${name}</text>`
+        + `<line x1="${x(a)}" x2="${x(b)}" y1="${cy}" y2="${cy}" stroke="var(${col})" stroke-width="2" stroke-opacity="0.55"/>`
+        + `<circle cx="${x(a)}" cy="${cy}" r="5" fill="var(--surface)" stroke="var(--muted)" stroke-width="2"/>`
+        + `<circle cx="${x(b)}" cy="${cy}" r="6" fill="var(${col})" stroke="var(--surface)" stroke-width="2"/>`
+        + `<rect class="hit" x="${L}" y="${cy - rowH / 2}" width="${W - L - R}" height="${rowH}" fill="transparent"
+            data-tip="<b>${name}</b><br>${p.title}<br>v1 ${p.f(a)} → v2 <b>${p.f(b)}</b>"/>`;
+      const lx = x(b) + (b > a ? 10 : -10);
+      s += `<text x="${Math.min(lx, W - 4)}" y="${cy - 8}" text-anchor="${x(b) > W - 60 ? "end" : "start"}" class="ink" style="font-size:11px">${p.f(a)}→${p.f(b)}</text>`;
+    });
+  });
+  host.innerHTML = s + "</svg>";
+}
+
+const TRACE_NAMES = {
+  graph: "Graph only", dense: "Dense embeddings", bm25: "BM25", "graph+bm25": "Graph + BM25",
+  "graph+dense": "Graph + dense", "graph+rrf(bm25,dense)": "Graph + RRF(BM25, dense)",
+  "graph+rrf(bm25,dense)+llm-rerank@10": "… + LLM rerank of top 10",
+};
+function traceChart() {
+  const host = $("#c-trace .plot"), W = Math.max(280, host.clientWidth);
+  const rows = Object.keys(TRACE_NAMES).map((k) => ({ k, name: TRACE_NAMES[k], ...D.traceability.methods[k] }));
+  const L = Math.min(178, W * 0.45), R = 40, rowH = 26, top = 4, H = top + rows.length * rowH + 22, max = 0.8;
+  const x = (v) => L + (W - L - R) * (v / max);
+  let s = svgEl(W, H);
+  [0, 0.2, 0.4, 0.6, 0.8].forEach((t) => { s += `<line class="gridl" x1="${x(t)}" x2="${x(t)}" y1="${top}" y2="${top + rows.length * rowH}"/>`
+    + `<text x="${x(t)}" y="${H - 6}" text-anchor="middle">${t.toFixed(1)}</text>`; });
+  rows.forEach((r, i) => {
+    const cy = top + rowH * i + rowH / 2, isBest = r.k === "graph+rrf(bm25,dense)", ap = r.ap;
+    const col = isBest ? "var(--s-qwen)" : "var(--muted)";
+    s += `<text x="${L - 10}" y="${cy + 4}" text-anchor="end" class="${isBest ? "ink" : "ink2"}" style="font-family:var(--f-body);font-size:12.5px;${isBest ? "font-weight:600" : ""}">${r.name}</text>`
+      + `<line x1="${x(ap.ci95[0])}" x2="${x(ap.ci95[1])}" y1="${cy}" y2="${cy}" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-opacity="0.6"/>`
+      + `<circle cx="${x(ap.mean)}" cy="${cy}" r="${isBest ? 6 : 5}" fill="${col}" stroke="var(--surface)" stroke-width="2"/>`
+      + `<text x="${x(ap.ci95[1]) + 6}" y="${cy + 4}" class="${isBest ? "ink" : ""}">${ap.mean.toFixed(3)}</text>`
+      + `<rect class="hit" x="0" y="${cy - rowH / 2}" width="${W}" height="${rowH}" fill="transparent"
+          data-tip="<b>${esc(r.name)}</b><br>MAP ${ap.mean.toFixed(3)} [${ap.ci95[0].toFixed(3)}, ${ap.ci95[1].toFixed(3)}]<br>Recall@1 ${r["recall@1"].mean.toFixed(3)} · Recall@10 ${r["recall@10"].mean.toFixed(3)}"/>`;
+  });
+  host.innerHTML = s + "</svg>";
+}
+
+const SERIES = [
+  { k: "qwen", name: "Qwen3-Coder · llama.cpp", col: "--s-qwen" },
+  { k: "qwen_vllm", name: "Qwen3-Coder · vLLM", col: "--s-vllm" },
+  { k: "devstral", name: "Devstral · llama.cpp", col: "--s-dev" },
+];
+$("#serve-keys").innerHTML = SERIES.map((s) => `<span><i style="background:var(${s.col})"></i>${s.name}</span>`).join("")
+  + `<span><i style="background:repeating-linear-gradient(90deg,var(--muted) 0 4px,transparent 4px 7px)"></i>20 tok/s per user</span>`;
+function serveChart() {
+  const host = $("#c-serve .plot"), W = Math.max(300, host.clientWidth), narrow = W < 560;
+  const H = narrow ? 240 : 280, L = 40, R = narrow ? 64 : 170, T = 10, B = 34, max = 80;
+  const levels = D.serving.qwen.profiles.chat.map((l) => l.concurrency);
+  const x = (i) => L + (W - L - R) * (i / (levels.length - 1)), y = (v) => T + (H - T - B) * (1 - v / max);
+  let s = svgEl(W, H);
+  [0, 20, 40, 60, 80].forEach((t) => { s += `<line class="gridl" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/>`
+    + `<text x="${L - 8}" y="${y(t) + 4}" text-anchor="end">${t}</text>`; });
+  levels.forEach((c, i) => { s += `<text x="${x(i)}" y="${H - B + 18}" text-anchor="middle">${c}</text>`; });
+  s += `<text x="${(L + W - R) / 2}" y="${H - 2}" text-anchor="middle">concurrent streams</text>`;
+  s += `<line x1="${L}" x2="${W - R}" y1="${y(20)}" y2="${y(20)}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  const ends = [];
+  SERIES.forEach((se) => {
+    const pts = D.serving[se.k].profiles.chat.map((l, i) => [x(i), y(1000 / l.tpot_p50_ms)]);
+    s += `<polyline points="${pts.map((p) => p.join(",")).join(" ")}" fill="none" stroke="var(${se.col})" stroke-width="2" stroke-linejoin="round"/>`;
+    pts.forEach((p) => { s += `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="var(${se.col})" stroke="var(--surface)" stroke-width="2"/>`; });
+    ends.push({ y: pts[pts.length - 1][1], se, v: 1000 / D.serving[se.k].profiles.chat.at(-1).tpot_p50_ms });
+  });
+  ends.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 15) ends[i].y = ends[i - 1].y + 15;
+  ends.forEach((e) => { s += `<text x="${W - R + 10}" y="${e.y + 4}" class="ink" style="font-size:11.5px">${narrow ? Math.round(e.v) : `${Math.round(e.v)} · ${e.se.name.split(" · ")[0].replace("Qwen3-Coder", "Qwen")} ${e.se.name.split(" · ")[1]}`}</text>`; });
+  s += `<line id="xhair" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--ink-2)" stroke-width="1" visibility="hidden"/>`;
+  s += `<rect id="serve-hit" x="${L - 20}" y="${T}" width="${W - L - R + 40}" height="${H - T - B}" fill="transparent"/>`;
+  s += `<text x="${L + 6}" y="${y(80) + 14}" style="font-size:11px">tok/s per user</text>`;
+  host.innerHTML = s + "</svg>";
+  const svg = host.querySelector("svg"), hit = svg.querySelector("#serve-hit"), xh = svg.querySelector("#xhair");
+  const move = (ev) => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * (W / r.width);
+    const i = Math.max(0, Math.min(levels.length - 1, Math.round(((px - L) / (W - L - R)) * (levels.length - 1))));
+    xh.setAttribute("x1", x(i)); xh.setAttribute("x2", x(i)); xh.setAttribute("visibility", "visible");
+    const rows = SERIES.map((se) => { const l = D.serving[se.k].profiles.chat[i];
+      return `<i style="background:var(${se.col})"></i>${se.name}: <b>${(1000 / l.tpot_p50_ms).toFixed(0)}</b> tok/s/user · ${l.output_tps.toFixed(0)} total · 1st token ${l.ttft_p50_s.toFixed(1)} s`; });
+    showTip(host, `<b>${levels[i]} concurrent stream${levels[i] > 1 ? "s" : ""}</b><br>${rows.join("<br>")}`, x(i) * (r.width / W), (ev.clientY - r.top));
+  };
+  hit.addEventListener("pointermove", move);
+  hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); hideTip(); });
+}
+function wireHits(sel) {
+  const host = $(sel + " .plot");
+  host.addEventListener("pointermove", (ev) => {
+    const t = ev.target.closest("[data-tip]");
+    if (!t) { hideTip(); return; }
+    const r = host.getBoundingClientRect();
+    showTip(host, t.getAttribute("data-tip"), ev.clientX - r.left, ev.clientY - r.top);
+  });
+  host.addEventListener("pointerleave", hideTip);
+}
+function drawCharts() { agentChart(); traceChart(); serveChart(); }
+wireHits("#c-agent"); wireHits("#c-trace");
+drawCharts();
+let rz;
+window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawCharts, 120); });
+
+load(0);
+})();
+</script>
