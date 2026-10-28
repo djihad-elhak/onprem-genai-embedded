@@ -27,7 +27,7 @@ GenAI-engineering skill (serving, eval, RAG, KG, MCP, agents, CI) reusable for s
 | Deploy a local LLM platform | WP1 Docker Compose deployment (CPU and GPU profiles, offline mode) |
 | Evaluate code models (Qwen, DeepSeek, Devstral) | WP0 probe + WP3 evaluation; DeepSeek-V4 covered in sizing (does not fit the test hardware) |
 | Assistants for code / refactoring / docs / tests | WP3 task suite + Continue/Aider configs pointing at the platform |
-| Agents interacting with engineering tools & repos | WP4 LangGraph agent ⏳ with Git + Jenkins MCP |
+| Agents interacting with engineering tools & repos | WP4 LangGraph agent with Git + Jenkins MCP |
 | RAG + MCP to docs, Git repos, CI | WP2 knowledge MCP server + official Jenkins MCP plugin |
 | Measure performance & productivity, scale-up strategy | WP1/WP3/WP4 metrics + WP5 report |
 
@@ -40,7 +40,7 @@ GenAI-engineering skill (serving, eval, RAG, KG, MCP, agents, CI) reusable for s
 | Dev machine: Windows, 16 GB RAM, i7-13th gen, Docker, no GPU | Laptop runs graph DB, MCP servers, Jenkins and a small CPU model; nothing GPU-bound |
 | Defense-style context | No external APIs at runtime; offline mode is verified and documented; no employer branding in the repo |
 
-## 3. Target codebase ⏳
+## 3. Target codebase
 
 **Recommended: NASA F´ (F Prime)**, JPL flight-software framework (flew on the Ingenuity Mars helicopter),
 Apache-2.0, C++. Verified on the current repository:
@@ -59,7 +59,7 @@ too weak for traceability); a synthetic radio-link C library (full control, but 
 ```
  Engineers ─ IDE (Continue) / CLI (Aider) ─┐
                                             │ OpenAI-compatible API
- Agent (LangGraph ⏳) ──────────────────────┤
+ Agent (LangGraph) ────────────────────────┤
                                             ▼
                      Inference server  (vLLM  |  llama.cpp server)
                      GPU profile: 2×T4 (benchmarks) · CPU profile: laptop (dev)
@@ -86,7 +86,7 @@ Neo4j holds graph and vectors in one store (fewer moving parts).
 | **WP1 Serving & sizing** | Load-test client (concurrency sweep, code-assistant traffic profiles); engine and quantization comparison; sizing calculator (weights + KV cache, including linear-attention state for hybrid models); Docker Compose deployment (CPU/GPU profiles, offline mode) | TTFT p50/p95, tokens/s vs concurrency; predicted-vs-measured error; sizing for 20 / 100 / 300 engineers |
 | **WP2 Knowledge layer** | Tree-sitter ingestion of F´ (C++), SDD requirement parsing, test tagging, local embeddings, Neo4j; MCP server (`search`, `get_symbol`, `callers/callees`, `get_requirement`, `trace`, `coverage_gaps`) | Traceability recovery P/R/F1 on 152 ground-truth requirements: BM25 vs vector vs graph vs hybrid; retrieval recall@k on a curated question set |
 | **WP3 Model evaluation** | ≈30 contamination-free embedded C tasks written for this project: generation (hidden tests, `-Wall -Werror`), unit-test generation (gcov coverage + mutation score), refactoring (tests still pass + complexity delta) | pass@1, coverage, mutation score, latency and tokens per task, per model |
-| **WP4 Agent + CI** | LangGraph agent ⏳: pick an untested requirement from the KG → retrieve requirement, code and existing tester via MCP → write an F´ test with a `REQUIREMENT()` tag → build and run → fix loop → branch + commit → Jenkins run via MCP → update graph | On ≈20 untested requirements: compile rate, pass rate, iterations, coverage delta, manually reviewed relevance |
+| **WP4 Agent + CI** | LangGraph agent: pick an untested requirement from the KG → retrieve requirement, code and existing tester via MCP → write an F´ test with a `REQUIREMENT()` tag → build and run → fix loop → branch + commit → Jenkins run via MCP → update graph | On ≈20 untested requirements: compile rate, pass rate, iterations, coverage delta, manually reviewed relevance |
 | **WP5 Study & strategy** (EN + FR) | Productivity proxies from WP3/WP4; controlled pilot protocol (SPACE-style metrics); phased scale-up, hardware tiers, model governance (eval gates in CI), security for air-gapped sites | Report + design-decision record for interviews |
 
 **Milestone M1** (first public, CV-ready version): WP0 + WP1 + WP2.
@@ -95,7 +95,7 @@ Neo4j holds graph and vectors in one store (fewer moving parts).
 ## 6. Repository layout
 
 ```
-<repo> ⏳/
+onprem-genai-embedded/
 ├── README.md · README.fr.md
 ├── docs/            PLAN · ARCHITECTURE · DESIGN_DECISIONS · results/ · report (EN/FR)
 ├── kaggle/          00_probe · 01_serving_bench · 02_model_eval · 03_agent_eval

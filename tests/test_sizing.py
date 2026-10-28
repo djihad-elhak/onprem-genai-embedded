@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
-from onprem_genai.sizing.calibration import Measurement, fit, leave_one_model_out
+from onprem_genai.sizing.calibration import Measurement, fit, leave_one_model_out, measurements_from_probe
 from onprem_genai.sizing.memory import (
     estimate_memory,
     kv_bytes_per_token,
@@ -16,7 +19,12 @@ from onprem_genai.sizing.performance import (
     estimate_decode,
     touched_weight_bytes,
 )
-from onprem_genai.sizing.planner import load_scenarios, min_gpus_for_weights, plan_deployment
+from onprem_genai.sizing.planner import (
+    load_scenarios,
+    max_request_rate,
+    min_gpus_for_weights,
+    plan_deployment,
+)
 from onprem_genai.sizing.specs import (
     IncompleteSpecError,
     ModelSpec,
@@ -331,3 +339,37 @@ def test_team_report_sizes_complete_specs_and_lists_unverified_ones() -> None:
     rows = [ln for ln in lines if ln.startswith("| Qwen3.8-27B | chat |")]
     assert len(rows) == 2
     assert "Not sized (unverified architecture fields): deepseek-v4-flash" in text
+
+
+def test_calibration_from_probe_fits_dense_and_moe_separately() -> None:
+    probe = json.loads(Path("docs/results/probe/run2-2026-10-28.json").read_text())
+    ms = measurements_from_probe(probe)
+    assert sorted(m.model_key for m in ms) == [
+        "devstral-small-2-24b",
+        "qwen3-coder-30b-a3b",
+        "qwen3.6-35b-a3b",
+        "qwen3.8-27b",
+    ]
+    assert all(m.parallelism is Parallelism.LAYER and m.n_gpus == 2 and m.weights_bytes for m in ms)
+    specs = load_models()
+    calib = fit(ms, specs, WF, KV["f16"], GPUS)
+    assert calib.decode_bw_efficiency > calib.moe_decode_bw_efficiency  # MoE kernels reach less of the peak
+    assert calib.prefill_compute_efficiency > calib.moe_prefill_compute_efficiency
+    rows = {r["model"]: r for r in leave_one_model_out(ms, specs, WF, KV["f16"], GPUS)}
+    assert all(abs(r["decode_error_pct"]) < 12 for r in rows.values())
+    vllm = measurements_from_probe(probe, engine="vllm")
+    assert [(m.model_key, m.weight_format) for m in vllm] == [("qwen3-coder-30b-a3b", "awq_int4_g128")]
+
+
+def test_max_request_rate_matches_the_replica_count() -> None:
+    spec, sc = load_models()["qwen3-coder-30b-a3b"], load_scenarios()["chat"]
+    kw = {"gpus_per_replica": 2, "parallelism": Parallelism.LAYER, "calib": Calibration()}
+    rate, plan = max_request_rate(spec, WF["q4_k_m"], KV["f16"], GPUS["t4"], sc, **kw)
+    assert plan is not None
+    assert rate > 0
+    one = sc.model_copy(update={"headroom": 1.0, "peak_active_fraction": 1.0})
+    n = round(rate * 3600 / 12)
+    assert plan_deployment(spec, WF["q4_k_m"], KV["f16"], GPUS["t4"], one, engineers=n, **kw).replicas == 1
+    assert (
+        plan_deployment(spec, WF["q4_k_m"], KV["f16"], GPUS["t4"], one, engineers=n + 1, **kw).replicas == 2
+    )

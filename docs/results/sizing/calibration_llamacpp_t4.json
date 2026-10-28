@@ -1,0 +1,8 @@
+{
+  "decode_bw_efficiency": 0.7711,
+  "prefill_compute_efficiency": 0.5082,
+  "tp_efficiency": 0.85,
+  "moe_decode_bw_efficiency": 0.5902,
+  "moe_prefill_compute_efficiency": 0.2024,
+  "source": "median over 2 dense + 2 MoE decode, 2 dense + 2 MoE prefill measurements; llama.cpp on t4; probe run2-2026-10-28.json"
+}

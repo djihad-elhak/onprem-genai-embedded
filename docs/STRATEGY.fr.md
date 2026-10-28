@@ -12,8 +12,8 @@ sources:
 
 Ce document transforme la plateforme en processus de décision : quoi mesurer avant le déploiement, comment
 conduire un pilote capable de montrer un effet réel, et comment passer d'un serveur GPU à un département, avec
-les contrôles qu'exige un site d'ingénierie déconnecté. Les valeurs marquées ⏳ proviennent du benchmark Kaggle
-(`kaggle/01_benchmark`) et de la calibration du dimensionnement ; rien n'est extrapolé à partir de chiffres
+les contrôles qu'exige un site d'ingénierie déconnecté. Les valeurs mesurées proviennent des passes Kaggle
+(`docs/results/`) et de la calibration du dimensionnement ; rien n'est extrapolé à partir de chiffres
 constructeurs.
 
 ## 1. Trois niveaux de preuve
@@ -76,7 +76,7 @@ n'interprète pas les écarts qui y sont contenus.
 
 | Phase | Utilisateurs | Plateforme | Condition de passage |
 |---|---|---|---|
-| 0 · Référence (ce dépôt) | — | CPU portable + GPU de test ; air gap vérifié en CI | benchmarks de capacité ✅ (⏳ passes modèles) |
+| 0 · Référence (ce dépôt) | — | CPU portable + GPU de test ; air gap vérifié en CI | benchmarks de capacité ✅ (2 modèles mesurés) |
 | 1 · Pilote | 20–40 | un serveur GPU : un modèle de code + embeddings + serveur MCP de connaissances ; intégration Jenkins par MCP ; configurations IDE | décision du pilote (§3) |
 | 2 · Département | 100–400 | répliques vLLM derrière une passerelle (clés d'API par équipe, quotas, routage), graphe Neo4j partagé, un serveur MCP par famille de dépôts, registre de modèles | SLO tenu au pic mesuré ; porte d'évaluation en place |
 | 3 · Multi-sites / modèles plus grands | 400+ | modèles MoE plus grands (classe DeepSeek-V4-Flash) sur GPU à grande mémoire, répliques régionales | coût par ingénieur actif dans le budget |
@@ -84,14 +84,36 @@ n'interprète pas les écarts qui y sont contenus.
 Le matériel de chaque phase vient de `oge sizing plan <modèle> --scenario <chat|chat_agents|full> --engineers N`,
 avec des rendements calibrés sur des mesures (`--calibration`). Les hypothèses de charge sont explicites
 (`src/onprem_genai/sizing/data/workloads.yaml` : 60 % de l'équipe active au pic, 20 jetons/s par flux, marge 1,25,
-débits de requêtes par classe) et sont remplacées par la télémétrie du pilote dès qu'elle existe. ⏳ Les tableaux
-calibrés (25 / 100 / 400 ingénieurs × scénarios × types de GPU) sont générés après le benchmark.
+débits de requêtes par classe) et sont remplacées par la télémétrie du pilote dès qu'elle existe.
 
-Pourquoi calibrer : sur 2× T4, le même modèle dense de 27 B décode à 13,9 jetons/s sous llama.cpp et 4,6 sous
-vLLM (GPTQ en mode *eager*), alors qu'un MoE de 30 B avec 3,3 B de paramètres actifs atteint 82 (llama.cpp) à 101
-(vLLM) jetons/s, et le préremplissage de vLLM sur ce MoE est 5 fois plus lent que celui de llama.cpp
-(`docs/results/probe/run2-2026-10-28.md`). Le moteur, le chemin de noyaux et l'architecture changent le débit d'un
-ordre de grandeur ; un modèle de dimensionnement qui les ignore fait acheter le mauvais matériel.
+Tableaux calibrés par équipe, Qwen3-Coder-30B-A3B, poids 4 bits (tableau complet, Devstral et tous les
+scénarios : [`docs/results/sizing/team_tables.md`](results/sizing/team_tables.md)) :
+
+| Scénario | Ingénieurs | L4 | L40S | A100 80 Go | H100 SXM |
+|---|---|---|---|---|---|
+| chat | 100 | 2 | 1 | 1 | 1 |
+| chat + agents | 100 | 6 | 2 | 1 | 1 |
+| chat + agents | 400 | 16 | 6 | 4 | 2 |
+| chat + agents + complétion | 400 | 16 | 6 | 4 | 2 |
+
+Les agents dominent : une étape d'agent renvoie ≈ 12 k jetons de contexte, si bien qu'à 400 ingénieurs le
+scénario avec agents demande 2 à 4 fois plus de GPU que le chat seul, même avec 70 % de chaque prompt d'agent servi
+par le cache de préfixe. Devstral-Small-2-24B, modèle dense, demande jusqu'à 2 fois (typiquement 1,5 fois) plus de
+GPU que le MoE Qwen3-Coder pour la même équipe.
+
+Pourquoi calibrer, et jusqu'où s'y fier ([`docs/results/sizing`](results/sizing/README.md)) :
+
+- Sur les mêmes 2× T4, le moteur et l'architecture changent la vitesse d'un ordre de grandeur : un modèle dense de
+  27 B décode à 13,9 jetons/s sous llama.cpp et 4,6 sous vLLM (GPTQ en mode *eager*), un MoE de 30 B avec 3,3 B de
+  paramètres actifs à 82 (llama.cpp) puis 101 (vLLM).
+- Les modèles denses et MoE atteignent des fractions très différentes du pic matériel (décodage 77 % contre 59 % de
+  la bande passante, préremplissage 51 % contre 20 % du calcul FP16 sous llama.cpp) : ils sont calibrés séparément.
+- Validé sur le matériel mesurable : décodage prédit à ±11 % près en validation croisée par modèle et à 4 % près
+  sur une passe indépendante ; capacité d'un serveur 2× T4 llama.cpp en chat prédite à 7 % près du test de charge.
+  Le préremplissage des MoE et le délai du premier jeton sont moins précis (−44 % à +79 %, −21 % à −36 %).
+- Les tableaux supposent que les rendements mesurés sur T4 se transposent au GPU et au moteur cibles. C'est le
+  maillon le plus faible : la première étape du pilote est de relancer le notebook de sonde sur le serveur candidat
+  et de régénérer les tableaux (`oge sizing calibrate` → `oge sizing report`) avant toute commande de matériel.
 
 ## 5. Gouvernance des modèles
 

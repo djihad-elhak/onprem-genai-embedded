@@ -1,0 +1,42 @@
+[
+  {
+    "engine": "llama.cpp",
+    "model": "qwen3.8-27b",
+    "measured_decode_tps": 13.89,
+    "predicted_decode_tps": 13.69,
+    "decode_error_pct": -1.5,
+    "measured_prefill_tps": 550.0,
+    "predicted_prefill_tps": 584.1,
+    "prefill_error_pct": 6.2
+  },
+  {
+    "engine": "llama.cpp",
+    "model": "qwen3-coder-30b-a3b",
+    "measured_decode_tps": 81.92,
+    "predicted_decode_tps": 90.63,
+    "decode_error_pct": 10.6,
+    "measured_prefill_tps": 1445.3,
+    "predicted_prefill_tps": 809.4,
+    "prefill_error_pct": -44.0
+  },
+  {
+    "engine": "llama.cpp",
+    "model": "devstral-small-2-24b",
+    "measured_decode_tps": 15.89,
+    "predicted_decode_tps": 16.13,
+    "decode_error_pct": 1.5,
+    "measured_prefill_tps": 649.0,
+    "predicted_prefill_tps": 611.2,
+    "prefill_error_pct": -5.8
+  },
+  {
+    "engine": "llama.cpp",
+    "model": "qwen3.6-35b-a3b",
+    "measured_decode_tps": 60.91,
+    "predicted_decode_tps": 55.06,
+    "decode_error_pct": -9.6,
+    "measured_prefill_tps": 1326.1,
+    "predicted_prefill_tps": 2368.1,
+    "prefill_error_pct": 78.6
+  }
+]

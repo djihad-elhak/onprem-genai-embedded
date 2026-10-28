@@ -18,14 +18,14 @@ dans le dépôt.
 
 | Couche | Composant | État |
 |---|---|---|
-| **Dimensionnement** | `oge sizing` — mémoire GPU (poids + cache KV + état des couches à attention linéaire), débit (modèle roofline, trafic des experts MoE), planification de capacité par équipe ; chaque valeur constructeur est sourcée, toute valeur inconnue est refusée plutôt que devinée | ✅ architectures issues des configurations officielles · ⏳ calibration du débit (passe 3) |
-| **Service des modèles** | Profils llama.cpp (CPU / CUDA) et vLLM en Docker Compose, clés d'API, ports liés à localhost ; générateur de charge `oge bench` (TTFT, TPOT, percentiles de débit) avec profils de trafic d'assistant de code | ✅ pile · ⏳ balayages 2×T4 (passe 3) |
+| **Dimensionnement** | `oge sizing` — mémoire GPU (poids + cache KV + état des couches à attention linéaire), débit (modèle roofline, trafic des experts MoE), planification de capacité par équipe ; chaque valeur constructeur est sourcée, toute valeur inconnue est refusée plutôt que devinée | ✅ calibré sur 2× T4, validé par des tests de charge |
+| **Service des modèles** | Profils llama.cpp (CPU / CUDA) et vLLM en Docker Compose, clés d'API, ports liés à localhost ; générateur de charge `oge bench` (TTFT, TPOT, percentiles de débit) avec profils de trafic d'assistant de code | ✅ pile · balayages 2×T4 (3 déploiements) |
 | **Connaissances** | Ingestion Tree-sitter du code, des tests unitaires, des tableaux d'exigences et des documents de conception dans un graphe typé (en mémoire ou **Neo4j**) ; recherche hybride BM25 + dense + graphe | ✅ |
 | **MCP** | Serveur de connaissances (SDK MCP v2, stdio ou HTTP) : `search`, `get_symbol`, `get_callers/callees`, `get_requirement`, `trace_requirement`, `coverage_gaps`, `module_overview` | ✅ |
 | **Assistants** | Configurations Continue, Aider et MCP générique pointant vers la plateforme | ✅ |
 | **Air gap** | Surcouche Compose sur réseau Docker interne + test de fumée qui **échoue si une seule connexion sortante aboutit** | ✅ (CI) |
 | **Évaluation des modèles** | `oge eval` — 27 tâches C embarqué écrites pour le projet (génération, génération de tests unitaires, refactorisation, documentation) notées par exécution : compilation stricte, tests cachés, ASan/UBSan, couverture gcov, test de mutation, complexité, complétude Doxygen ; la suite se valide elle-même | ✅ 2 modèles mesurés |
-| **Agent** | `oge agent` — agent LangGraph qui comble les trous de traçabilité de F´ : contexte récupéré via MCP, test unitaire balisé par l'exigence, compilation et exécution, réparation à partir des erreurs du compilateur et des tests, commit sur une branche de revue ; le modèle n'écrit que du code de test, tout le reste est déterministe et contrôlé par une politique | ✅ v1 mesurée sur 2 modèles · ⏳ v2 (passe 3) |
+| **Agent** | `oge agent` — agent LangGraph qui comble les trous de traçabilité de F´ : contexte récupéré via MCP, test unitaire balisé par l'exigence, compilation et exécution, réparation à partir des erreurs du compilateur et des tests, commit sur une branche de revue ; le modèle n'écrit que du code de test, tout le reste est déterministe et contrôlé par une politique | ✅ 18/28 trous comblés par modèle (v2) |
 | **CI** | Jenkins LTS avec le plugin officiel MCP Server (compte de service à privilèges minimaux, JCasC) ; l'agent déclenche le pipeline de tests unitaires F´ et lit le verdict via MCP | ✅ (CI) |
 
 ## Résultats
@@ -89,17 +89,43 @@ sur l'exécution, pas seulement une relecture.
 
 ### Agent de génération de tests sur F´ (28 trous de traçabilité)
 
-| Modèle | Vérifiées (v1) | Première réponse compilée | Mutants tués par les tests vérifiés | Temps médian / exigence |
+| Modèle | Vérifiées, v1 → v2 | Première réponse compilée, v1 → v2 | Mutants tués par les tests vérifiés (v2) | Temps médian / exigence |
 |---|---|---|---|---|
-| Qwen3-Coder-30B-A3B | 11 / 28 | 52 % | 25 / 41 | 38 s |
-| Devstral-Small-2-24B | 8 / 28 (+1 déclarée non testable) | 15 % | 21 / 32 | 113 s |
+| Qwen3-Coder-30B-A3B | 11 → **18 / 28** | 52 % → 81 % | 42 / 64 | 43 s |
+| Devstral-Small-2-24B | 8 → **18 / 28** | 15 % → 67 % | 35 / 67 | 94 s |
 
-Analyse des 121 tentatives échouées (classées par `failure_causes`) : **54 % viennent d'une confusion que l'agent
-lui-même entretenait** — appeler `doDispatch()` sur des composants passifs, encouragé par une suggestion
-« vouliez-vous dire » proposant une méthode absente de F´ v4 — et 8 d'un bogue du patcheur sur les définitions
-qualifiées par l'espace de noms. L'agent v2 indique la nature du composant et l'appel de dispatch exact, corrige
-le bogue, conserve le bloc qu'une réponse de réparation omet et montre le source des assertions F´ déclenchées.
-⏳ La v2 est mesurée en passe 3, sur les mêmes 28 exigences.
+La v1 a échoué sur 121 tentatives ; leur classement (`failure_causes`) a montré que **54 % venaient d'une
+confusion que l'agent lui-même entretenait** : appeler `doDispatch()` sur des composants passifs, encouragé par
+une suggestion « vouliez-vous dire » proposant une méthode absente de F´ v4. Huit autres venaient d'un bogue du
+patcheur. La v2 indique la nature du composant et l'appel de dispatch exact, corrige le bogue, conserve le bloc
+qu'une réponse de réparation omet et montre le source des assertions F´ déclenchées. Sur les mêmes 28 exigences
+et les mêmes modèles, les tests vérifiés passent de 11 à 18 et de 8 à 18 (test exact de McNemar p = 0,016 et
+0,013) ; ces causes d'échec tombent à zéro. Restent la connaissance de l'API F´ par les modèles (valeurs d'énumérés
+et chemins d'inclusion inventés) et les préconditions des composants. Une pré-revue par IA des 36 tests vérifiés
+en juge 30 pertinents et 6 partiellement pertinents (à confirmer par un ingénieur sur les fiches de revue).
+Source : [`bench/run3-2026-10-28`](docs/results/bench/run3-2026-10-28/README.md).
+
+### Service sur 2× T4 (nouveaux prompts à chaque niveau de concurrence)
+
+| Déploiement | Chat, 1 utilisateur | Chat, 4 utilisateurs | Chat, 16 utilisateurs | Étape d'agent (prompt de 9 k jetons), 4 flux | Complétion en ligne, 4 flux |
+|---|---|---|---|---|---|
+| Qwen3-Coder · llama.cpp (4 emplacements) | 74 jetons/s · premier jeton 2,3 s | 23 jetons/s/util. · 5,7 s | 20 jetons/s/util. · **71 s** (file d'attente) | **0,31 req/s** · 4,1 s | premier jeton 2,6 s |
+| Qwen3-Coder · vLLM (TP 2) | 71 jetons/s · 2,4 s | 27 jetons/s/util. · 6,8 s | 7 jetons/s/util. · 7,0 s | 0,13 req/s · 19,1 s | **premier jeton 1,5 s** |
+| Devstral · llama.cpp | 15 jetons/s · 5,0 s | 6 jetons/s/util. · 11,2 s | 6 jetons/s/util. · 226 s | 0,14 req/s · 7,5 s | premier jeton 4,4 s |
+
+Un serveur 2× T4 sert environ quatre utilisateurs de chat simultanés à 20 jetons/s chacun. Sur Turing, vLLM est
+le meilleur moteur pour le trafic interactif et llama.cpp pour les étapes d'agent à long contexte (le traitement
+des prompts de vLLM n'y dispose ni de FlashAttention 2 ni des noyaux Marlin) : le choix dépend du mélange de
+charge et doit être remesuré sur le GPU cible.
+
+### Dimensionnement : calibré sur ces passes
+
+Ajusté sur la sonde, séparément pour les modèles denses et MoE (décodage à 77 % contre 59 % de la bande passante
+crête sous llama.cpp), le modèle de dimensionnement prédit le décodage à ±11 % près pour un modèle tenu à l'écart
+et à 4 % près sur la passe indépendante 3. Il prédit aussi la capacité en chat d'un serveur 2× T4 llama.cpp à 7 %
+près du test de charge (0,187 contre 0,174 requête/s). Tableaux par équipe de 25 à 400 ingénieurs, du L4 au H200,
+avec l'hypothèse sur laquelle ils reposent : [`docs/results/sizing`](docs/results/sizing/README.md) et
+[STRATÉGIE](docs/STRATEGY.fr.md).
 
 ### Audit de traçabilité de F´ (automatique, depuis le graphe)
 

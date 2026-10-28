@@ -239,3 +239,49 @@ def min_gpus_for_weights(
     w_bytes, _ = weight_bytes(spec, weight_fmt, artifact_format)
     per_gpu = gpu.memory_gb * GB * usable_fraction - overhead_gb_per_gpu * GB
     return math.ceil(w_bytes / per_gpu)
+
+
+def max_request_rate(
+    spec: ModelSpec,
+    weight_fmt: WeightFormat,
+    kv_fmt: KvFormat,
+    gpu: GpuSpec,
+    scenario: Scenario,
+    *,
+    gpus_per_replica: int,
+    parallelism: Parallelism,
+    calib: Calibration,
+    artifact_format: str | None = None,
+    max_engineers: int = 100_000,
+) -> tuple[float, Plan | None]:
+    """Largest request rate (requests/s, all classes) one replica serves within the SLO, without headroom.
+
+    Comparable with a load test: every engineer counts as active and no capacity margin is kept.
+    """
+    sc = scenario.model_copy(update={"headroom": 1.0, "peak_active_fraction": 1.0})
+    per_engineer = sum(rc.requests_per_engineer_hour for rc in sc.request_classes) / 3600.0
+
+    def plan(n: int) -> Plan:
+        return plan_deployment(
+            spec,
+            weight_fmt,
+            kv_fmt,
+            gpu,
+            sc,
+            engineers=n,
+            gpus_per_replica=gpus_per_replica,
+            parallelism=parallelism,
+            calib=calib,
+            artifact_format=artifact_format,
+        )
+
+    first = plan(1)
+    if not first.feasible or first.replicas > 1:
+        return 0.0, first if not first.feasible else None
+    lo, hi = 1, 2
+    while hi <= max_engineers and plan(hi).replicas == 1:  # replicas grows monotonically with the team
+        lo, hi = hi, hi * 2
+    while hi - lo > 1:
+        mid = (lo + hi) // 2
+        lo, hi = (mid, hi) if plan(mid).replicas == 1 else (lo, mid)
+    return lo * per_engineer, plan(lo)

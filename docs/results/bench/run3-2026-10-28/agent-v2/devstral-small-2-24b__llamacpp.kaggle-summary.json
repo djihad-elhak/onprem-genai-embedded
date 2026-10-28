@@ -1,0 +1,43 @@
+{
+  "targets": 28,
+  "status": {
+    "passed": 18,
+    "failed": 10
+  },
+  "verified_rate": 0.6429,
+  "first_attempt_compile_rate": 0.6667,
+  "compile_rate": 0.8214,
+  "mean_attempts_when_verified": 1.3333,
+  "median_wall_seconds": 94.245,
+  "llm_calls": 54,
+  "completion_tokens": 25018,
+  "mutation": {
+    "tests_analysed": 18,
+    "valid_mutants": 67,
+    "killed": 35,
+    "mean_score": 0.537
+  },
+  "per_module": {
+    "Svc/ComStub": {
+      "targets": 7,
+      "passed": 7,
+      "coverage_delta": 0.0
+    },
+    "Svc/ComRetry": {
+      "targets": 7,
+      "passed": 2,
+      "coverage_delta": 0.0
+    },
+    "Svc/PrmDb": {
+      "targets": 5,
+      "passed": 3,
+      "coverage_delta": 0.0
+    },
+    "Svc/FprimeRouter": {
+      "targets": 9,
+      "passed": 6,
+      "coverage_delta": 0.0
+    }
+  },
+  "gaps_closed": 18
+}

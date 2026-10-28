@@ -12,8 +12,8 @@ sources:
 
 This document turns the platform into a decision process: what to measure before rollout, how to run a pilot
 that can actually show an effect, and how to grow from one GPU server to a department, with the controls an
-air-gapped engineering site needs. Numbers marked ⏳ come from the Kaggle benchmark (`kaggle/01_benchmark`) and
-the sizing calibration; nothing here is extrapolated from vendor claims.
+air-gapped engineering site needs. Measured numbers come from the Kaggle runs (`docs/results/`) and the sizing
+calibration; nothing here is extrapolated from vendor claims.
 
 ## 1. Three levels of evidence
 
@@ -71,7 +71,7 @@ report states them and does not over-read differences inside them.
 
 | Phase | Users | Platform | Gate to next phase |
 |---|---|---|---|
-| 0 · Reference (this repository) | — | laptop CPU + test GPUs; air gap verified in CI | capability benchmarks ✅ (⏳ model runs) |
+| 0 · Reference (this repository) | — | laptop CPU + test GPUs; air gap verified in CI | capability benchmarks ✅ (2 models measured) |
 | 1 · Pilot | 20–40 | one GPU server: one code model + embeddings + knowledge MCP server; Jenkins MCP integration; IDE configs | pilot decision (§3) |
 | 2 · Department | 100–400 | vLLM replicas behind a gateway (per-team API keys, quotas, routing), shared Neo4j graph, one knowledge MCP server per repository family, model registry | SLO held at measured peak; eval gate in place |
 | 3 · Multi-site / larger models | 400+ | larger MoE models (DeepSeek-V4-Flash class) on high-memory GPUs, regional replicas | cost per active engineer within budget |
@@ -79,14 +79,36 @@ report states them and does not over-read differences inside them.
 Hardware per phase comes from `oge sizing plan <model> --scenario <chat|chat_agents|full> --engineers N` with
 efficiencies calibrated on measured runs (`--calibration`). The workload assumptions are explicit
 (`src/onprem_genai/sizing/data/workloads.yaml`: 60 % of the team active at peak, 20 tokens/s per stream, 1.25
-headroom, request rates per class) and are replaced by pilot telemetry as soon as it exists. ⏳ Calibrated team
-tables (25 / 100 / 400 engineers × scenarios × GPU types) are generated after the benchmark run.
+headroom, request rates per class) and are replaced by pilot telemetry as soon as it exists.
 
-Why calibration matters: on 2× T4 the same 27 B dense model decodes at 13.9 tokens/s on llama.cpp and 4.6 on
-vLLM (eager GPTQ), while a 30 B MoE with 3.3 B active parameters reaches 82 (llama.cpp) to 101 (vLLM) tokens/s,
-and vLLM's prefill on that MoE is 5× slower than llama.cpp's (`docs/results/probe/run2-2026-10-28.md`). Engine,
-kernel path and architecture move throughput by an order of magnitude; a sizing model that ignores them buys the
-wrong hardware.
+Calibrated team tables, Qwen3-Coder-30B-A3B, 4-bit weights (full table, Devstral and all scenarios:
+[`docs/results/sizing/team_tables.md`](results/sizing/team_tables.md)):
+
+| Scenario | Engineers | L4 | L40S | A100 80 GB | H100 SXM |
+|---|---|---|---|---|---|
+| chat | 100 | 2 | 1 | 1 | 1 |
+| chat + agents | 100 | 6 | 2 | 1 | 1 |
+| chat + agents | 400 | 16 | 6 | 4 | 2 |
+| chat + agents + completion | 400 | 16 | 6 | 4 | 2 |
+
+Agents dominate: an agent step re-sends ≈ 12k tokens of context, so at 400 engineers the agent scenario needs
+2–4× the GPUs of chat alone, even with 70 % of each agent prompt served from the prefix cache. Devstral-Small-2-24B,
+a dense model, needs up to 2× (typically 1.5×) the GPUs of the MoE Qwen3-Coder for the same team.
+
+Why calibration matters, and how far it can be trusted
+([`docs/results/sizing`](results/sizing/README.md)):
+
+- On the same 2× T4, the engine and the architecture change speed by an order of magnitude: a 27 B dense model
+  decodes at 13.9 tokens/s on llama.cpp and 4.6 on vLLM (eager GPTQ), a 30 B MoE with 3.3 B active parameters at
+  82 (llama.cpp) to 101 (vLLM).
+- Dense and MoE models reach very different fractions of the hardware peak (decode 77 % vs 59 % of bandwidth,
+  prefill 51 % vs 20 % of FP16 compute on llama.cpp), so they are calibrated separately.
+- Validated on the hardware we could measure: decode is predicted within ±11 % leave-one-model-out and within
+  4 % on an independent run; the capacity of one 2× T4 llama.cpp server for chat is predicted within 7 % of the
+  load test. Prefill of MoE models and time to first token are less accurate (−44 % to +79 %, −21 % to −36 %).
+- The tables assume the T4 efficiencies carry over to the target GPU and engine. That is the weakest link, so
+  the first step of the pilot is to re-run the probe notebook on the candidate server and regenerate the tables
+  (`oge sizing calibrate` → `oge sizing report`) before ordering hardware.
 
 ## 5. Model governance
 

@@ -107,20 +107,22 @@ Jenkins verdict over MCP.
 
 ## Results
 
-Benchmark run 2 (agent v1, 2× T4, Q4_K_M on llama.cpp, same 28 requirements and context for both models):
+Same 28 requirements, models and context budget for both versions (2× T4, Q4_K_M on llama.cpp):
 
-| Model | Verified | First answer compiles | Mutants killed by verified tests | Median time / requirement |
+| Model | Verified, v1 (run 2) → v2 (run 3) | First answer compiles | Mutants killed by verified tests (v2) | Median time / requirement (v2) |
 |---|---|---|---|---|
-| Qwen3-Coder-30B-A3B | 11 / 28 | 52 % | 25 / 41 | 38 s |
-| Devstral-Small-2-24B | 8 / 28 (+1 not testable) | 15 % | 21 / 32 | 113 s |
+| Qwen3-Coder-30B-A3B | 11 → 18 / 28 | 52 % → 81 % | 42 / 64 | 43 s |
+| Devstral-Small-2-24B | 8 (+1 not testable) → 18 / 28 | 15 % → 67 % | 35 / 67 | 94 s |
 
-`failure_causes` classifies every failed attempt (121 in total): 54 % were dispatch calls on passive components
-or on the wrong object — the v1 prompt stated the active-component rule without the component's kind, and the
-hints offered `dispatchAll`, which F´ v4 does not have — and 8 came from a patcher bug on namespace-qualified
-definitions. The rest are the models' own: invented enum values and include paths, wrong expected values,
-broken preconditions. Agent v2 addresses the first two groups only with general rules (DESIGN_DECISIONS D17)
-and is measured on the same targets in run 3 (⏳). Per-attempt records, generated tests as patches and the full
-analysis: [`results/bench/run2-2026-10-28`](results/bench/run2-2026-10-28/README.md).
+`failure_causes` classifies every failed attempt. In v1 (121 failed attempts), 54 % were dispatch calls on
+passive components or on the wrong object — the v1 prompt stated the active-component rule without the
+component's kind, and the hints offered `dispatchAll`, which F´ v4 does not have — and 8 came from a patcher bug
+on namespace-qualified definitions. v2 fixes both with general rules (DESIGN_DECISIONS D17): those causes fell to
+zero, verified requirements rose by 7 and 10 (exact McNemar p = 0.016 and 0.013) and failed attempts fell to 40
+and 36. The remaining failures are the models' own: invented enum values and include paths, broken component
+preconditions, wrong expected values. An AI pre-review of the 36 verified tests finds 30 relevant and 6 partial
+(to be confirmed by an engineer on the review sheets). Records, generated tests as patches and analyses:
+[`run2`](results/bench/run2-2026-10-28/README.md) (v1), [`run3`](results/bench/run3-2026-10-28/README.md) (v2).
 
 ## Limits
 

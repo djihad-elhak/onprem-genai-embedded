@@ -17,17 +17,17 @@ Ingenuity Mars helicopter), Apache-2.0, ≈ 207 k lines of C++. Fetched at a pin
 
 | Layer | Component | Status |
 |---|---|---|
-| **Sizing** | `oge sizing` — GPU memory (weights + KV cache + linear-attention state), roofline throughput incl. MoE expert traffic, team capacity planning; every datasheet value carries its source, unknown values are refused, not guessed | ✅ architectures from official configs · ⏳ throughput calibration (run 3) |
-| **Serving** | llama.cpp (CPU / CUDA) and vLLM profiles in Docker Compose, API keys, localhost-bound ports; `oge bench` load generator (TTFT, TPOT, throughput percentiles) with code-assistant traffic profiles | ✅ stack · ⏳ 2×T4 sweeps (run 3) |
+| **Sizing** | `oge sizing` — GPU memory (weights + KV cache + linear-attention state), roofline throughput incl. MoE expert traffic, team capacity planning; every datasheet value carries its source, unknown values are refused, not guessed | ✅ calibrated on 2× T4, validated against load tests |
+| **Serving** | llama.cpp (CPU / CUDA) and vLLM profiles in Docker Compose, API keys, localhost-bound ports; `oge bench` load generator (TTFT, TPOT, throughput percentiles) with code-assistant traffic profiles | ✅ stack · 2×T4 sweeps (3 deployments) |
 | **Knowledge** | Tree-sitter ingestion of code, unit tests, requirement tables and design docs into a typed graph (in-memory or **Neo4j**); hybrid BM25 + dense + graph retrieval | ✅ |
 | **MCP** | Knowledge server (MCP SDK v2, stdio or streamable HTTP): `search`, `get_symbol`, `get_callers/callees`, `get_requirement`, `trace_requirement`, `coverage_gaps`, `module_overview` | ✅ |
 | **Assistants** | Continue, Aider and generic MCP client configs targeting the platform | ✅ |
 | **Air gap** | Compose overlay on an internal Docker network + smoke test that **fails if any outbound connection succeeds** | ✅ (CI) |
 | **Model evaluation** | `oge eval` — 27 purpose-written embedded C tasks (generation, unit-test generation, refactoring, documentation) scored by execution: strict compile, hidden tests, ASan/UBSan, gcov coverage, mutation testing, complexity, Doxygen completeness; the suite validates itself | ✅ 2 models measured |
-| **Agent** | `oge agent` — LangGraph agent that closes F´ traceability gaps: retrieves context over MCP, writes a requirement-tagged unit test, builds and runs it, repairs from compiler and test output, commits on a review branch; the model only writes test code, everything else is deterministic and policy-checked | ✅ v1 measured on 2 models · ⏳ v2 (run 3) |
+| **Agent** | `oge agent` — LangGraph agent that closes F´ traceability gaps: retrieves context over MCP, writes a requirement-tagged unit test, builds and runs it, repairs from compiler and test output, commits on a review branch; the model only writes test code, everything else is deterministic and policy-checked | ✅ 18/28 gaps closed per model (v2) |
 | **CI** | Jenkins LTS with the official MCP Server plugin (least-privilege service account, JCasC); the agent triggers the F´ unit-test pipeline and reads the verdict over MCP | ✅ (CI) |
 
-## Results so far
+## Results
 
 ### What runs on 2× Tesla T4 (probe, 4-bit weights)
 
@@ -85,16 +85,40 @@ but 4 of 10 change behaviour. Generated code and tests need execution gates, not
 
 ### Test-generation agent on F´ (28 requirement gaps)
 
-| Model | Verified (v1) | First answer compiles | Mutants killed by verified tests | Median time / requirement |
+| Model | Verified, v1 → v2 | First answer compiles, v1 → v2 | Mutants killed by verified tests (v2) | Median time / requirement |
 |---|---|---|---|---|
-| Qwen3-Coder-30B-A3B | 11 / 28 | 52 % | 25 / 41 | 38 s |
-| Devstral-Small-2-24B | 8 / 28 (+1 declined as not testable) | 15 % | 21 / 32 | 113 s |
+| Qwen3-Coder-30B-A3B | 11 → **18 / 28** | 52 % → 81 % | 42 / 64 | 43 s |
+| Devstral-Small-2-24B | 8 → **18 / 28** | 15 % → 67 % | 35 / 67 | 94 s |
 
-Failure analysis of the 121 failed attempts (classified by `failure_causes`): **54 % came from one confusion the
-agent itself reinforced** — calling `doDispatch()` on passive components, helped by a did-you-mean hint that
-offered a method F´ v4 does not have — and 8 from a patcher bug with namespace-qualified definitions. Agent v2
-states the component kind and exact dispatch call, fixes the bug, keeps the block a repair answer leaves out and
-shows the source of failed F´ assertions. ⏳ v2 is measured in run 3, on the same 28 requirements.
+v1 failed 121 attempts; classifying them (`failure_causes`) showed that **54 % came from one confusion the agent
+itself reinforced**: calling `doDispatch()` on passive components, encouraged by a did-you-mean hint that offered
+a method F´ v4 does not have. Another 8 came from a patcher bug. v2 states the component kind and the exact
+dispatch call, fixes the bug, keeps the block a repair answer leaves out and shows the source of failed F´
+assertions. On the same 28 requirements and models, verified tests went from 11 to 18 and from 8 to 18 (exact
+McNemar p = 0.016 and 0.013); those failure causes dropped to zero. What remains is the models' knowledge of
+the F´ API (invented enum values and include paths) and of component preconditions. An AI pre-review of the 36
+verified tests finds 30 relevant and 6 partially relevant (to be confirmed by an engineer on the review sheets).
+Source: [`bench/run3-2026-10-28`](docs/results/bench/run3-2026-10-28/README.md).
+
+### Serving on 2× T4 (new prompts at every concurrency level)
+
+| Deployment | Chat, 1 user | Chat, 4 users | Chat, 16 users | Agent step (9k-token prompt), 4 streams | Inline completion, 4 streams |
+|---|---|---|---|---|---|
+| Qwen3-Coder · llama.cpp (4 slots) | 74 tok/s · first token 2.3 s | 23 tok/s/user · 5.7 s | 20 tok/s/user · **71 s** (queued) | **0.31 req/s** · 4.1 s | first token 2.6 s |
+| Qwen3-Coder · vLLM (TP 2) | 71 tok/s · 2.4 s | 27 tok/s/user · 6.8 s | 7 tok/s/user · 7.0 s | 0.13 req/s · 19.1 s | **first token 1.5 s** |
+| Devstral · llama.cpp | 15 tok/s · 5.0 s | 6 tok/s/user · 11.2 s | 6 tok/s/user · 226 s | 0.14 req/s · 7.5 s | first token 4.4 s |
+
+One 2× T4 server holds about four concurrent chat users at 20 tok/s each. On Turing, vLLM is the better engine
+for interactive traffic and llama.cpp for long-context agent steps (vLLM's prompt processing lacks FlashAttention
+2 and Marlin kernels there), so the choice depends on the workload mix and must be re-measured on the target GPU.
+
+### Sizing: calibrated on these runs
+
+Fitted on the probe, separately for dense and MoE models (decode 77 % vs 59 % of peak bandwidth on llama.cpp),
+the sizing model predicts decode within ±11 % for a held-out model and within 4 % on the independent run 3. It
+also predicts the chat capacity of one 2× T4 llama.cpp server within 7 % of the load test (0.187 vs 0.174
+requests/s). Team tables for 25–400 engineers on L4 to H200, with the assumption they rest on:
+[`docs/results/sizing`](docs/results/sizing/README.md) and [STRATEGY](docs/STRATEGY.md).
 
 ### Traceability audit of F´ (automatic, from the graph)
 

@@ -11,7 +11,8 @@ F´ commit for all knowledge results: `558b7ef48edd5d25f3bdddcbbe7afddb9cc22d09`
 | `probe/` | 2× T4 compatibility matrix: load status, VRAM, TTFT, decode/prefill speed, 4× concurrency, C smoke test, root causes of failures — run 1 (llama.cpp build failed) and run 2 (complete) | `kaggle/00_probe_t4x2` |
 | `bench/run1-2026-10-28.md` | Failed run: GPU memory held by the embedding step (cause and fix) | `kaggle/01_benchmark` |
 | `bench/run2-2026-10-28/` | **Final**: dense / hybrid / LLM-reranked traceability, `oge eval` reports for 2 models (with the generated code), official model configs for sizing. **Superseded**: serving sweeps (cache-served levels) and agent v1 (baseline of the failure analysis) | `kaggle/01_benchmark` at `a91bbdb` |
-| `bench/run3-…/` | ⏳ Serving sweeps on new prompts per level, agent v2 | `kaggle/01_benchmark` at `bf66c9d`, `STAGES=["serving", "agent"]` |
+| `bench/run3-2026-10-28/` | **Final**: serving sweeps on new prompts at every level (3 profiles × 5 concurrency levels × 3 deployments), agent v2 (records, patches, review sheets, AI pre-review) | `kaggle/01_benchmark` at `bf66c9d`, `STAGES=["serving", "agent"]` |
+| `sizing/` | Calibration of the sizing model (llama.cpp and vLLM on T4, dense and MoE fitted separately), leave-one-model-out and load-test validation, team tables | `oge sizing calibrate / capacity / report` |
 
 Reproduce the CPU results:
 

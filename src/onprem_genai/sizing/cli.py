@@ -15,6 +15,7 @@ from onprem_genai.sizing.memory import estimate_memory, max_cached_tokens
 from onprem_genai.sizing.performance import Calibration, Parallelism, estimate_decode, estimate_prefill_tps
 from onprem_genai.sizing.planner import best_plan_per_gpu, load_scenarios
 from onprem_genai.sizing.specs import (
+    Artifact,
     IncompleteSpecError,
     load_formats,
     load_gpus,
@@ -281,6 +282,106 @@ def report(
     if out:
         out.write_text(text, encoding="utf-8")
     typer.echo(text)
+
+
+@app.command("capacity")
+def capacity(
+    model: str,
+    gpu: str = "t4",
+    gpus_per_replica: int = 2,
+    parallelism: Annotated[str, typer.Option(help="tensor (vLLM) or layer (llama.cpp)")] = "tensor",
+    weights: str = "q4_k_m",
+    kv: str = "f16",
+    scenario: str = "chat",
+    calibration: Path | None = None,
+    weights_bytes: Annotated[
+        float | None, typer.Option(help="Measured weight size (bytes), e.g. GGUF")
+    ] = None,
+) -> None:
+    """Largest request rate one replica serves within the SLO (to compare with a load test)."""
+    from onprem_genai.sizing.planner import max_request_rate  # noqa: PLC0415
+
+    spec = load_models()[model]
+    if weights_bytes:
+        art = Artifact(format="measured", bytes=weights_bytes, source="--weights-bytes")
+        spec = spec.model_copy(update={"artifacts": [*spec.artifacts, art]})
+    wf, kf = load_formats()
+    rate, p = max_request_rate(
+        spec,
+        wf[weights],
+        kf[kv],
+        load_gpus()[gpu],
+        load_scenarios()[scenario],
+        gpus_per_replica=gpus_per_replica,
+        parallelism=Parallelism(parallelism),
+        calib=_calibration(calibration),
+        artifact_format="measured" if weights_bytes else None,
+    )
+    if p is None or not p.feasible:
+        console.print(f"infeasible: {p.reason if p else 'one engineer already needs more than one replica'}")
+        return
+    console.print(
+        f"{rate:.3f} requests/s · batch {p.batch_per_replica} · {p.per_sequence_tps} tok/s per sequence · "
+        f"TTFT {p.ttft_s}"
+    )
+
+
+@app.command("calibrate")
+def calibrate(
+    probe: Annotated[Path, typer.Option(help="Probe results JSON (kaggle/00_probe_t4x2)")],
+    engine: Annotated[str, typer.Option(help="llama.cpp or vllm")] = "llama.cpp",
+    gpu: str = "t4",
+    tp_efficiency: float = 0.85,
+    out: Annotated[Path | None, typer.Option(help="Write the calibration (JSON, for --calibration)")] = None,
+) -> None:
+    """Fit decode / prefill efficiencies on probe measurements; report leave-one-model-out errors."""
+    from onprem_genai.sizing.calibration import (  # noqa: PLC0415
+        fit,
+        leave_one_model_out,
+        measurements_from_probe,
+    )
+
+    ms = measurements_from_probe(load_json(probe), gpu, engine)
+    specs, (wf, kf), gpus = load_models(), load_formats(), load_gpus()
+    calib = fit(ms, specs, wf, kf["f16"], gpus, tp_efficiency)
+    rows = leave_one_model_out(ms, specs, wf, kf["f16"], gpus, tp_efficiency)
+    t = Table(
+        "model",
+        "decode tok/s",
+        "predicted",
+        "error",
+        "prefill tok/s",
+        "predicted",
+        "error",
+        title=f"leave-one-model-out on {gpu} · fitted (dense / MoE): decode "
+        f"{calib.decode_bw_efficiency:.3f} / {calib.moe_decode_bw_efficiency:.3f} of peak bandwidth, "
+        f"prefill {calib.prefill_compute_efficiency:.3f} / {calib.moe_prefill_compute_efficiency:.3f} "
+        "of peak FP16",
+    )
+    for r in rows:
+        t.add_row(
+            r["model"],
+            f"{r['measured_decode_tps']:g}",
+            f"{r['predicted_decode_tps']:g}",
+            f"{r['decode_error_pct']:+.1f} %",
+            f"{r.get('measured_prefill_tps', '–')}",
+            f"{r.get('predicted_prefill_tps', '–')}",
+            f"{r['prefill_error_pct']:+.1f} %" if "prefill_error_pct" in r else "–",
+        )
+    console.print(t)
+    if out:
+        payload = {
+            "decode_bw_efficiency": round(calib.decode_bw_efficiency, 4),
+            "prefill_compute_efficiency": round(calib.prefill_compute_efficiency, 4),
+            "tp_efficiency": calib.tp_efficiency,
+            "moe_decode_bw_efficiency": round(calib.moe_decode_bw_efficiency or 0.0, 4),
+            "moe_prefill_compute_efficiency": round(calib.moe_prefill_compute_efficiency or 0.0, 4),
+            "source": f"{calib.source}; {engine} on {gpu}; probe {probe.name}",
+        }
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        out.with_suffix(".validation.json").write_text(json.dumps(rows, indent=2) + "\n", encoding="utf-8")
+        console.print(f"wrote {out} and {out.with_suffix('.validation.json')}")
 
 
 @app.command("import-config")

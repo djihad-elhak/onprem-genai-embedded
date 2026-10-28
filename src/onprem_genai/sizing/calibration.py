@@ -70,22 +70,33 @@ def fit(
     gpus: dict[str, GpuSpec],
     tp_efficiency: float = 0.85,
 ) -> Calibration:
-    dec, pre = [], []
+    """Median implied efficiencies: dense and MoE models separately (each falls back to the other class)."""
+    dec: dict[bool, list[float]] = {False: [], True: []}
+    pre: dict[bool, list[float]] = {False: [], True: []}
     for m in measurements:
         spec, wf, gpu = specs[m.model_key], weight_formats[m.weight_format], gpus[m.gpu_key]
+        moe = bool(spec.num_experts)
         if m.decode_tps_single:
-            dec.append(implied_decode_efficiency(m, spec, wf, kv, gpu, tp_efficiency))
+            dec[moe].append(implied_decode_efficiency(m, spec, wf, kv, gpu, tp_efficiency))
         if m.prefill_tps and m.prefill_prompt_tokens:
-            pre.append(implied_prefill_efficiency(m, spec, gpu, tp_efficiency))
-    if not dec:
+            pre[moe].append(implied_prefill_efficiency(m, spec, gpu, tp_efficiency))
+    if not dec[False] and not dec[True]:
         raise ValueError("no decode measurements to calibrate on")
+
+    def med(xs: list[float], other: list[float], default: float) -> float:
+        return statistics.median(xs) if xs else (statistics.median(other) if other else default)
+
+    defaults = Calibration()
     return Calibration(
-        decode_bw_efficiency=statistics.median(dec),
-        prefill_compute_efficiency=statistics.median(pre)
-        if pre
-        else Calibration().prefill_compute_efficiency,
+        decode_bw_efficiency=med(dec[False], dec[True], defaults.decode_bw_efficiency),
+        prefill_compute_efficiency=med(pre[False], pre[True], defaults.prefill_compute_efficiency),
         tp_efficiency=tp_efficiency,
-        source=f"median over {len(dec)} decode / {len(pre)} prefill measurements",
+        source=(
+            f"median over {len(dec[False])} dense + {len(dec[True])} MoE decode, "
+            f"{len(pre[False])} dense + {len(pre[True])} MoE prefill measurements"
+        ),
+        moe_decode_bw_efficiency=med(dec[True], dec[False], defaults.decode_bw_efficiency),
+        moe_prefill_compute_efficiency=med(pre[True], pre[False], defaults.prefill_compute_efficiency),
     )
 
 
@@ -150,3 +161,61 @@ def leave_one_model_out(
             )
         rows.append(row)
     return rows
+
+
+_VLLM_FORMATS = {"auto_awq": "awq_int4_g128", "awq": "awq_int4_g128", "auto_gptq": "gptq_int4_g128"}
+
+
+def measurements_from_probe(
+    probe: dict[str, Any], gpu_key: str = "t4", engine: str = "llama.cpp"
+) -> list[Measurement]:
+    """Single-stream decode and long-prompt prefill measured by the probe, for one engine.
+
+    llama.cpp splits layers across the GPUs (they work one after another): ``Parallelism.LAYER``, weights =
+    GGUF file size, 16k-context single-slot launch. vLLM runs with tensor parallelism: ``Parallelism.TENSOR``,
+    weights = the loaded size it logs per rank; runs forced into eager mode are skipped (no CUDA graphs: not
+    the configuration anyone would deploy).
+    """
+    out: list[Measurement] = []
+    for run in probe.get("runs", []):
+        if run.get("engine") != engine or run.get("status") != "done":
+            continue
+        if engine == "llama.cpp":
+            launch = next((x for x in run.get("launches", []) if x.get("label") == "single_16k"), None)
+            if not launch or not launch.get("loaded") or not launch.get("single_stream"):
+                continue
+            single, prefill = launch["single_stream"], launch.get("prefill") or {}
+            peak = list(launch.get("vram_peak_mib") or [])
+            fmt, par = "q4_k_m", Parallelism.LAYER
+            w_bytes = run["file_size_gb"] * 1e9 if run.get("file_size_gb") else None
+        elif engine == "vllm":
+            if run.get("enforce_eager") or not run.get("single_stream"):
+                continue
+            info = run.get("log_info") or {}
+            fmt = _VLLM_FORMATS.get(str(info.get("quantization", "")))
+            if fmt is None:
+                continue
+            single, prefill = run["single_stream"], run.get("prefill") or {}
+            peak, par = list(run.get("vram_peak_mib") or []), Parallelism.TENSOR
+            per_rank = info.get("weights_gib_per_rank")
+            w_bytes = per_rank * (len(peak) or 1) * 2**30 if per_rank else None
+        else:
+            raise ValueError(f"unknown engine {engine!r}")
+        out.append(
+            Measurement(
+                engine=engine,
+                model_key=run["model_key"],
+                weight_format=fmt,
+                gpu_key=gpu_key,
+                n_gpus=len(peak) or 1,
+                parallelism=par,
+                decode_tps_single=single.get("decode_tps"),
+                decode_context=int(single.get("prompt_tokens", 0) + single.get("completion_tokens", 0) / 2),
+                prefill_tps=prefill.get("prefill_tps"),
+                prefill_prompt_tokens=prefill.get("prompt_tokens"),
+                weights_bytes=w_bytes,
+                vram_peak_mib=peak,
+                label=f"{run['model_key']} {fmt} {engine}",
+            )
+        )
+    return out

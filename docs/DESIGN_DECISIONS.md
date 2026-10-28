@@ -128,6 +128,15 @@ the end.
   levels 2 and 4 (vLLM: time to first token 8.8 s → 0.26 s on 9.7k-token prompts). A capacity plan built on
   cached throughput would under-buy hardware.
 
+## D19 · Sizing calibrated per engine and per architecture class, validated against load tests
+- **Choice**: decode / prefill efficiencies are fitted on probe measurements per engine, with dense and MoE
+  models fitted separately (`oge sizing calibrate`); every calibration is checked leave-one-model-out and
+  against an independent load test (`oge sizing capacity` vs the serving sweep).
+- **Why**: on llama.cpp / T4 dense models reach 77 % of peak bandwidth when decoding and MoE models 59 %
+  (prefill 51 % vs 20 % of peak FP16); one shared value mispredicted MoE prefill by up to +239 %. Split by class,
+  decode is within ±11 % and one server's chat capacity within 7 % of the measurement. vLLM on Turing is
+  calibrated separately because its kernel path there (no Marlin, no FlashAttention 2) is not representative.
+
 ---
 
 ## Questions to expect (and where the answers are)

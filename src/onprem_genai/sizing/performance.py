@@ -22,10 +22,27 @@ class Parallelism(StrEnum):
 
 @dataclass(frozen=True)
 class Calibration:
+    """Achieved fractions of peak bandwidth (decode) and peak FP16 compute (prefill).
+
+    Mixture-of-experts models reach a lower fraction than dense ones on the same engine (expert routing, many
+    small GEMMs); measured on the probe, the gap is large (decode 0.56-0.62 vs 0.77, prefill 0.15-0.26 vs
+    0.49-0.52 on llama.cpp / T4), so MoE models get their own values when they have been measured.
+    """
+
     decode_bw_efficiency: float = 0.6
     prefill_compute_efficiency: float = 0.35
     tp_efficiency: float = 0.85
     source: str = "uncalibrated defaults"
+    moe_decode_bw_efficiency: float | None = None
+    moe_prefill_compute_efficiency: float | None = None
+
+    def decode_eff(self, spec: ModelSpec) -> float:
+        moe = spec.num_experts and self.moe_decode_bw_efficiency is not None
+        return self.moe_decode_bw_efficiency if moe else self.decode_bw_efficiency  # type: ignore[return-value]
+
+    def prefill_eff(self, spec: ModelSpec) -> float:
+        moe = spec.num_experts and self.moe_prefill_compute_efficiency is not None
+        return self.moe_prefill_compute_efficiency if moe else self.prefill_compute_efficiency  # type: ignore[return-value]
 
 
 @dataclass(frozen=True)
@@ -97,10 +114,8 @@ def estimate_decode(
     kv_step = batch * avg_context * kv_bytes_per_token(spec, kv_fmt)
     state_step = batch * 2.0 * linear_state_bytes_per_sequence(spec)  # read + write
     scale = _scale(n_gpus, parallelism, calib)
-    mem_time = (w_step + kv_step + state_step) / (
-        gpu.bandwidth_gbs * 1e9 * calib.decode_bw_efficiency * scale
-    )
-    compute = gpu.fp16_dense_tflops * 1e12 * calib.prefill_compute_efficiency * scale
+    mem_time = (w_step + kv_step + state_step) / (gpu.bandwidth_gbs * 1e9 * calib.decode_eff(spec) * scale)
+    compute = gpu.fp16_dense_tflops * 1e12 * calib.prefill_eff(spec) * scale
     compute_time = batch * flops_per_token(spec, avg_context) / compute
     step = max(mem_time, compute_time)
     return DecodeEstimate(
@@ -126,5 +141,5 @@ def estimate_prefill_tps(
 ) -> float:
     """Prompt-processing throughput (tokens/s) for a prompt of ``prompt_tokens`` tokens."""
     scale = _scale(n_gpus, parallelism, calib)
-    compute = gpu.fp16_dense_tflops * 1e12 * calib.prefill_compute_efficiency * scale
+    compute = gpu.fp16_dense_tflops * 1e12 * calib.prefill_eff(spec) * scale
     return compute / flops_per_token(spec, max(prompt_tokens // 2, 1))
