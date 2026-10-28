@@ -1,0 +1,5 @@
+run dispatch qualified compile policy assertion expected
+{Qwen v1} 23 8 1 10 6 7
+{Qwen v2} 0 0 15 9 10 6
+{Devstral v1} 42 0 17 0 1 6
+{Devstral v2} 0 0 20 1 6 9

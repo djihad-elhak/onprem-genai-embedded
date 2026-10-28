@@ -1,0 +1,27 @@
+% Fig. 4 -- failed attempts by primary cause, agent v1 (run 2) vs v2 (run 3) (data: failure_causes.dat).
+\begin{tikzpicture}
+\begin{axis}[
+  xbar stacked, bar width=7pt,
+  width=0.96\columnwidth, height=40mm,
+  xmin=0, xmax=70, xlabel={failed attempts (28 requirements, $\le$3 attempts each)},
+  symbolic y coords={{Devstral v2},{Devstral v1},{Qwen v2},{Qwen v1}}, ytick=data,
+  y dir=normal, enlarge y limits=0.2,
+  tick label style={font=\scriptsize}, label style={font=\scriptsize},
+  legend style={font=\tiny, at={(0.5,1.03)}, anchor=south, legend columns=3, draw=none, column sep=2pt},
+  grid=major, ymajorgrids=false, grid style={black!10},
+  every axis plot/.append style={draw=white, line width=0.3pt},
+]
+\addplot[fill=red!65!black] table[y=run, x=dispatch] {figures/failure_causes.dat};
+\addlegendentry{wrong dispatch call}
+\addplot[fill=red!35] table[y=run, x=qualified] {figures/failure_causes.dat};
+\addlegendentry{qualified definition (agent bug)}
+\addplot[fill=orange!75!black] table[y=run, x=compile] {figures/failure_causes.dat};
+\addlegendentry{other compile error}
+\addplot[fill=yellow!70!orange] table[y=run, x=policy] {figures/failure_causes.dat};
+\addlegendentry{policy rejection}
+\addplot[fill=blue!55] table[y=run, x=assertion] {figures/failure_causes.dat};
+\addlegendentry{F\'{} assertion}
+\addplot[fill=blue!25] table[y=run, x=expected] {figures/failure_causes.dat};
+\addlegendentry{wrong expected value}
+\end{axis}
+\end{tikzpicture}

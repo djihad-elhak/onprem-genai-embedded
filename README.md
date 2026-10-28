@@ -34,6 +34,11 @@ file, no server) to step through three real agent runs (a repaired pass, a first
 the exact compiler and test output, browse every attempt on all 28 requirements, and explore the benchmark
 charts. It is built from the stored results by `demo/web/extract.py`.
 
+## Paper
+
+A 6-page IEEE conference paper on the platform and its three studies (sizing, traceability recovery,
+test generation): [`paper/main.pdf`](paper/main.pdf), LaTeX source in [`paper/`](paper/README.md).
+
 ## What it does
 
 | Layer | Component | Status |

@@ -1,0 +1,38 @@
+% Fig. 1 -- platform architecture (TikZ). Included by main.tex.
+\begin{tikzpicture}[
+  font=\scriptsize, >=Stealth,
+  box/.style={draw, rounded corners=1.5pt, align=center, inner sep=2.5pt, minimum height=7mm, fill=white},
+  client/.style={box, fill=black!6},
+  svc/.style={box, fill=blue!7},
+  data/.style={box, fill=orange!9},
+  lab/.style={font=\tiny\itshape, text=black!60},
+]
+% model serving (top)
+\node[svc, minimum width=61mm] (llm) at (2.4,0) {LLM server: llama.cpp or vLLM {\tiny(OpenAI-compatible API)}};
+% clients (middle)
+\node[client, text width=16mm] (ide) at (0,-1.3) {IDE assistant\\{\tiny chat, completion}};
+\node[client, text width=17mm] (agent) at (2.4,-1.3) {Test-generation\\agent {\tiny(LangGraph)}};
+\node[client, text width=14mm] (eval) at (4.8,-1.3) {Evaluation\\suite runner};
+% MCP servers and embeddings
+\node[svc, text width=12mm] (emb) at (-0.3,-2.65) {Embedding\\server};
+\node[svc, text width=22mm] (kmcp) at (2.05,-2.65) {Knowledge MCP\\server {\tiny(9 read-only tools)}};
+\node[svc, text width=14mm] (ci) at (4.8,-2.65) {Jenkins +\\MCP plugin};
+% data
+\node[data, text width=22mm] (kg) at (2.05,-3.95) {Knowledge graph\\{\tiny code, tests, reqs, docs}};
+\node[data, text width=14mm] (repo) at (4.8,-3.95) {F\'{} repository\\+ design docs};
+% edges
+\foreach \c in {ide, agent, eval} \draw[->] (\c.north) -- (\c.north |- llm.south);
+\draw[->] (ide.south) -- node[lab, left, pos=0.4]{MCP} (kmcp.north west);
+\draw[->] (agent.south) -- (agent.south |- kmcp.north);
+\draw[->] (agent.south east) -- node[lab, above, sloped]{MCP} (ci.north west);
+\draw[->] (kmcp) -- (kg);
+\draw[->] (kmcp) -- node[lab, above]{dense} (emb);
+\draw[->] (repo) -- node[lab, above]{ingest} (kg);
+\draw[->] (ci) -- node[lab, right]{build, test} (repo);
+% boundary
+\node[draw, dashed, rounded corners=3pt, inner sep=3pt, fit=(llm)(emb)(kg)(repo)(eval),
+  label={[lab, anchor=north west, yshift=-0.5pt]south west:on premises, no egress (checked by \texttt{smoke -{}-expect-offline} in CI)}] (bnd) {};
+% sizing pipeline
+\node[box, fill=green!7, text width=70mm, minimum height=5.5mm, below=4.5mm of bnd.south] (siz)
+  {Sizing: probe on a reference GPU $\rightarrow$ calibration $\rightarrow$ roofline and Little's-law planner $\rightarrow$ GPUs per team};
+\end{tikzpicture}

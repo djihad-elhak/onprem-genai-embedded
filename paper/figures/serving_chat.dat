@@ -1,0 +1,6 @@
+streams qwenllama qwenllamattft qwenvllm qwenvllmttft devllama devllamattft
+1 73.6 2.32 71.3 2.38 15.2 5.04
+2 42.6 3.94 40.6 3.72 12.3 8.62
+4 23.0 5.68 26.8 6.79 6.4 11.16
+8 19.2 26.48 14.1 9.43 6.1 82.37
+16 20.0 70.68 7.0 7.03 6.0 226.25

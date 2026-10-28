@@ -1,0 +1,29 @@
+% Fig. 3 -- the agent's state graph (TikZ). Included by main.tex.
+\begin{tikzpicture}[
+  font=\scriptsize, >=Stealth, node distance=2.6mm,
+  n/.style={draw, rounded corners=1.5pt, align=center, inner sep=1.5pt, minimum height=8mm, minimum width=11.2mm, fill=blue!7},
+  llm/.style={n, fill=orange!16},
+  gate/.style={n, fill=black!6},
+  lab/.style={font=\tiny, text=black!65, align=center},
+]
+\node[n] (prep) {prepare\\{\tiny baseline}};
+\node[n, right=of prep] (gath) {gather\\{\tiny MCP}};
+\node[llm, right=of gath] (gen) {generate\\{\tiny LLM}};
+\node[gate, right=of gen] (chk) {check\\{\tiny policy}};
+\node[gate, right=of chk] (bld) {build\\{\tiny -Werror}};
+\node[gate, right=of bld] (tst) {test\\{\tiny new$\times$3+suite}};
+\node[n, below=5mm of tst] (com) {commit\\{\tiny review}};
+\node[n, left=of com] (evl) {evaluate\\{\tiny mutants}};
+\node[n, below=5mm of gen, fill=black!3, dashed] (fin) {report\\{\tiny gap stays}};
+\foreach \a/\b in {prep/gath, gath/gen, gen/chk, chk/bld, bld/tst} \draw[->] (\a) -- (\b);
+\draw[->] (tst) -- node[lab, right]{pass} (com);
+\draw[->] (com) -- (evl);
+% repair bus above the row
+\coordinate (bus) at ($(gen.north)+(0,4.5mm)$);
+\draw[->, red!60!black] (chk.north) -- (chk.north |- bus) -- (bus) -- (gen.north);
+\draw[red!60!black] (bld.north) -- (bld.north |- bus) -- (chk.north |- bus);
+\draw[red!60!black] (tst.north) -- (tst.north |- bus) -- (bld.north |- bus);
+\node[lab, above=0.2mm of bus, anchor=south west, xshift=1mm, text=red!60!black]
+  {repair: diagnostics + hints, at most 3 attempts};
+\draw[->, dashed, black!55] (gen.south) -- node[lab, right]{after 3 failed\\attempts} (fin.north);
+\end{tikzpicture}

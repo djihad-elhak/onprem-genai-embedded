@@ -37,6 +37,12 @@ réussite du premier coup, un échec) avec les sorties exactes du compilateur et
 tentative sur les 28 exigences et explorer les graphiques du benchmark. Page générée depuis les résultats
 stockés par `demo/web/extract.py`.
 
+## Article
+
+Un article de conférence IEEE de 6 pages sur la plateforme et ses trois études (dimensionnement,
+recouvrement de la traçabilité, génération de tests) : [`paper/main.pdf`](paper/main.pdf), source LaTeX dans
+[`paper/`](paper/README.md).
+
 ## Ce que fait la plateforme
 
 | Couche | Composant | État |
