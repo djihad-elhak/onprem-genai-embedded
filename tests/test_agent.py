@@ -468,3 +468,30 @@ def test_assert_hints_show_the_broken_precondition(tmp_path: Path) -> None:
     assert "Svc/Foo/Foo.cpp:3" in hints
     assert ">    3 |   FW_ASSERT(this->m_owned);" in hints
     assert ctxmod.assert_hints('Assert: "Missing/File.cpp:3"', tmp_path) == ""
+
+
+def test_failure_causes_take_the_first_matching_rule() -> None:
+    from onprem_genai.agent.runner import failure_causes  # noqa: PLC0415
+
+    def rec(req: str, *attempts: tuple[str, str]) -> dict:
+        hist = [{"attempt": i + 1, "stage": s, "detail": d} for i, (s, d) in enumerate(attempts)]
+        return {"req_id": req, "history": hist}
+
+    records = [
+        rec("A", ("build", "error: 'class Svc::ComStub' has no member named 'doDispatch'"), ("passed", "")),
+        rec("B", ("build", "error: invalid use of '::'"), ("policy", "missing the ```cpp main``` block")),
+        rec("C", ("test", 'Assert: "Svc/X/X.cpp:3"'), ("test", "Expected equality of these values")),
+        rec(
+            "D", ("build", "error: 'class Svc::X' has no member named 'doDispatch' [-Werror=old-style-cast]")
+        ),
+    ]
+    causes = failure_causes(records)
+    assert causes["dispatch call on the wrong object or a passive component"] == {
+        "attempts": 2,
+        "requirements": 2,
+    }
+    assert causes["namespace-qualified method definition"]["attempts"] == 1
+    assert causes["answer missing a block"]["attempts"] == 1
+    assert causes["F´ assertion in the component (precondition broken)"]["attempts"] == 1
+    assert causes["wrong expected value"]["attempts"] == 1
+    assert sum(c["attempts"] for c in causes.values()) == 6  # passed attempts are not failures

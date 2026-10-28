@@ -18,14 +18,14 @@ dans le dépôt.
 
 | Couche | Composant | État |
 |---|---|---|
-| **Dimensionnement** | `oge sizing` — mémoire GPU (poids + cache KV + état des couches à attention linéaire), débit (modèle roofline, trafic des experts MoE), planification de capacité par équipe ; chaque valeur constructeur est sourcée, toute valeur inconnue est refusée plutôt que devinée | ✅ calibration Kaggle (en cours) |
-| **Service des modèles** | Profils llama.cpp (CPU / CUDA) et vLLM en Docker Compose, clés d'API, ports liés à localhost ; générateur de charge `oge bench` (TTFT, TPOT, percentiles de débit) avec profils de trafic d'assistant de code | ✅ pile · ⏳ mesures 2×T4 |
+| **Dimensionnement** | `oge sizing` — mémoire GPU (poids + cache KV + état des couches à attention linéaire), débit (modèle roofline, trafic des experts MoE), planification de capacité par équipe ; chaque valeur constructeur est sourcée, toute valeur inconnue est refusée plutôt que devinée | ✅ architectures issues des configurations officielles · ⏳ calibration du débit (passe 3) |
+| **Service des modèles** | Profils llama.cpp (CPU / CUDA) et vLLM en Docker Compose, clés d'API, ports liés à localhost ; générateur de charge `oge bench` (TTFT, TPOT, percentiles de débit) avec profils de trafic d'assistant de code | ✅ pile · ⏳ balayages 2×T4 (passe 3) |
 | **Connaissances** | Ingestion Tree-sitter du code, des tests unitaires, des tableaux d'exigences et des documents de conception dans un graphe typé (en mémoire ou **Neo4j**) ; recherche hybride BM25 + dense + graphe | ✅ |
 | **MCP** | Serveur de connaissances (SDK MCP v2, stdio ou HTTP) : `search`, `get_symbol`, `get_callers/callees`, `get_requirement`, `trace_requirement`, `coverage_gaps`, `module_overview` | ✅ |
 | **Assistants** | Configurations Continue, Aider et MCP générique pointant vers la plateforme | ✅ |
 | **Air gap** | Surcouche Compose sur réseau Docker interne + test de fumée qui **échoue si une seule connexion sortante aboutit** | ✅ (CI) |
-| **Évaluation des modèles** | `oge eval` — 27 tâches C embarqué écrites pour le projet (génération, génération de tests unitaires, refactorisation, documentation) notées par exécution : compilation stricte, tests cachés, ASan/UBSan, couverture gcov, test de mutation, complexité, complétude Doxygen ; la suite se valide elle-même | ✅ suite · ⏳ passes modèles |
-| **Agent** | `oge agent` — agent LangGraph qui comble les trous de traçabilité de F´ : contexte récupéré via MCP, test unitaire balisé par l'exigence, compilation et exécution, réparation à partir des erreurs du compilateur et des tests, commit sur une branche de revue ; le modèle n'écrit que du code de test, tout le reste est déterministe et contrôlé par une politique | ✅ de bout en bout sur F´ (modèle scripté) · ⏳ passes modèles |
+| **Évaluation des modèles** | `oge eval` — 27 tâches C embarqué écrites pour le projet (génération, génération de tests unitaires, refactorisation, documentation) notées par exécution : compilation stricte, tests cachés, ASan/UBSan, couverture gcov, test de mutation, complexité, complétude Doxygen ; la suite se valide elle-même | ✅ 2 modèles mesurés |
+| **Agent** | `oge agent` — agent LangGraph qui comble les trous de traçabilité de F´ : contexte récupéré via MCP, test unitaire balisé par l'exigence, compilation et exécution, réparation à partir des erreurs du compilateur et des tests, commit sur une branche de revue ; le modèle n'écrit que du code de test, tout le reste est déterministe et contrôlé par une politique | ✅ v1 mesurée sur 2 modèles · ⏳ v2 (passe 3) |
 | **CI** | Jenkins LTS avec le plugin officiel MCP Server (compte de service à privilèges minimaux, JCasC) ; l'agent déclenche le pipeline de tests unitaires F´ et lit le verdict via MCP | ✅ (CI) |
 
 ## Résultats
@@ -59,11 +59,47 @@ classe **les 3 261 cas de test** de la base pour chaque exigence. Moyenne sur le
 |---|---|---|---|---|
 | Graphe seul (module de l'exigence, appels) | 0,249 [0,220 ; 0,278] | 0,291 | 0,073 | 0,550 |
 | BM25 sur le code (tokenisation des identifiants) | 0,488 [0,427 ; 0,548] | 0,591 | 0,297 | 0,677 |
-| **BM25 contraint par le graphe (hybride)** | **0,569 [0,513 ; 0,626]** | **0,665** | **0,330** | **0,781** |
-| + dense (Qwen3-Embedding-0.6B), + reclassement LLM | ⏳ `kaggle/01_benchmark` | | | |
+| Dense (Qwen3-Embedding-0.6B) | 0,479 [0,428 ; 0,531] | 0,586 | 0,261 | 0,713 |
+| BM25 contraint par le graphe | 0,569 [0,513 ; 0,626] | 0,665 | 0,330 | 0,781 |
+| Dense contraint par le graphe | 0,573 [0,521 ; 0,619] | 0,680 | 0,303 | 0,817 |
+| **Fusion BM25 + dense (RRF) contrainte par le graphe** | **0,609 [0,553 ; 0,660]** | **0,713** | **0,350** | **0,821** |
+| + reclassement LLM des 10 premiers (Qwen3-Coder) | 0,584 [0,535 ; 0,633] | 0,670 | 0,297 | 0,822 |
 
 Aucun signal ne suffit seul : le graphe sait *où* chercher (les exigences sont allouées à des composants), le
-texte sait *quel* test. Source : [`docs/results/traceability_lexical.json`](docs/results/traceability_lexical.json).
+texte sait *quel* test, et les recherches lexicale et dense échouent sur des exigences différentes. Le
+reclassement LLM point par point a *dégradé* la précision en tête de liste et coûte 10 appels par exigence : il
+n'est pas activé par défaut. Sources : [`traceability_lexical.json`](docs/results/traceability_lexical.json),
+[`bench/run2-2026-10-28`](docs/results/bench/run2-2026-10-28/README.md).
+
+### Modèles de code sur du C embarqué (`oge eval`, 27 tâches notées par exécution)
+
+| Modèle (Q4_K_M, llama.cpp, 2× T4) | Génération | Tests unitaires | Refactorisation | Documentation | Tâches réussies | Latence médiane |
+|---|---|---|---|---|---|---|
+| **Qwen3-Coder-30B-A3B** | **9 / 12** | 0 / 6 | 2 / 5 | **4 / 4** | **15 / 27** | **21 s** |
+| Devstral-Small-2-24B | 5 / 12 | 1 / 6 | 2 / 5 | 2 / 4 | 10 / 27 | 85 s |
+
+Qwen3-Coder réussit plus de tâches (7 contre 2 discordantes ; test exact de McNemar p = 0,18 — une tendance à
+cette taille d'échantillon) avec une latence quatre fois plus faible. Chaque échec a été re-noté à partir des
+sorties conservées ; les motifs comptent plus que les totaux : **8 programmes de test générés sur 12 échouent
+sur l'implémentation correcte**, parce que le modèle calcule les valeurs attendues de tête (sommes de contrôle,
+bornes de saturation) — les tests valides tuent 16 fautes injectées sur 19 ; les conventions au niveau du bit
+(COBS, Hamming(7,4), code convolutif) mettent les deux modèles en échec ; les refactorisations réduisent toujours
+la complexité, mais 4 sur 10 changent le comportement. Le code et les tests générés exigent des portes fondées
+sur l'exécution, pas seulement une relecture.
+
+### Agent de génération de tests sur F´ (28 trous de traçabilité)
+
+| Modèle | Vérifiées (v1) | Première réponse compilée | Mutants tués par les tests vérifiés | Temps médian / exigence |
+|---|---|---|---|---|
+| Qwen3-Coder-30B-A3B | 11 / 28 | 52 % | 25 / 41 | 38 s |
+| Devstral-Small-2-24B | 8 / 28 (+1 déclarée non testable) | 15 % | 21 / 32 | 113 s |
+
+Analyse des 121 tentatives échouées (classées par `failure_causes`) : **54 % viennent d'une confusion que l'agent
+lui-même entretenait** — appeler `doDispatch()` sur des composants passifs, encouragé par une suggestion
+« vouliez-vous dire » proposant une méthode absente de F´ v4 — et 8 d'un bogue du patcheur sur les définitions
+qualifiées par l'espace de noms. L'agent v2 indique la nature du composant et l'appel de dispatch exact, corrige
+le bogue, conserve le bloc qu'une réponse de réparation omet et montre le source des assertions F´ déclenchées.
+⏳ La v2 est mesurée en passe 3, sur les mêmes 28 exigences.
 
 ### Audit de traçabilité de F´ (automatique, depuis le graphe)
 

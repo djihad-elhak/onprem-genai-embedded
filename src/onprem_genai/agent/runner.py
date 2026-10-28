@@ -113,6 +113,43 @@ async def verify_with_ci(
 
 
 # ------------------------------------------------------------------------------------------- summary
+# Primary cause of a failed attempt: first matching rule, in this order (from the run-2 failure analysis).
+FAILURE_CAUSES: list[tuple[str, tuple[str, ...], str]] = [
+    (
+        "dispatch call on the wrong object or a passive component",
+        ("build",),
+        r"no member named [‘'`](?:doDispatch|dispatchAll|dispatchOne|component)[’'`]",
+    ),
+    ("namespace-qualified method definition", ("build",), r"invalid use of [‘'`]::[’'`]"),
+    ("-Werror: C-style cast or deprecated API", ("build",), r"old-style-cast|deprecated"),
+    ("other compile error", ("build",), r""),
+    ("answer missing a block", ("policy",), r"missing the ```cpp"),
+    ("reused an existing method or test name", ("policy",), r"already (?:defines|exist)"),
+    ("other policy rejection", ("policy",), r""),
+    (
+        "F´ assertion in the component (precondition broken)",
+        ("test", "regression"),
+        r"Assertion `false' failed|Assert: \"",
+    ),
+    ("wrong expected value", ("test", "regression"), r""),
+]
+
+
+def failure_causes(records: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
+    """Failed attempts by primary cause: ``{cause: {"attempts": n, "requirements": k}}``."""
+    attempts: Counter[str] = Counter()
+    reqs: dict[str, set[str]] = defaultdict(set)
+    for r in records:
+        for h in r.get("history", []):
+            stage, detail = h.get("stage"), str(h.get("detail", ""))
+            for cause, stages, pattern in FAILURE_CAUSES:
+                if stage in stages and re.search(pattern, detail):
+                    attempts[cause] += 1
+                    reqs[cause].add(r["req_id"])
+                    break
+    return {c: {"attempts": n, "requirements": len(reqs[c])} for c, n in attempts.most_common()}
+
+
 def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
     n = len(records)
     status = Counter(r["status"] for r in records)
@@ -158,6 +195,7 @@ def summarize(records: list[dict[str, Any]]) -> dict[str, Any]:
         },
         "per_module": dict(per_module),
         "gaps_closed": len(passed),
+        "failure_causes": failure_causes(records),
     }
 
 

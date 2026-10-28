@@ -1,0 +1,704 @@
+{
+  "meta": {
+    "model": "devstral-small-2-24b",
+    "label": "devstral-small-2-24b__llamacpp",
+    "engine": "llama.cpp",
+    "samples": 1,
+    "suite": "e020894c44ba",
+    "created": "2026-10-28T14:54:20+00:00"
+  },
+  "summary": {
+    "categories": {
+      "generate": {
+        "tasks": 12,
+        "pass@1": 0.4167,
+        "pass@1_ci95": [
+          0.1667,
+          0.6667
+        ],
+        "compile_rate": 0.9167,
+        "tests_pass_rate": 0.4167,
+        "sanitizer_clean_rate": 0.4167,
+        "mean_warnings": 0.0,
+        "policy_violation_rate": 0.0,
+        "request_errors": 0
+      },
+      "testgen": {
+        "tasks": 6,
+        "pass@1": 0.1667,
+        "pass@1_ci95": [
+          0.0,
+          0.5
+        ],
+        "valid_rate": 0.3333,
+        "line_coverage": 0.3333,
+        "branch_coverage": 0.3333,
+        "mutation_score": 0.3,
+        "request_errors": 0
+      },
+      "refactor": {
+        "tasks": 5,
+        "pass@1": 0.4,
+        "pass@1_ci95": [
+          0.0,
+          0.8
+        ],
+        "behaviour_preserved_rate": 0.4,
+        "ccn_max_reduction": 0.4792,
+        "goto_or_policy_violation_rate": 0.0,
+        "request_errors": 0
+      },
+      "document": {
+        "tasks": 4,
+        "pass@1": 0.5,
+        "pass@1_ci95": [
+          0.0,
+          1.0
+        ],
+        "code_unchanged_rate": 1.0,
+        "doc_completeness": 0.8729,
+        "request_errors": 0
+      }
+    },
+    "overall_pass@1": 0.3709,
+    "jobs": 27,
+    "request_errors": 0,
+    "truncated": 0,
+    "mean_latency_s": 100.0059,
+    "mean_completion_tokens": 688.9259
+  },
+  "results": [
+    {
+      "task": "doc-ccsds-parse",
+      "category": "document",
+      "sample": 0,
+      "passed": true,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": true,
+        "code_unchanged": true,
+        "doc_completeness": 1.0,
+        "missing": []
+      },
+      "latency_s": 85.377,
+      "prompt_tokens": 776,
+      "completion_tokens": 524,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\n/** @brief Parses a CCSDS Space Packet primary header from a buffer.\n *\n *  @param buf Pointer to the input buffer containing the packet header (must be at least 6 bytes).\n *  @param len Length of the input buffer in bytes (must be >= 6).\n *  @param hdr Pointer to the output structure to store the parsed header fields.\n *\n *  @return 0 on success, -1 if buf/hdr is NULL or len < 6, -2 if version field is non-zero.\n */\nint ccsds_parse_primary(const uint8_t *buf, size_t len, ccsds_primary_header_t *hdr)\n{\n    if (buf == NULL || hdr == NULL || len < 6u) {\n        return -1;\n    }\n    uint16_t w0 = (uint16_t)(((uint16_t)buf[0] << 8) | buf[1]);\n    uint16_t w1 = (uint16_t)(((uint16_t)buf[2] << 8) | buf[3]);\n    hdr->version = (uint8_t)(w0 >> 13);\n    hdr->type = (uint8_t)((w0 >> 12) & 1u);\n    hdr->sec_hdr = (uint8_t)((w0 >> 11) & 1u);\n    hdr->apid = (uint16_t)(w0 & 0x7FFu);\n    hdr->seq_flags = (uint8_t)(w1 >> 14);\n    hdr->seq_count = (uint16_t)(w1 & 0x3FFFu);\n    hdr->data_length = (uint16_t)(((uint16_t)buf[4] << 8) | buf[5]);\n    return hdr->version == 0u ? 0 : -2;\n}\n\n/** @brief Calculates the total length of a CCSDS Space Packet.\n *\n *  @param hdr Pointer to the parsed primary header structure.\n *\n *  @return Total packet length in bytes (6 + data_length + 1), where data_length is from the header.\n */\nsize_t ccsds_packet_length(const ccsds_primary_header_t *hdr) { return 6u + (size_t)hdr->data_length + 1u; }\n",
+      "logs": {}
+    },
+    {
+      "task": "doc-pid",
+      "category": "document",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": true,
+        "code_unchanged": true,
+        "doc_completeness": 0.7059,
+        "missing": [
+          {
+            "function": "clamp",
+            "missing": [
+              "brief",
+              "param:v",
+              "param:lo",
+              "param:hi",
+              "return"
+            ]
+          }
+        ]
+      },
+      "latency_s": 91.244,
+      "prompt_tokens": 707,
+      "completion_tokens": 550,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nstatic int32_t clamp(int32_t v, int32_t lo, int32_t hi)\n{\n    if (v < lo) {\n        return lo;\n    }\n    if (v > hi) {\n        return hi;\n    }\n    return v;\n}\n\n/** @brief Initialize a PID controller with given gains and output limits.\n *\n *  @param p Pointer to the PID controller structure to initialize.\n *  @param kp_q8 Proportional gain in Q8.8 fixed-point format (8.8).\n *  @param ki_q8 Integral gain in Q8.8 fixed-point format (8.8).\n *  @param kd_q8 Derivative gain in Q8.8 fixed-point format (8.8).\n *  @param out_min Minimum allowed output value.\n *  @param out_max Maximum allowed output value.\n */\nvoid pid_init(pid_t_ *p, int32_t kp_q8, int32_t ki_q8, int32_t kd_q8, int32_t out_min, int32_t out_max)\n{\n    p->kp_q8 = kp_q8;\n    p->ki_q8 = ki_q8;\n    p->kd_q8 = kd_q8;\n    p->integral = 0;\n    p->integral_limit = 100000;\n    p->prev_error = 0;\n    p->out_min = out_min;\n    p->out_max = out_max;\n}\n\n/** @brief Execute one step of the PID control loop.\n *\n *  @param p Pointer to the initialized PID controller structure.\n *  @param setpoint Desired target value (units same as measurement).\n *  @param measurement Current measured value (units same as setpoint).\n *  @return Control output value clamped to [out_min, out_max].\n */\nint32_t pid_step(pid_t_ *p, int32_t setpoint, int32_t measurement)\n{\n    int32_t error = setpoint - measurement;\n    int32_t derivative = error - p->prev_error;\n    p->integral = clamp(p->integral + error, -p->integral_limit, p->integral_limit);\n    p->prev_error = error;\n    int32_t out = (p->kp_q8 * error + p->ki_q8 * p->integral + p->kd_q8 * derivative) / 256;\n    return clamp(out, p->out_min, p->out_max);\n}\n",
+      "logs": {}
+    },
+    {
+      "task": "doc-ring-buffer",
+      "category": "document",
+      "sample": 0,
+      "passed": true,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": true,
+        "code_unchanged": true,
+        "doc_completeness": 1.0,
+        "missing": []
+      },
+      "latency_s": 88.12,
+      "prompt_tokens": 643,
+      "completion_tokens": 537,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\n/** @brief Initialize a ring buffer to empty state.\n *\n *  @param rb Pointer to ring_buffer_t to initialize.\n */\nvoid rb_init(ring_buffer_t *rb)\n{\n    rb->head = 0u;\n    rb->tail = 0u;\n    rb->count = 0u;\n}\n\n/** @brief Push a byte into the ring buffer.\n *\n *  @param rb Pointer to ring_buffer_t to push into.\n *  @param byte Byte value to store.\n *  @return true if byte was stored, false if buffer was full.\n */\nbool rb_push(ring_buffer_t *rb, uint8_t byte)\n{\n    if (rb->count >= RB_CAPACITY) {\n        return false;\n    }\n    rb->data[rb->head] = byte;\n    rb->head = (rb->head + 1u) % RB_CAPACITY;\n    rb->count++;\n    return true;\n}\n\n/** @brief Pop a byte from the ring buffer.\n *\n *  @param rb Pointer to ring_buffer_t to pop from.\n *  @param[out] out Pointer to store popped byte (untouched on failure).\n *  @return true if byte was retrieved, false if buffer was empty.\n */\nbool rb_pop(ring_buffer_t *rb, uint8_t *out)\n{\n    if (rb->count == 0u) {\n        return false;\n    }\n    *out = rb->data[rb->tail];\n    rb->tail = (rb->tail + 1u) % RB_CAPACITY;\n    rb->count--;\n    return true;\n}\n\n/** @brief Get current number of bytes in the ring buffer.\n *\n *  @param rb Pointer to ring_buffer_t to query.\n *  @return Number of bytes currently stored (0 to RB_CAPACITY).\n */\nsize_t rb_count(const ring_buffer_t *rb) { return rb->count; }\n\n/** @brief Push multiple bytes into the ring buffer.\n *\n *  @param rb Pointer to ring_buffer_t to push into.\n *  @param src Pointer to array of bytes to store.\n *  @param n Number of bytes to attempt to store.\n *  @return Number of bytes actually stored (0 to n).\n */\nsize_t rb_push_many(ring_buffer_t *rb, const uint8_t *src, size_t n)\n{\n    size_t stored = 0u;\n    while (stored < n && rb_push(rb, src[stored])) {\n        stored++;\n    }\n    return stored;\n}\n",
+      "logs": {}
+    },
+    {
+      "task": "doc-saturating-arith",
+      "category": "document",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": true,
+        "code_unchanged": true,
+        "doc_completeness": 0.7857,
+        "missing": [
+          {
+            "function": "clamp16",
+            "missing": [
+              "brief",
+              "param:v",
+              "return"
+            ]
+          }
+        ]
+      },
+      "latency_s": 73.73,
+      "prompt_tokens": 506,
+      "completion_tokens": 451,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nstatic int16_t clamp16(int32_t v)\n{\n    if (v > INT16_MAX) {\n        return INT16_MAX;\n    }\n    if (v < INT16_MIN) {\n        return INT16_MIN;\n    }\n    return (int16_t)v;\n}\n\n/** @brief Performs saturating addition of two 16-bit signed integers.\n *\n *  @param a First operand in range [INT16_MIN, INT16_MAX].\n *  @param b Second operand in range [INT16_MIN, INT16_MAX].\n *  @return Result of a + b clamped to [INT16_MIN, INT16_MAX].\n */\nint16_t sat_add16(int16_t a, int16_t b) { return clamp16((int32_t)a + (int32_t)b); }\n\n/** @brief Performs saturating subtraction of two 16-bit signed integers.\n *\n *  @param a First operand in range [INT16_MIN, INT16_MAX].\n *  @param b Second operand in range [INT16_MIN, INT16_MAX].\n *  @return Result of a - b clamped to [INT16_MIN, INT16_MAX].\n */\nint16_t sat_sub16(int16_t a, int16_t b) { return clamp16((int32_t)a - (int32_t)b); }\n\n/** @brief Performs saturating absolute value of a 16-bit signed integer.\n *\n *  @param a Input value in range [INT16_MIN, INT16_MAX].\n *  @return Absolute value of a clamped to [INT16_MIN, INT16_MAX].\n *  @note sat_abs16(INT16_MIN) returns INT16_MAX to avoid overflow.\n */\nint16_t sat_abs16(int16_t a) { return clamp16(a < 0 ? -(int32_t)a : (int32_t)a); }\n",
+      "logs": {}
+    },
+    {
+      "task": "gen-ccsds-header",
+      "category": "generate",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": false,
+        "warnings": 0,
+        "sanitizer_clean": false,
+        "violations": []
+      },
+      "latency_s": 98.46,
+      "prompt_tokens": 534,
+      "completion_tokens": 670,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nint ccsds_parse_primary(const uint8_t *buf, size_t len, ccsds_primary_header_t *hdr) {\n    if (buf == NULL || hdr == NULL || len < 6) {\n        return -1;\n    }\n\n    uint32_t header = ((uint32_t)buf[0] << 24) | ((uint32_t)buf[1] << 16) |\n                      ((uint32_t)buf[2] << 8)  | ((uint32_t)buf[3] << 0);\n\n    hdr->version = (header >> 30) & 0x7;\n    hdr->type = (header >> 29) & 0x1;\n    hdr->sec_hdr = (header >> 28) & 0x1;\n    hdr->apid = (header >> 17) & 0x7FF;\n    hdr->seq_flags = (header >> 15) & 0x3;\n    hdr->seq_count = (header >> 1) & 0x3FFF;\n    hdr->data_length = ((uint16_t)buf[4] << 8) | buf[5];\n\n    if (hdr->version != 0) {\n        return -2;\n    }\n\n    return 0;\n}\n\nsize_t ccsds_packet_length(const ccsds_primary_header_t *hdr) {\n    return 6 + hdr->data_length + 1;\n}\n\nint ccsds_build_primary(const ccsds_primary_header_t *hdr, uint8_t out[6]) {\n    if (hdr->version > 7 || hdr->type > 1 || hdr->sec_hdr > 1 ||\n        hdr->apid > 2047 || hdr->seq_flags > 3 || hdr->seq_count > 16383) {\n        return -1;\n    }\n\n    uint32_t header = ((hdr->version & 0x7) << 30) | ((hdr->type & 0x1) << 29) |\n                      ((hdr->sec_hdr & 0x1) << 28) | ((hdr->apid & 0x7FF) << 17) |\n                      ((hdr->seq_flags & 0x3) << 15) | ((hdr->seq_count & 0x3FFF) << 1);\n\n    out[0] = (header >> 24) & 0xFF;\n    out[1] = (header >> 16) & 0xFF;\n    out[2] = (header >> 8) & 0xFF;\n    out[3] = header & 0xFF;\n    out[4] = (hdr->data_length >> 8) & 0xFF;\n    out[5] = hdr->data_length & 0xFF;\n\n    return 0;\n}\n",
+      "logs": {
+        "run": "/tmp/oge-eval-ym4owcex/plain/tests.c:9: h.seq_flags == 3 failed: 0x1 != 0x3\n/tmp/oge-eval-ym4owcex/plain/tests.c:9: h.seq_count == 0 failed: 0x2000 != 0x0\n/tmp/oge-eval-ym4owcex/plain/tests.c:14: h.type == 1 failed: 0x0 != 0x1\n/tmp/oge-eval-ym4owcex/plain/tests.c:17: memory differs: back vs raw\n/tmp/oge-eval-ym4owcex/plain/tests.c:20: h.sec_hdr == 1 failed: 0x0 != 0x1\n/tmp/oge-eval-ym4owcex/plain/tests.c:21: h.apid == 291 failed: 0x491 != 0x123\n/tmp/oge-eval-ym4owcex/plain/tests.c:21: h.seq_flags == 1 failed: 0x2 != 0x1\n/tmp/oge-eval-ym4owcex/plain/tests.c:21: h.seq_count == 677 failed: 0x2152 != 0x2a5\n/tmp/oge-eval-ym4owcex/plain/tests.c:23: memory differs: back vs raw\n/tmp/oge-eval-ym4owcex/plain/tests.c:26: h.type == 1 failed: 0x0 != 0x1\n/tmp/oge-eval-ym4owcex/plain/tests.c:26: h.sec_hdr == 0 failed: 0x1 != 0x0\n/tmp/oge-eval-ym4owcex/plain/tests.c:27: h.apid == 90 failed: 0x2d != 0x5a\n/tmp/oge-eval-ym4owcex/plain/tests.c:27: h.seq_flags == 2 failed: 0x1 != 0x2\n/tmp/oge-eval-ym4owcex/plain/tests.c:27: h.seq_count == 4097 failed: 0x800 != 0x1001\n/tmp/oge-eval-ym4owcex/plain/tests.c:29: memory differs: back vs raw\n/tmp/oge-eval-ym4owcex/plain/tests.c:34: ccsds_parse_primary(v1, 6, &h) == -2 failed: 0 != -2\n"
+      }
+    },
+    {
+      "task": "gen-cobs",
+      "category": "generate",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": false,
+        "warnings": 0,
+        "sanitizer_clean": false,
+        "violations": []
+      },
+      "latency_s": 58.82,
+      "prompt_tokens": 417,
+      "completion_tokens": 402,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nsize_t cobs_encode(const uint8_t *src, size_t len, uint8_t *dst)\n{\n    size_t i = 0;\n    size_t code_pos = 0;\n    size_t code_value = 1;\n\n    while (i < len) {\n        if (src[i] == 0) {\n            dst[code_pos] = code_value;\n            code_pos = i + 1;\n            code_value = 1;\n        } else {\n            dst[i + 1] = src[i];\n            code_value++;\n            if (code_value == 255) {\n                dst[code_pos] = code_value;\n                code_pos = i + 2;\n                code_value = 1;\n            }\n        }\n        i++;\n    }\n\n    dst[code_pos] = code_value;\n    return len + (len / 254) + 1;\n}\n\nsize_t cobs_decode(const uint8_t *src, size_t len, uint8_t *dst)\n{\n    if (len == 0) {\n        return 0;\n    }\n\n    size_t i = 0;\n    size_t dst_pos = 0;\n    size_t code_byte = src[i];\n    size_t remaining = code_byte;\n\n    i++;\n\n    while (i < len) {\n        if (remaining == 1) {\n            if (src[i] == 0) {\n                return 0;\n            }\n            dst[dst_pos++] = src[i];\n            code_byte = src[i];\n            remaining = code_byte;\n            i++;\n        } else {\n            if (src[i] == 0) {\n                return 0;\n            }\n            dst[dst_pos++] = src[i];\n            remaining--;\n            i++;\n        }\n    }\n\n    if (remaining != 1 || i != len) {\n        return 0;\n    }\n\n    return dst_pos;\n}\n",
+      "logs": {
+        "run": "memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n/tmp/oge-eval-ia9erhd9/plain/tests.c:75: memory differs: dec vs in\n"
+      }
+    },
+    {
+      "task": "gen-conv-encoder",
+      "category": "generate",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": false,
+        "warnings": 0,
+        "sanitizer_clean": false,
+        "violations": []
+      },
+      "latency_s": 58.804,
+      "prompt_tokens": 433,
+      "completion_tokens": 403,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nsize_t conv_encode(const uint8_t *in, size_t nbits, uint8_t *out)\n{\n    uint8_t state = 0; /* p2 p1 u */\n    size_t out_bits = 0;\n    size_t out_byte = 0;\n    uint8_t out_accum = 0;\n\n    for (size_t i = 0; i < nbits; ++i)\n    {\n        /* Extract current input bit (MSB first) */\n        uint8_t u = (in[i / 8] >> (7 - (i % 8))) & 1;\n\n        /* Compute output bits */\n        uint8_t out0 = u ^ ((state >> 1) & 1) ^ (state & 1);\n        uint8_t out1 = u ^ ((state >> 2) & 1);\n\n        /* Pack output bits into output array (MSB first) */\n        out_accum = (out_accum << 1) | out0;\n        ++out_bits;\n        if (out_bits % 8 == 0)\n        {\n            out[out_byte++] = out_accum;\n            out_accum = 0;\n        }\n\n        out_accum = (out_accum << 1) | out1;\n        ++out_bits;\n        if (out_bits % 8 == 0)\n        {\n            out[out_byte++] = out_accum;\n            out_accum = 0;\n        }\n\n        /* Update state (shift in new bit, drop oldest) */\n        state = (state << 1) | u;\n    }\n\n    /* Handle remaining bits in the last byte */\n    if (out_bits % 8 != 0)\n    {\n        out_accum <<= (8 - (out_bits % 8));\n        out[out_byte] = out_accum;\n    }\n\n    return out_bits;\n}\n",
+      "logs": {
+        "run": "/tmp/oge-eval-hfq_f6im/plain/tests.c:12: memory differs: out vs ex\n/tmp/oge-eval-hfq_f6im/plain/tests.c:15: memory differs: out vs ex\n/tmp/oge-eval-hfq_f6im/plain/tests.c:18: memory differs: out vs ex\n"
+      }
+    },
+    {
+      "task": "gen-crc16-ccitt",
+      "category": "generate",
+      "sample": 0,
+      "passed": true,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": true,
+        "warnings": 0,
+        "sanitizer_clean": true,
+        "violations": []
+      },
+      "latency_s": 305.655,
+      "prompt_tokens": 436,
+      "completion_tokens": 2155,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nstatic const uint16_t crc16_table[256] = {\n    0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,\n    0x8108, 0x9129, 0xA14A, 0xB16B, 0xC18C, 0xD1AD, 0xE1CE, 0xF1EF,\n    0x1231, 0x0210, 0x3273, 0x2252, 0x52B5, 0x4294, 0x72F7, 0x62D6,\n    0x9339, 0x8318, 0xB37B, 0xA35A, 0xD3BD, 0xC39C, 0xF3FF, 0xE3DE,\n    0x2462, 0x3443, 0x0420, 0x1401, 0x64E6, 0x74C7, 0x44A4, 0x5485,\n    0xA56A, 0xB54B, 0x8528, 0x9509, 0xE5EE, 0xF5CF, 0xC5AC, 0xD58D,\n    0x3653, 0x2672, 0x1611, 0x0630, 0x76D7, 0x66F6, 0x5695, 0x46B4,\n    0xB75B, 0xA77A, 0x9719, 0x8738, 0xF7DF, 0xE7FE, 0xD79D, 0xC7BC,\n    0x48C4, 0x58E5, 0x6886, 0x78A7, 0x0840, 0x1861, 0x2802, 0x3823,\n    0xC9CC, 0xD9ED, 0xE98E, 0xF9AF, 0x8948, 0x9969, 0xA90A, 0xB92B,\n    0x5AF5, 0x4AD4, 0x7AB7, 0x6A96, 0x1A71, 0x0A50, 0x3A33, 0x2A12,\n    0xDBFD, 0xCBDC, 0xFBBF, 0xEB9E, 0x9B79, 0x8B58, 0xBB3B, 0xAB1A,\n    0x6CA6, 0x7C87, 0x4CE4, 0x5CC5, 0x2C22, 0x3C03, 0x0C60, 0x1C41,\n    0xEDAE, 0xFD8F, 0xCDEC, 0xDDCD, 0xAD2A, 0xBD0B, 0x8D68, 0x9D49,\n    0x7E97, 0x6EB6, 0x5ED5, 0x4EF4, 0x3E13, 0x2E32, 0x1E51, 0x0E70,\n    0xFF9F, 0xEFBE, 0xDFDD, 0xCFFC, 0xBF1B, 0xAF3A, 0x9F59, 0x8F78,\n    0x9188, 0x81A9, 0xB1CA, 0xA1EB, 0xD10C, 0xC12D, 0xF14E, 0xE16F,\n    0x1080, 0x00A1, 0x30C2, 0x20E3, 0x5004, 0x4025, 0x7046, 0x6067,\n    0x83B9, 0x9398, 0xA3FB, 0xB3DA, 0xC33D, 0xD31C, 0xE37F, 0xF35E,\n    0x02B1, 0x1290, 0x22F3, 0x32D2, 0x4235, 0x5214, 0x6277, 0x7256,\n    0xB5EA, 0xA5CB, 0x95A8, 0x8589, 0xF56E, 0xE54F, 0xD52C, 0xC50D,\n    0x34E2, 0x24C3, 0x14A0, 0x0481, 0x7466, 0x6447, 0x5424, 0x4405,\n    0xA7DB, 0xB7FA, 0x8799, 0x97B8, 0xE75F, 0xF77E, 0xC71D, 0xD73C,\n    0x26D3, 0x36F2, 0x0691, 0x16B0, 0x6657, 0x7676, 0x4615, 0x5634,\n    0xD94C, 0xC96D, 0xF90E, 0xE92F, 0x99C8, 0x89E9, 0xB98A, 0xA9AB,\n    0x5844, 0x4865, 0x7806, 0x6827, 0x18C0, 0x08E1, 0x3882, 0x28A3,\n    0xCB7D, 0xDB5C, 0xEB3F, 0xFB1E, 0x8BF9, 0x9BD8, 0xABBB, 0xBB9A,\n    0x4A75, 0x5A54, 0x6A37, 0x7A16, 0x0AF1, 0x1AD0, 0x2AB3, 0x3A92,\n    0xFD2E, 0xED0F, 0xDD6C, 0xCD4D, 0xBDAA, 0xAD8B, 0x9DE8, 0x8DC9,\n    0x7C26, 0x6C07, 0x5C64, 0x4C45, 0x3CA2, 0x2C83, 0x1CE0, 0x0CC1,\n    0xEF1F, 0xFF3E, 0xCF5D, 0xDF7C, 0xAF9B, 0xBFBA, 0x8FD9, 0x9FF8,\n    0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0\n};\n\nuint16_t crc16_ccitt_false(const uint8_t *data, size_t len) {\n    return crc16_ccitt_update(0xFFFF, data, len);\n}\n\nuint16_t crc16_ccitt_update(uint16_t crc, const uint8_t *data, size_t len) {\n    for (size_t i = 0; i < len; ++i) {\n        crc = (crc << 8) ^ crc16_table[((crc >> 8) ^ data[i]) & 0xFF];\n    }\n    return crc;\n}\n",
+      "logs": {}
+    },
+    {
+      "task": "gen-crc32",
+      "category": "generate",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": false,
+        "warnings": 0,
+        "sanitizer_clean": false,
+        "violations": []
+      },
+      "latency_s": 447.683,
+      "prompt_tokens": 435,
+      "completion_tokens": 3095,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nstatic const uint32_t crc32_table[256] = {\n    0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F,\n    0xE963A535, 0x9E6495A3, 0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988,\n    0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91, 0x1DB71064, 0x6AB020F2,\n    0xF3B97148, 0x84BE41DE, 0x1ADAD47D, 0x6DDDE4EB, 0xF4D4B551, 0x83D385C7,\n    0x136C9856, 0x646BA8C0, 0xFD62F97A, 0x8A65C9EC, 0x14015C4F, 0x63066CD9,\n    0xFA0F3D63, 0x8D080DF5, 0x3B6E20C8, 0x4C69105E, 0xD56041E4, 0xA2677172,\n    0x3C03E4D1, 0x4B04D447, 0xD20D85FD, 0xA50AB56B, 0x35B5A8FA, 0x42B2986C,\n    0xDBBBC9D6, 0xACBCF940, 0x32D86CE3, 0x45DF5C75, 0xDCD60DCF, 0xABD13D59,\n    0x26D930AC, 0x51DE003A, 0xC8D75180, 0xBFD06116, 0x21B4F4B5, 0x56B3C423,\n    0xCFBA9599, 0xB8BDA50F, 0x2802B89E, 0x5F058808, 0xC60CD9B2, 0xB10BE924,\n    0x2F6F7C87, 0x58684C11, 0xC1611DAB, 0xB6662D3D, 0x76DC4190, 0x01DB7106,\n    0x98D220BC, 0xEFD5102A, 0x71B18589, 0x06B6B51F, 0x9FBFE4A5, 0xE8B8D433,\n    0x7807C9A2, 0x0F00F934, 0x9609A88E, 0xE10E9818, 0x7F6A0DBB, 0x086D3D2D,\n    0x91646C97, 0xE6635C01, 0x6B6B51F4, 0x1C6C6162, 0x856530D8, 0xF262004E,\n    0x6C0695ED, 0x1B01A57B, 0x8208F4C1, 0xF50FC457, 0x65B0D9C6, 0x12B7E950,\n    0x8BBEB8EA, 0xFCB9887C, 0x62DD1DDF, 0x15DA2D49, 0x8CD37CF3, 0xFBD44C65,\n    0x4DB26158, 0x3AB551CE, 0xA3BC0074, 0xD4BB30E2, 0x4ADFA541, 0x3DD895D7,\n    0xA4D1C46D, 0xD3D6F4FB, 0x4369E96A, 0x346ED9FC, 0xAD678846, 0xDA60B8D0,\n    0x44042D73, 0x33031DE5, 0xAA0A4C5F, 0xDD0D7CC9, 0x5005713C, 0x270241AA,\n    0xBE0B1010, 0xC90C2086, 0x5768B525, 0x206F85B3, 0xB966D409, 0xCE61E49F,\n    0x5EDEF90E, 0x29D9C998, 0xB0D09822, 0xC7D7A8B4, 0x59B33D17, 0x2EB40D81,\n    0xB7BD5C3B, 0xC0BA6CAD, 0xEDB88320, 0x9ABFB3B6, 0x03B6E20C, 0x74B1D29A,\n    0xEAD54739, 0x9DD277AF, 0x04DB2615, 0x73DC1683, 0xE3630B12, 0x94643B84,\n    0x0D6D6A3E, 0x7A6A5AA8, 0xE40ECF0B, 0x9309FF9D, 0x0A00AE27, 0x7D079EB1,\n    0xF00F9344, 0x8708A3D2, 0x1E01F268, 0x6906C2FE, 0xF762575D, 0x806567CB,\n    0x196C3671, 0x6E6B06E7, 0xFED41B76, 0x89D32BE0, 0x10DA7A5A, 0x67DD4ACC,\n    0xF9B9DF6F, 0x8EBEEFF9, 0x17B7BE43, 0x60B08ED5, 0xD6D6A3E8, 0xA1D1937E,\n    0x38D8C2C4, 0x4FDFF252, 0xD1BB67F1, 0xA6BC5767, 0x3FB506DD, 0x48B2364B,\n    0xD80D2BDA, 0xAF0A1B4C, 0x36034AF6, 0x41047A60, 0xDF60EFC3, 0xA867DF55,\n    0x316E8EEF, 0x4669BE79, 0xCB61B38C, 0xBC66831A, 0x256FD2A0, 0x5268E236,\n    0xCC0C7795, 0xBB0B4703, 0x220216B9, 0x5505262F, 0xC5BA3BBE, 0xB2BD0B28,\n    0x2BB45A92, 0x5CB36A04, 0xC2D7FFA7, 0xB5D0CF31, 0x2CD99E8B, 0x5BDEAE1D,\n    0x9B64C2B0, 0xEC63F226, 0x756AA39C, 0x026D930A, 0x9C0906A9, 0xEB0E363F,\n    0x72076785, 0x05005713, 0x95BF4A82, 0xE2B87A14, 0x7BB12BAE, 0x0CB61B38,\n    0x92D28E9B, 0xE5D5BE0D, 0x7CDCEFB7, 0x0BDBDF21, 0x86D3D2D4, 0xF1D4E242,\n    0x68DDB3F8, 0x1FDA836E, 0x81BE16CD, 0xF6B9265B, 0x6FB077E1, 0x18B74777,\n    0x88085AE6, 0xFF0F6A70, 0x66063BCA, 0x11010B5C, 0x8F659EFF, 0xF862AE69,\n    0x616BFFD3, 0x166CCF45, 0xA00AE278, 0xD70DD2EE, 0x4E048354, 0x3903B3C2,\n    0xA7672661, 0xD06016F7, 0x4969474D, 0x3E6E77DB, 0xAED16A4A, 0xD9D65ADC,\n    0x40DF0B66, 0x37D83BF0, 0xA9BCAE53, 0xDEBB9EC5, 0x47B2CF7F, 0x30B5FFE9,\n    0xBDBDF21C, 0xCABAC28A, 0x53B39330, 0x24B4A3A6, 0xBAD03605, 0xCDD70693,\n    0x54DE5729, 0x23D967BF, 0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94,\n    0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D\n};\n\nuint32_t crc32_ieee(const uint8_t *data, size_t len) {\n    return crc32_ieee_update(0xFFFFFFFF, data, len) ^ 0xFFFFFFFF;\n}\n\nuint32_t crc32_ieee_update(uint32_t crc, const uint8_t *data, size_t len) {\n    crc ^= 0xFFFFFFFF;\n    for (size_t i = 0; i < len; ++i) {\n        crc = crc32_table[(crc ^ data[i]) & 0xFF] ^ (crc >> 8);\n    }\n    return crc ^ 0xFFFFFFFF;\n}\n",
+      "logs": {
+        "run": "/tmp/oge-eval-kj07lrz8/plain/tests.c:6: crc32_ieee(d, 9) == 0xCBF43926u failed: 0x2dfd2d88 != 0xcbf43926\n/tmp/oge-eval-kj07lrz8/plain/tests.c:8: crc32_ieee(d, 1) == 0xE8B7BE43u failed: 0x3ab551ce != 0xe8b7be43\n/tmp/oge-eval-kj07lrz8/plain/tests.c:9: crc32_ieee(d, 43) == 0x414FA339u failed: 0xb9c60808 != 0x414fa339\n/tmp/oge-eval-kj07lrz8/plain/tests.c:10: crc32_ieee(d, 256) == 0x29058C73u failed: 0x2493092b != 0x29058c73\n/tmp/oge-eval-kj07lrz8/plain/tests.c:15: c == 0xCBF43926u failed: 0x9c3f8c2b != 0xcbf43926\n"
+      }
+    },
+    {
+      "task": "gen-debounce",
+      "category": "generate",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": false,
+        "tests_passed": false,
+        "warnings": 0,
+        "sanitizer_clean": false,
+        "violations": []
+      },
+      "latency_s": 21.68,
+      "prompt_tokens": 296,
+      "completion_tokens": 159,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nvoid debounce_init(debounce_t *d, bool initial)\n{\n    if (d != NULL)\n    {\n        d->state = initial;\n        d->count = 0u;\n    }\n}\n\nbool debounce_update(debounce_t *d, bool raw)\n{\n    if (d == NULL)\n    {\n        return false;\n    }\n\n    if (raw == d->state)\n    {\n        d->count = 0u;\n    }\n    else\n    {\n        d->count++;\n        if (d->count >= DEBOUNCE_SAMPLES)\n        {\n            d->state = raw;\n            d->count = 0u;\n        }\n    }\n\n    return d->state;\n}\n",
+      "logs": {
+        "compile": "/tmp/oge-eval-exm4ysvi/plain/solution.c: In function \u2018debounce_init\u2019:\n/tmp/oge-eval-exm4ysvi/plain/solution.c:5:14: error: \u2018NULL\u2019 undeclared (first use in this function)\n    5 |     if (d != NULL)\n      |              ^~~~\n/tmp/oge-eval-exm4ysvi/plain/solution.c:2:1: note: \u2018NULL\u2019 is defined in header \u2018<stddef.h>\u2019; did you forget to \u2018#include <stddef.h>\u2019?\n    1 | #include \"task.h\"\n  +++ |+#include <stddef.h>\n    2 | \n/tmp/oge-eval-exm4ysvi/plain/solution.c:5:14: note: each undeclared identifier is reported only once for each function it appears in\n    5 |     if (d != NULL)\n      |              ^~~~\n/tmp/oge-eval-exm4ysvi/plain/solution.c: In function \u2018debounce_update\u2019:\n/tmp/oge-eval-exm4ysvi/plain/solution.c:14:14: error: \u2018NULL\u2019 undeclared (first use in this function)\n   14 |     if (d == NULL)\n      |              ^~~~\n/tmp/oge-eval-exm4ysvi/plain/solution.c:14:14: note: \u2018NULL\u2019 is defined in header \u2018<stddef.h>\u2019; did you forget to \u2018#include <stddef.h>\u2019?\n"
+      }
+    },
+    {
+      "task": "gen-endian-codec",
+      "category": "generate",
+      "sample": 0,
+      "passed": true,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": true,
+        "warnings": 0,
+        "sanitizer_clean": true,
+        "violations": []
+      },
+      "latency_s": 61.301,
+      "prompt_tokens": 299,
+      "completion_tokens": 439,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nuint16_t read_be16(const uint8_t *p)\n{\n    return ((uint16_t)p[0] << 8) | p[1];\n}\n\nuint32_t read_be32(const uint8_t *p)\n{\n    return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) | p[3];\n}\n\nuint16_t read_le16(const uint8_t *p)\n{\n    return ((uint16_t)p[1] << 8) | p[0];\n}\n\nuint32_t read_le32(const uint8_t *p)\n{\n    return ((uint32_t)p[3] << 24) | ((uint32_t)p[2] << 16) | ((uint32_t)p[1] << 8) | p[0];\n}\n\nvoid write_be16(uint8_t *p, uint16_t v)\n{\n    p[0] = (uint8_t)(v >> 8);\n    p[1] = (uint8_t)(v >> 0);\n}\n\nvoid write_be32(uint8_t *p, uint32_t v)\n{\n    p[0] = (uint8_t)(v >> 24);\n    p[1] = (uint8_t)(v >> 16);\n    p[2] = (uint8_t)(v >> 8);\n    p[3] = (uint8_t)(v >> 0);\n}\n\nvoid write_le32(uint8_t *p, uint32_t v)\n{\n    p[0] = (uint8_t)(v >> 0);\n    p[1] = (uint8_t)(v >> 8);\n    p[2] = (uint8_t)(v >> 16);\n    p[3] = (uint8_t)(v >> 24);\n}\n",
+      "logs": {}
+    },
+    {
+      "task": "gen-hamming74",
+      "category": "generate",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": false,
+        "warnings": 0,
+        "sanitizer_clean": false,
+        "violations": []
+      },
+      "latency_s": 83.062,
+      "prompt_tokens": 415,
+      "completion_tokens": 596,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nuint8_t hamming74_encode(uint8_t nibble) {\n    uint8_t codeword = nibble & 0x0F;\n    uint8_t p1 = __builtin_parity(codeword & 0x55) ^ ((codeword >> 2) & 1);\n    uint8_t p2 = __builtin_parity(codeword & 0x66) ^ ((codeword >> 1) & 1);\n    uint8_t p3 = __builtin_parity(codeword & 0x77) ^ (codeword & 1);\n    return (p1 << 6) | (p2 << 5) | (p3 << 3) | codeword;\n}\n\nint hamming74_decode(uint8_t codeword, uint8_t *nibble) {\n    uint8_t p1 = (codeword >> 6) & 1;\n    uint8_t p2 = (codeword >> 5) & 1;\n    uint8_t p3 = (codeword >> 3) & 1;\n    uint8_t d1 = (codeword >> 2) & 1;\n    uint8_t d2 = (codeword >> 1) & 1;\n    uint8_t d3 = codeword & 1;\n    uint8_t d4 = (codeword >> 4) & 1;\n\n    uint8_t received_p1 = __builtin_parity(d1 | d3 | d4);\n    uint8_t received_p2 = __builtin_parity(d1 | d2 | d4);\n    uint8_t received_p3 = __builtin_parity(d2 | d3 | d4);\n\n    uint8_t error_pos = 0;\n    if (received_p1 != p1) error_pos |= 1;\n    if (received_p2 != p2) error_pos |= 2;\n    if (received_p3 != p3) error_pos |= 4;\n\n    if (error_pos == 0) {\n        *nibble = (d1 << 3) | (d2 << 2) | (d3 << 1) | d4;\n        return 0;\n    } else if (error_pos <= 7) {\n        codeword ^= (1 << (7 - error_pos));\n        *nibble = ((codeword >> 2) & 1) << 3 |\n                  ((codeword >> 1) & 1) << 2 |\n                  (codeword & 1) << 1 |\n                  ((codeword >> 4) & 1);\n        return 1;\n    } else {\n        *nibble = 0;\n        return 0;\n    }\n}\n",
+      "logs": {
+        "run": "t == n failed: 0xd != 0xe\n/tmp/oge-eval-_yq7y71j/plain/tests.c:17: out == n failed: 0xd != 0xe\n/tmp/oge-eval-_yq7y71j/plain/tests.c:16: hamming74_decode((uint8_t)(cw ^ (1u << bit)), &out) == 1 failed: 0x0 != 0x1\n/tmp/oge-eval-_yq7y71j/plain/tests.c:17: out == n failed: 0xc != 0xe\n/tmp/oge-eval-_yq7y71j/plain/tests.c:11: cw == expected[n] failed: 0x6f != 0x7f\n/tmp/oge-eval-_yq7y71j/plain/tests.c:13: out == n failed: 0xe != 0xf\n/tmp/oge-eval-_yq7y71j/plain/tests.c:16: hamming74_decode((uint8_t)(cw ^ (1u << bit)), &out) == 1 failed: 0x0 != 0x1\n/tmp/oge-eval-_yq7y71j/plain/tests.c:17: out == n failed: 0xc != 0xf\n/tmp/oge-eval-_yq7y71j/plain/tests.c:16: hamming74_decode((uint8_t)(cw ^ (1u << bit)), &out) == 1 failed: 0x0 != 0x1\n/tmp/oge-eval-_yq7y71j/plain/tests.c:17: out == n failed: 0xa != 0xf\n/tmp/oge-eval-_yq7y71j/plain/tests.c:16: hamming74_decode((uint8_t)(cw ^ (1u << bit)), &out) == 1 failed: 0x0 != 0x1\n/tmp/oge-eval-_yq7y71j/plain/tests.c:17: out == n failed: 0x6 != 0xf\n/tmp/oge-eval-_yq7y71j/plain/tests.c:17: out == n failed: 0xe != 0xf\n/tmp/oge-eval-_yq7y71j/plain/tests.c:16: hamming74_decode((uint8_t)(cw ^ (1u << bit)), &out) == 1 failed: 0x0 != 0x1\n/tmp/oge-eval-_yq7y71j/plain/tests.c:17: out == n failed: 0xe != 0xf\n/tmp/oge-eval-_yq7y71j/plain/tests.c:17: out == n failed: 0xe != 0xf\n/tmp/oge-eval-_yq7y71j/plain/tests.c:23: hamming74_decode((uint8_t)(0x80 | expected[5]), &out) == 0 failed: 0x1 != 0x0\n/tmp/oge-eval-_yq7y71j/plain/tests.c:24: out == 5 failed: 0x2 != 0x5\n"
+      }
+    },
+    {
+      "task": "gen-lfsr-scrambler",
+      "category": "generate",
+      "sample": 0,
+      "passed": true,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": true,
+        "warnings": 0,
+        "sanitizer_clean": true,
+        "violations": []
+      },
+      "latency_s": 36.251,
+      "prompt_tokens": 464,
+      "completion_tokens": 252,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nvoid scrambler_init(scrambler_t *s, uint8_t seed) {\n    if (seed == 0) {\n        s->state = 0x7F;\n    } else {\n        s->state = seed & 0x7F;\n    }\n}\n\nvoid scrambler_apply(scrambler_t *s, const uint8_t *in, uint8_t *out, size_t len) {\n    for (size_t i = 0; i < len; i++) {\n        uint8_t in_byte = in[i];\n        uint8_t out_byte = 0;\n        for (int bit = 0; bit < 8; bit++) {\n            uint8_t fb = ((s->state >> 6) ^ (s->state >> 3)) & 1;\n            uint8_t b = (in_byte >> bit) & 1;\n            uint8_t out_bit = b ^ fb;\n            out_byte |= out_bit << bit;\n            s->state = ((s->state << 1) | fb) & 0x7F;\n        }\n        out[i] = out_byte;\n    }\n}\n",
+      "logs": {}
+    },
+    {
+      "task": "gen-q15-arith",
+      "category": "generate",
+      "sample": 0,
+      "passed": true,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": true,
+        "warnings": 0,
+        "sanitizer_clean": true,
+        "violations": []
+      },
+      "latency_s": 30.965,
+      "prompt_tokens": 376,
+      "completion_tokens": 213,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nq15_t q15_add_sat(q15_t a, q15_t b) {\n    int32_t sum = (int32_t)a + b;\n    if (sum < -32768) return -32768;\n    if (sum > 32767) return 32767;\n    return (q15_t)sum;\n}\n\nq15_t q15_mul(q15_t a, q15_t b) {\n    int32_t product = (int32_t)a * b;\n    int32_t rounded = (product + 16384) >> 15;\n    if (rounded < -32768) return -32768;\n    if (rounded > 32767) return 32767;\n    return (q15_t)rounded;\n}\n",
+      "logs": {}
+    },
+    {
+      "task": "gen-ring-buffer",
+      "category": "generate",
+      "sample": 0,
+      "passed": true,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": true,
+        "warnings": 0,
+        "sanitizer_clean": true,
+        "violations": []
+      },
+      "latency_s": 42.935,
+      "prompt_tokens": 403,
+      "completion_tokens": 304,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nvoid rb_init(ring_buffer_t *rb)\n{\n    rb->head = 0;\n    rb->tail = 0;\n    rb->count = 0;\n}\n\nbool rb_push(ring_buffer_t *rb, uint8_t byte)\n{\n    if (rb->count >= RB_CAPACITY)\n    {\n        return false;\n    }\n\n    rb->data[rb->head] = byte;\n    rb->head = (rb->head + 1) % RB_CAPACITY;\n    rb->count++;\n    return true;\n}\n\nbool rb_pop(ring_buffer_t *rb, uint8_t *out)\n{\n    if (rb->count == 0)\n    {\n        return false;\n    }\n\n    *out = rb->data[rb->tail];\n    rb->tail = (rb->tail + 1) % RB_CAPACITY;\n    rb->count--;\n    return true;\n}\n\nsize_t rb_count(const ring_buffer_t *rb)\n{\n    return rb->count;\n}\n\nbool rb_is_full(const ring_buffer_t *rb)\n{\n    return rb->count >= RB_CAPACITY;\n}\n\nsize_t rb_push_many(ring_buffer_t *rb, const uint8_t *src, size_t n)\n{\n    size_t stored = 0;\n    while (stored < n && rb_push(rb, src[stored]))\n    {\n        stored++;\n    }\n    return stored;\n}\n",
+      "logs": {}
+    },
+    {
+      "task": "gen-tick-elapsed",
+      "category": "generate",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": false,
+        "warnings": 0,
+        "sanitizer_clean": false,
+        "violations": []
+      },
+      "latency_s": 31.533,
+      "prompt_tokens": 306,
+      "completion_tokens": 211,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nbool tick_elapsed(uint32_t now, uint32_t start, uint32_t timeout_ms)\n{\n    uint32_t elapsed = now - start;\n    if (elapsed >= timeout_ms)\n    {\n        return true;\n    }\n    if (now < start)\n    {\n        elapsed += UINT32_MAX + 1U - start + now;\n        return elapsed >= timeout_ms;\n    }\n    return false;\n}\n\nuint32_t tick_remaining(uint32_t now, uint32_t start, uint32_t timeout_ms)\n{\n    uint32_t elapsed = now - start;\n    if (elapsed >= timeout_ms)\n    {\n        return 0;\n    }\n    if (now < start)\n    {\n        elapsed += UINT32_MAX + 1U - start + now;\n        if (elapsed >= timeout_ms)\n        {\n            return 0;\n        }\n    }\n    return timeout_ms - elapsed;\n}\n",
+      "logs": {
+        "run": "/tmp/oge-eval-nd628md_/plain/tests.c:11: CHECK failed: !tick_elapsed(0x0Fu, 0xFFFFFFF0u, 0x20u)\n/tmp/oge-eval-nd628md_/plain/tests.c:13: CHECK failed: !tick_elapsed(0x00000004u, 0xFFFFFFFBu, 10u)\n/tmp/oge-eval-nd628md_/plain/tests.c:15: tick_remaining(0x0Fu, 0xFFFFFFF0u, 0x20u) == 1u failed: 0x0 != 0x1\n"
+      }
+    },
+    {
+      "task": "ref-command-dispatch",
+      "category": "refactor",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": false,
+        "tests_passed": false,
+        "warnings": 0,
+        "violations": [],
+        "ccn_max_before": 13,
+        "ccn_max_after": 6,
+        "ccn_avg_before": 7.0,
+        "ccn_avg_after": 2.5,
+        "functions_after": 8,
+        "improved": false
+      },
+      "latency_s": 100.871,
+      "prompt_tokens": 835,
+      "completion_tokens": 693,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\n#define OPCODE_SET_MODE      0x01\n#define OPCODE_SET_GAIN      0x02\n#define OPCODE_SET_CHANNEL   0x03\n#define OPCODE_RESET         0x04\n#define OPCODE_PING          0x05\n\n#define MODE_ACTIVE          1\n#define GAIN_MIN             0\n#define GAIN_MAX             63\n#define CHANNEL_MIN          1\n#define CHANNEL_MAX          15\n#define RESET_MAGIC          0xA5\n\n#define SUCCESS              0\n#define ERROR_UNKNOWN_OPCODE -1\n#define ERROR_ARG_OUT_OF_RANGE -2\n#define ERROR_COMMAND_NOT_ALLOWED -3\n\nstatic void reset_state(payload_state_t *s)\n{\n    s->mode = 0;\n    s->gain = 10;\n    s->channel = 1;\n}\n\nvoid payload_init(payload_state_t *s)\n{\n    reset_state(s);\n    s->cmd_count = 0;\n    s->err_count = 0;\n}\n\nstatic int handle_set_mode(payload_state_t *s, uint8_t arg)\n{\n    if (arg > 3) {\n        s->err_count++;\n        return ERROR_ARG_OUT_OF_RANGE;\n    }\n    s->mode = arg;\n    s->cmd_count++;\n    return SUCCESS;\n}\n\nstatic int handle_set_gain(payload_state_t *s, uint8_t arg)\n{\n    if (s->mode == 0) {\n        s->err_count++;\n        return ERROR_COMMAND_NOT_ALLOWED;\n    }\n    if (arg > GAIN_MAX) {\n        s->err_count++;\n        return ERROR_ARG_OUT_OF_RANGE;\n    }\n    s->gain = arg;\n    s->cmd_count++;\n    return SUCCESS;\n}\n\nstatic int handle_set_channel(payload_state_t *s, uint8_t arg)\n{\n    if (s->mode == 0) {\n        s->err_count++;\n        return ERROR_COMMAND_NOT_ALLOWED;\n    }\n    if (arg < CHANNEL_MIN || arg > CHANNEL_MAX) {\n        s->err_count++;\n        return ERROR_ARG_OUT_OF_RANGE;\n    }\n    s->channel = arg;\n    s->cmd_count++;\n    return SUCCESS;\n}\n\nstatic int handle_reset(payload_state_t *s, uint8_t arg)\n{\n    if (arg != RESET_MAGIC) {\n        s->err_count++;\n        return ERROR_ARG_OUT_OF_RANGE;\n    }\n    reset_state(s);\n    s->cmd_count++;\n    return SUCCESS;\n}\n\nstatic int handle_ping(payload_state_t *s)\n{\n    (void)arg; // Unused parameter\n    s->cmd_count++;\n    return SUCCESS;\n}\n\nint payload_dispatch(payload_state_t *s, uint8_t opcode, uint8_t arg)\n{\n    switch (opcode) {\n        case OPCODE_SET_MODE:      return handle_set_mode(s, arg);\n        case OPCODE_SET_GAIN:      return handle_set_gain(s, arg);\n        case OPCODE_SET_CHANNEL:   return handle_set_channel(s, arg);\n        case OPCODE_RESET:         return handle_reset(s, arg);\n        case OPCODE_PING:          return handle_ping(s);\n        default:                   s->err_count++; return ERROR_UNKNOWN_OPCODE;\n    }\n}\n",
+      "logs": {
+        "compile": "/tmp/oge-eval-40eyaxv9/solution.c: In function \u2018handle_ping\u2019:\n/tmp/oge-eval-40eyaxv9/solution.c:89:11: error: \u2018arg\u2019 undeclared (first use in this function)\n   89 |     (void)arg; // Unused parameter\n      |           ^~~\n/tmp/oge-eval-40eyaxv9/solution.c:89:11: note: each undeclared identifier is reported only once for each function it appears in\n"
+      }
+    },
+    {
+      "task": "ref-config-validate",
+      "category": "refactor",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": false,
+        "tests_passed": false,
+        "warnings": 0,
+        "violations": [],
+        "ccn_max_before": 17,
+        "ccn_max_after": 7,
+        "ccn_avg_before": 17.0,
+        "ccn_avg_after": 4.0,
+        "functions_after": 7,
+        "improved": false
+      },
+      "latency_s": 113.276,
+      "prompt_tokens": 801,
+      "completion_tokens": 786,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nstatic const uint32_t FREQ_MIN_KHZ = 400000;\nstatic const uint32_t FREQ_MAX_KHZ = 470000;\nstatic const uint32_t FREQ_STEP_KHZ = 25;\nstatic const uint16_t BANDWIDTHS_KHZ[] = {125, 250, 500};\nstatic const size_t BANDWIDTHS_COUNT = sizeof(BANDWIDTHS_KHZ) / sizeof(BANDWIDTHS_KHZ[0]);\nstatic const uint8_t SF_MIN = 7;\nstatic const uint8_t SF_MAX = 12;\nstatic const int8_t TX_POWER_MIN_DBM = -4;\nstatic const int8_t TX_POWER_MAX_DBM = 20;\nstatic const uint8_t DUTY_CYCLE_MIN_PCT = 1;\nstatic const uint8_t DUTY_CYCLE_MAX_PCT = 100;\n\nstatic int validate_frequency(uint32_t freq_khz)\n{\n    if (freq_khz < FREQ_MIN_KHZ || freq_khz > FREQ_MAX_KHZ) return 1;\n    if (freq_khz % FREQ_STEP_KHZ != 0) return 2;\n    return 0;\n}\n\nstatic int validate_bandwidth(uint16_t bw_khz)\n{\n    for (size_t i = 0; i < BANDWIDTHS_COUNT; i++) {\n        if (bw_khz == BANDWIDTHS_KHZ[i]) return 0;\n    }\n    return 3;\n}\n\nstatic int validate_spreading_factor(uint8_t sf)\n{\n    if (sf < SF_MIN || sf > SF_MAX) return 4;\n    return 0;\n}\n\nstatic int validate_tx_power(int8_t tx_power_dbm)\n{\n    if (tx_power_dbm < TX_POWER_MIN_DBM || tx_power_dbm > TX_POWER_MAX_DBM) return 5;\n    return 0;\n}\n\nstatic int validate_bandwidth_sf_constraint(uint16_t bw_khz, uint8_t sf)\n{\n    if (bw_khz == 500 && sf > 10) return 6;\n    return 0;\n}\n\nstatic int validate_duty_cycle(int8_t tx_power_dbm, uint8_t duty_cycle_pct)\n{\n    if (tx_power_dbm > 14 && duty_cycle_pct > 10) return 7;\n    if (duty_cycle_pct < DUTY_CYCLE_MIN_PCT || duty_cycle_pct > DUTY_CYCLE_MAX_PCT) return 8;\n    return 0;\n}\n\nint radio_cfg_validate(const radio_cfg_t *c)\n{\n    int err = validate_frequency(c->frequency_khz);\n    if (err) return err;\n\n    err = validate_bandwidth(c->bandwidth_khz);\n    if (err) return err;\n\n    err = validate_spreading_factor(c->spreading_factor);\n    if (err) return err;\n\n    err = validate_tx_power(c->tx_power_dbm);\n    if (err) return err;\n\n    err = validate_bandwidth_sf_constraint(c->bandwidth_khz, c->spreading_factor);\n    if (err) return err;\n\n    err = validate_duty_cycle(c->tx_power_dbm, c->duty_cycle_pct);\n    if (err) return err;\n\n    return 0;\n}\n",
+      "logs": {
+        "compile": "/tmp/oge-eval-ew8oh46e/solution.c:7:14: error: unknown type name \u2018size_t\u2019\n    7 | static const size_t BANDWIDTHS_COUNT = sizeof(BANDWIDTHS_KHZ) / sizeof(BANDWIDTHS_KHZ[0]);\n      |              ^~~~~~\n/tmp/oge-eval-ew8oh46e/solution.c: In function \u2018validate_bandwidth\u2019:\n/tmp/oge-eval-ew8oh46e/solution.c:24:10: error: unknown type name \u2018size_t\u2019\n   24 |     for (size_t i = 0; i < BANDWIDTHS_COUNT; i++) {\n      |          ^~~~~~\n/tmp/oge-eval-ew8oh46e/solution.c:2:1: note: \u2018size_t\u2019 is defined in header \u2018<stddef.h>\u2019; did you forget to \u2018#include <stddef.h>\u2019?\n    1 | #include \"task.h\"\n  +++ |+#include <stddef.h>\n    2 | \n"
+      }
+    },
+    {
+      "task": "ref-frame-parser",
+      "category": "refactor",
+      "sample": 0,
+      "passed": true,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": true,
+        "warnings": 0,
+        "violations": [],
+        "ccn_max_before": 15,
+        "ccn_max_after": 10,
+        "ccn_avg_before": 15.0,
+        "ccn_avg_after": 4.4,
+        "functions_after": 5,
+        "improved": true
+      },
+      "latency_s": 84.791,
+      "prompt_tokens": 742,
+      "completion_tokens": 562,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nstatic const uint8_t SYNC_BYTE_1 = 0xEB;\nstatic const uint8_t SYNC_BYTE_2 = 0x90;\nstatic const uint8_t MIN_TYPE = 0x10;\nstatic const uint8_t MAX_TYPE = 0x1F;\nstatic const size_t MIN_FRAME_LEN = 5;\nstatic const size_t MAX_PAYLOAD_LEN = 32;\n\nstatic int validate_sync(const uint8_t *buf)\n{\n    return (buf[0] == SYNC_BYTE_1 && buf[1] == SYNC_BYTE_2) ? 0 : -2;\n}\n\nstatic int validate_length(const uint8_t *buf, size_t len)\n{\n    uint8_t payload_len = buf[2];\n    if (payload_len == 0 || payload_len > MAX_PAYLOAD_LEN) {\n        return -3;\n    }\n    if ((size_t)payload_len + MIN_FRAME_LEN != len) {\n        return -3;\n    }\n    return 0;\n}\n\nstatic int validate_type(const uint8_t *buf)\n{\n    uint8_t frame_type = buf[3];\n    return (frame_type >= MIN_TYPE && frame_type <= MAX_TYPE) ? 0 : -4;\n}\n\nstatic uint8_t compute_checksum(const uint8_t *buf, size_t payload_len)\n{\n    uint8_t checksum = buf[2] ^ buf[3];\n    for (size_t i = 0; i < payload_len; i++) {\n        checksum ^= buf[4 + i];\n    }\n    return checksum;\n}\n\nint frame_parse(const uint8_t *buf, size_t len, uint8_t *type, uint8_t *out)\n{\n    if (buf == NULL || type == NULL || out == NULL) {\n        return -1;\n    }\n    if (len < MIN_FRAME_LEN) {\n        return -1;\n    }\n\n    int rc = validate_sync(buf);\n    if (rc != 0) return rc;\n\n    rc = validate_length(buf, len);\n    if (rc != 0) return rc;\n\n    rc = validate_type(buf);\n    if (rc != 0) return rc;\n\n    uint8_t payload_len = buf[2];\n    uint8_t computed_checksum = compute_checksum(buf, payload_len);\n    if (computed_checksum != buf[4 + payload_len]) {\n        return -5;\n    }\n\n    *type = buf[3];\n    for (size_t i = 0; i < payload_len; i++) {\n        out[i] = buf[4 + i];\n    }\n    return payload_len;\n}\n",
+      "logs": {}
+    },
+    {
+      "task": "ref-mode-manager",
+      "category": "refactor",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": false,
+        "warnings": 0,
+        "violations": [],
+        "ccn_max_before": 14,
+        "ccn_max_after": 3,
+        "ccn_avg_before": 7.5,
+        "ccn_avg_after": 1.67,
+        "functions_after": 3,
+        "improved": false
+      },
+      "latency_s": 52.685,
+      "prompt_tokens": 760,
+      "completion_tokens": 354,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\ntypedef enum {\n    MODE_OFF = 0,\n    MODE_STANDBY,\n    MODE_OPERATE,\n    MODE_FAULT\n} mode_t;\n\ntypedef enum {\n    EVENT_POWER_ON = 0,\n    EVENT_POWER_OFF,\n    EVENT_START,\n    EVENT_STOP,\n    EVENT_ERROR,\n    EVENT_CLEAR\n} event_t;\n\nstatic const uint8_t transition_table[4][6] = {\n    [MODE_OFF][EVENT_POWER_ON] = MODE_STANDBY,\n    [MODE_STANDBY][EVENT_START] = MODE_OPERATE,\n    [MODE_STANDBY][EVENT_ERROR] = MODE_FAULT,\n    [MODE_OPERATE][EVENT_STOP] = MODE_STANDBY,\n    [MODE_OPERATE][EVENT_ERROR] = MODE_FAULT,\n    [MODE_FAULT][EVENT_CLEAR] = MODE_STANDBY,\n    [MODE_FAULT][EVENT_ERROR] = MODE_FAULT\n};\n\nstatic int is_valid_event(uint8_t event) {\n    return event <= EVENT_CLEAR;\n}\n\nvoid mode_init(mode_mgr_t *m) {\n    m->mode = MODE_OFF;\n    m->transitions = 0;\n}\n\nint mode_handle(mode_mgr_t *m, uint8_t event) {\n    if (!is_valid_event(event)) {\n        return 0;\n    }\n\n    uint8_t new_mode = transition_table[m->mode][event];\n    if (new_mode != 0) {\n        m->mode = new_mode;\n        m->transitions++;\n        return 1;\n    }\n\n    return 0;\n}\n",
+      "logs": {
+        "run": "/tmp/oge-eval-kc5ph12_/tests.c:22: mode_handle(&m, 1) == 1 failed: 0 != 1\n/tmp/oge-eval-kc5ph12_/tests.c:22: m.mode == 0 failed: 0x3 != 0x0\n/tmp/oge-eval-kc5ph12_/tests.c:23: mode_handle(&m, 1) == 1 failed: 0 != 1\n/tmp/oge-eval-kc5ph12_/tests.c:23: m.mode == 0 failed: 0x3 != 0x0\n/tmp/oge-eval-kc5ph12_/tests.c:25: m.transitions == 10 failed: 0x8 != 0xa\n"
+      }
+    },
+    {
+      "task": "ref-telemetry-pack",
+      "category": "refactor",
+      "sample": 0,
+      "passed": true,
+      "metrics": {
+        "compiled": true,
+        "tests_passed": true,
+        "warnings": 0,
+        "violations": [],
+        "ccn_max_before": 8,
+        "ccn_max_after": 3,
+        "ccn_avg_before": 8.0,
+        "ccn_avg_after": 1.88,
+        "functions_after": 8,
+        "improved": true
+      },
+      "latency_s": 97.2,
+      "prompt_tokens": 920,
+      "completion_tokens": 668,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n\nstatic const int32_t TEMP_MIN = -1000;\nstatic const int32_t TEMP_MAX = 1500;\nstatic const int32_t VOLT_MIN = 0;\nstatic const int32_t VOLT_MAX = 40000;\nstatic const uint8_t GAIN_MAX = 63;\nstatic const uint8_t MODE_MASK = 3;\nstatic const uint8_t CHANNEL_MASK = 15;\nstatic const uint8_t HEATER_BIT = 1 << 5;\nstatic const uint8_t FAULT_BIT = 1 << 4;\n\nstatic int32_t clamp_temp(int32_t temp)\n{\n    if (temp < TEMP_MIN) return TEMP_MIN;\n    if (temp > TEMP_MAX) return TEMP_MAX;\n    return temp;\n}\n\nstatic int32_t clamp_volt(int32_t volt)\n{\n    if (volt < VOLT_MIN) return VOLT_MIN;\n    if (volt > VOLT_MAX) return VOLT_MAX;\n    return volt;\n}\n\nstatic uint8_t clamp_gain(uint8_t gain)\n{\n    return (gain > GAIN_MAX) ? GAIN_MAX : gain;\n}\n\nstatic uint8_t pack_byte0(const hk_t *hk)\n{\n    uint8_t b0 = (uint8_t)((hk->mode & MODE_MASK) << 6);\n    if (hk->heater_on) b0 |= HEATER_BIT;\n    if (hk->fault) b0 |= FAULT_BIT;\n    b0 |= (uint8_t)(hk->channel & CHANNEL_MASK);\n    return b0;\n}\n\nstatic void pack_temp(int32_t temp, uint8_t out[2])\n{\n    temp = clamp_temp(temp);\n    out[0] = (uint8_t)(((uint16_t)(int16_t)temp >> 8) & 0xFF);\n    out[1] = (uint8_t)((uint16_t)(int16_t)temp & 0xFF);\n}\n\nstatic void pack_volt(int32_t volt, uint8_t out[2])\n{\n    volt = clamp_volt(volt);\n    out[0] = (uint8_t)(((uint32_t)volt >> 8) & 0xFF);\n    out[1] = (uint8_t)((uint32_t)volt & 0xFF);\n}\n\nstatic void pack_counter(uint16_t counter, uint8_t out[2])\n{\n    out[0] = (uint8_t)((counter >> 8) & 0xFF);\n    out[1] = (uint8_t)(counter & 0xFF);\n}\n\nvoid hk_pack(const hk_t *hk, uint8_t out[8])\n{\n    out[0] = pack_byte0(hk);\n    pack_temp(hk->temp_decic, out + 1);\n    pack_volt(hk->bus_mv, out + 3);\n    out[5] = clamp_gain(hk->gain);\n    pack_counter(hk->counter, out + 6);\n}\n",
+      "logs": {}
+    },
+    {
+      "task": "tst-ccsds-parse",
+      "category": "testgen",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_pass_on_reference": false,
+        "checks": 22,
+        "line_coverage": 0.0,
+        "branch_coverage": 0.0,
+        "mutants": 6,
+        "mutants_killed": 0,
+        "mutation_score": 0.0
+      },
+      "latency_s": 110.329,
+      "prompt_tokens": 901,
+      "completion_tokens": 759,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n#include \"oge_test.h\"\n#include <stdint.h>\n\nstatic void test_parse_null(void)\n{\n    ccsds_primary_header_t hdr;\n    CHECK_EQ_I(ccsds_parse_primary(NULL, 6, &hdr), -1);\n    CHECK_EQ_I(ccsds_parse_primary((const uint8_t *)0x1234, 6, NULL), -1);\n}\n\nstatic void test_parse_short(void)\n{\n    const uint8_t buf[5] = {0x00, 0x00, 0x00, 0x00, 0x00};\n    ccsds_primary_header_t hdr;\n    CHECK_EQ_I(ccsds_parse_primary(buf, 5, &hdr), -1);\n}\n\nstatic void test_parse_version(void)\n{\n    const uint8_t buf[6] = {0xE0, 0x00, 0x00, 0x00, 0x00, 0x00}; // version=7\n    ccsds_primary_header_t hdr;\n    CHECK_EQ_I(ccsds_parse_primary(buf, 6, &hdr), -2);\n}\n\nstatic void test_parse_valid(void)\n{\n    const uint8_t buf[6] = {0x1A, 0x7F, 0x3F, 0xFF, 0x12, 0x34};\n    ccsds_primary_header_t hdr;\n    CHECK_EQ_I(ccsds_parse_primary(buf, 6, &hdr), 0);\n    CHECK_EQ_U(hdr.version, 0);\n    CHECK_EQ_U(hdr.type, 1);\n    CHECK_EQ_U(hdr.sec_hdr, 0);\n    CHECK_EQ_U(hdr.apid, 0x7FF);\n    CHECK_EQ_U(hdr.seq_flags, 3);\n    CHECK_EQ_U(hdr.seq_count, 0x3FFF);\n    CHECK_EQ_U(hdr.data_length, 0x1234);\n}\n\nstatic void test_parse_zero(void)\n{\n    const uint8_t buf[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};\n    ccsds_primary_header_t hdr;\n    CHECK_EQ_I(ccsds_parse_primary(buf, 6, &hdr), 0);\n    CHECK_EQ_U(hdr.version, 0);\n    CHECK_EQ_U(hdr.type, 0);\n    CHECK_EQ_U(hdr.sec_hdr, 0);\n    CHECK_EQ_U(hdr.apid, 0);\n    CHECK_EQ_U(hdr.seq_flags, 0);\n    CHECK_EQ_U(hdr.seq_count, 0);\n    CHECK_EQ_U(hdr.data_length, 0);\n}\n\nstatic void test_packet_length(void)\n{\n    ccsds_primary_header_t hdr;\n    hdr.data_length = 0;\n    CHECK_EQ_U(ccsds_packet_length(&hdr), 7);\n    hdr.data_length = 0xFFFF;\n    CHECK_EQ_U(ccsds_packet_length(&hdr), 6 + 0xFFFF + 1);\n}\n\nint main(void)\n{\n    test_parse_null();\n    test_parse_short();\n    test_parse_version();\n    test_parse_valid();\n    test_parse_zero();\n    test_packet_length();\n    return OGE_REPORT();\n}\n",
+      "logs": {
+        "run": "/tmp/oge-eval-mfh69pjc/cov/tests.c:33: hdr.sec_hdr == 0 failed: 0x1 != 0x0\n/tmp/oge-eval-mfh69pjc/cov/tests.c:34: hdr.apid == 0x7FF failed: 0x27f != 0x7ff\n/tmp/oge-eval-mfh69pjc/cov/tests.c:35: hdr.seq_flags == 3 failed: 0x0 != 0x3\n"
+      }
+    },
+    {
+      "task": "tst-fletcher16",
+      "category": "testgen",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_pass_on_reference": false,
+        "checks": 12,
+        "line_coverage": 0.0,
+        "branch_coverage": 0.0,
+        "mutants": 5,
+        "mutants_killed": 0,
+        "mutation_score": 0.0
+      },
+      "latency_s": 73.06,
+      "prompt_tokens": 678,
+      "completion_tokens": 509,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n#include \"oge_test.h\"\n\nstatic void test_fletcher16_basic(void)\n{\n    CHECK_EQ_U(fletcher16(NULL, 0), 0);\n    CHECK_EQ_U(fletcher16((uint8_t[]){0}, 1), 0);\n    CHECK_EQ_U(fletcher16((uint8_t[]){1}, 1), 1);\n    CHECK_EQ_U(fletcher16((uint8_t[]){255}, 1), 255);\n    CHECK_EQ_U(fletcher16((uint8_t[]){1, 2}, 2), 0x0003);\n    CHECK_EQ_U(fletcher16((uint8_t[]){1, 2, 3}, 3), 0x0006);\n    CHECK_EQ_U(fletcher16((uint8_t[]){255, 255}, 2), 0xFFFF);\n}\n\nstatic void test_fletcher16_large(void)\n{\n    uint8_t data[256] = {0};\n    for (size_t i = 0; i < 256; ++i) {\n        data[i] = (uint8_t)i;\n    }\n    CHECK_EQ_U(fletcher16(data, 256), 0x0000);\n}\n\nstatic void test_fletcher16_frame_ok(void)\n{\n    uint8_t frame[3] = {1, 2, 0x03, 0x00}; /* 2-byte frame with correct check */\n    frame[2] = (uint8_t)(0x03 & 0xFF);\n    frame[3] = (uint8_t)(0x00 & 0xFF);\n    CHECK(fletcher16_frame_ok(frame, 4) == 1);\n    frame[2] ^= 0xFF; /* corrupt check */\n    CHECK(fletcher16_frame_ok(frame, 4) == 0);\n    CHECK(fletcher16_frame_ok(frame, 1) == 0);\n    CHECK(fletcher16_frame_ok(frame, 0) == 0);\n}\n\nint main(void)\n{\n    test_fletcher16_basic();\n    test_fletcher16_large();\n    test_fletcher16_frame_ok();\n    return OGE_REPORT();\n}\n",
+      "logs": {
+        "compile": "/tmp/oge-eval-tbu71f22/cov/tests.c: In function \u2018test_fletcher16_frame_ok\u2019:\n/tmp/oge-eval-tbu71f22/cov/tests.c:26:37: warning: excess elements in array initializer\n   26 |     uint8_t frame[3] = {1, 2, 0x03, 0x00}; /* 2-byte frame with correct check */\n      |                                     ^~~~\n/tmp/oge-eval-tbu71f22/cov/tests.c:26:37: note: (near initialization for \u2018frame\u2019)\n",
+        "run": "/tmp/oge-eval-tbu71f22/cov/tests.c:8: fletcher16((uint8_t[]){1}, 1) == 1 failed: 0x101 != 0x1\n/tmp/oge-eval-tbu71f22/cov/tests.c:9: fletcher16((uint8_t[]){255}, 1) == 255 failed: 0x0 != 0xff\n/tmp/oge-eval-tbu71f22/cov/tests.c:10: fletcher16((uint8_t[]){1, 2}, 2) == 0x0003 failed: 0x403 != 0x3\n/tmp/oge-eval-tbu71f22/cov/tests.c:11: fletcher16((uint8_t[]){1, 2, 3}, 3) == 0x0006 failed: 0xa06 != 0x6\n/tmp/oge-eval-tbu71f22/cov/tests.c:12: fletcher16((uint8_t[]){255, 255}, 2) == 0xFFFF failed: 0x0 != 0xffff\n/tmp/oge-eval-tbu71f22/cov/tests.c:21: fletcher16(data, 256) == 0x0000 failed: 0x5500 != 0x0\n/tmp/oge-eval-tbu71f22/cov/tests.c:29: CHECK failed: fletcher16_frame_ok(frame, 4) == 1\n"
+      }
+    },
+    {
+      "task": "tst-moving-average",
+      "category": "testgen",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_pass_on_reference": false,
+        "checks": 45,
+        "line_coverage": 0.0,
+        "branch_coverage": 0.0,
+        "mutants": 5,
+        "mutants_killed": 0,
+        "mutation_score": 0.0
+      },
+      "latency_s": 121.45,
+      "prompt_tokens": 673,
+      "completion_tokens": 840,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n#include \"oge_test.h\"\n\nstatic void test_reset(void)\n{\n    mavg_t m;\n    mavg_reset(&m);\n    CHECK_EQ_U(m.next, 0u);\n    CHECK_EQ_U(m.count, 0u);\n    CHECK_EQ_I(m.sum, 0);\n    for (uint32_t i = 0u; i < MAVG_WINDOW; ++i) {\n        CHECK_EQ_I(m.samples[i], 0);\n    }\n}\n\nstatic void test_push_partial_window(void)\n{\n    mavg_t m;\n    mavg_reset(&m);\n    CHECK_EQ_I(mavg_push(&m, 10), 10);\n    CHECK_EQ_U(m.next, 1u);\n    CHECK_EQ_U(m.count, 1u);\n    CHECK_EQ_I(m.sum, 10);\n    CHECK_EQ_I(mavg_push(&m, 20), 15);\n    CHECK_EQ_U(m.next, 2u);\n    CHECK_EQ_U(m.count, 2u);\n    CHECK_EQ_I(m.sum, 30);\n    CHECK_EQ_I(mavg_push(&m, 30), 20);\n    CHECK_EQ_U(m.next, 3u);\n    CHECK_EQ_U(m.count, 3u);\n    CHECK_EQ_I(m.sum, 60);\n}\n\nstatic void test_push_full_window(void)\n{\n    mavg_t m;\n    mavg_reset(&m);\n    CHECK_EQ_I(mavg_push(&m, 10), 10);\n    CHECK_EQ_I(mavg_push(&m, 20), 15);\n    CHECK_EQ_I(mavg_push(&m, 30), 20);\n    CHECK_EQ_I(mavg_push(&m, 40), 25);\n    CHECK_EQ_U(m.next, 0u);\n    CHECK_EQ_U(m.count, 4u);\n    CHECK_EQ_I(m.sum, 100);\n    CHECK_EQ_I(mavg_push(&m, 50), 35);\n    CHECK_EQ_U(m.next, 1u);\n    CHECK_EQ_U(m.count, 4u);\n    CHECK_EQ_I(m.sum, 110);\n    CHECK_EQ_I(mavg_push(&m, 60), 45);\n    CHECK_EQ_U(m.next, 2u);\n    CHECK_EQ_U(m.count, 4u);\n    CHECK_EQ_I(m.sum, 120);\n}\n\nstatic void test_negative_values(void)\n{\n    mavg_t m;\n    mavg_reset(&m);\n    CHECK_EQ_I(mavg_push(&m, -10), -10);\n    CHECK_EQ_I(mavg_push(&m, -20), -15);\n    CHECK_EQ_I(mavg_push(&m, -30), -20);\n    CHECK_EQ_I(mavg_push(&m, -40), -25);\n    CHECK_EQ_I(mavg_push(&m, -50), -35);\n    CHECK_EQ_I(mavg_push(&m, -60), -45);\n}\n\nstatic void test_rounding(void)\n{\n    mavg_t m;\n    mavg_reset(&m);\n    CHECK_EQ_I(mavg_push(&m, 1), 1);\n    CHECK_EQ_I(mavg_push(&m, 1), 1);\n    CHECK_EQ_I(mavg_push(&m, 1), 1);\n    CHECK_EQ_I(mavg_push(&m, 1), 1);\n    CHECK_EQ_I(mavg_push(&m, 2), 1);\n    CHECK_EQ_I(mavg_push(&m, 2), 1);\n    CHECK_EQ_I(mavg_push(&m, 2), 1);\n    CHECK_EQ_I(mavg_push(&m, 2), 1);\n}\n\nint main(void)\n{\n    test_reset();\n    test_push_partial_window();\n    test_push_full_window();\n    test_negative_values();\n    test_rounding();\n    return OGE_REPORT();\n}\n",
+      "logs": {
+        "run": "/tmp/oge-eval-dgnqckov/cov/tests.c:48: m.sum == 110 failed: 140 != 110\n/tmp/oge-eval-dgnqckov/cov/tests.c:52: m.sum == 120 failed: 180 != 120\n/tmp/oge-eval-dgnqckov/cov/tests.c:78: mavg_push(&m, 2) == 1 failed: 2 != 1\n"
+      }
+    },
+    {
+      "task": "tst-ring-buffer",
+      "category": "testgen",
+      "sample": 0,
+      "passed": true,
+      "metrics": {
+        "compiled": true,
+        "tests_pass_on_reference": true,
+        "checks": 36,
+        "line_coverage": 1.0,
+        "branch_coverage": 1.0,
+        "mutants": 5,
+        "mutants_killed": 5,
+        "mutation_score": 1.0
+      },
+      "latency_s": 130.383,
+      "prompt_tokens": 767,
+      "completion_tokens": 929,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n#include \"oge_test.h\"\n\nstatic void test_init(void)\n{\n    ring_buffer_t rb;\n    rb_init(&rb);\n    CHECK_EQ_U(rb.head, 0u);\n    CHECK_EQ_U(rb.tail, 0u);\n    CHECK_EQ_U(rb.count, 0u);\n}\n\nstatic void test_push_pop(void)\n{\n    ring_buffer_t rb;\n    rb_init(&rb);\n\n    uint8_t out;\n    CHECK(!rb_pop(&rb, &out));\n\n    CHECK(rb_push(&rb, 0x12));\n    CHECK_EQ_U(rb_count(&rb), 1u);\n    CHECK(rb_pop(&rb, &out));\n    CHECK_EQ_U(out, 0x12u);\n    CHECK_EQ_U(rb_count(&rb), 0u);\n}\n\nstatic void test_full_buffer(void)\n{\n    ring_buffer_t rb;\n    rb_init(&rb);\n\n    uint8_t data[RB_CAPACITY] = {0x11, 0x22, 0x33, 0x44, 0x55};\n    for (size_t i = 0; i < RB_CAPACITY; i++) {\n        CHECK(rb_push(&rb, data[i]));\n    }\n    CHECK_EQ_U(rb_count(&rb), RB_CAPACITY);\n    CHECK(!rb_push(&rb, 0x66));\n\n    uint8_t out;\n    for (size_t i = 0; i < RB_CAPACITY; i++) {\n        CHECK(rb_pop(&rb, &out));\n        CHECK_EQ_U(out, data[i]);\n    }\n    CHECK_EQ_U(rb_count(&rb), 0u);\n    CHECK(!rb_pop(&rb, &out));\n}\n\nstatic void test_wrap_around(void)\n{\n    ring_buffer_t rb;\n    rb_init(&rb);\n\n    uint8_t data[RB_CAPACITY + 2] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77};\n    size_t stored = rb_push_many(&rb, data, sizeof(data));\n    CHECK_EQ_U(stored, RB_CAPACITY);\n\n    uint8_t out;\n    CHECK(rb_pop(&rb, &out));\n    CHECK_EQ_U(out, 0x11u);\n    CHECK(rb_push(&rb, 0x66));\n    CHECK(rb_pop(&rb, &out));\n    CHECK_EQ_U(out, 0x22u);\n    CHECK(rb_push(&rb, 0x77));\n    CHECK_EQ_U(rb_count(&rb), RB_CAPACITY);\n\n    for (size_t i = 2; i < RB_CAPACITY; i++) {\n        CHECK(rb_pop(&rb, &out));\n        CHECK_EQ_U(out, data[i]);\n    }\n    CHECK(rb_pop(&rb, &out));\n    CHECK_EQ_U(out, 0x66u);\n    CHECK(rb_pop(&rb, &out));\n    CHECK_EQ_U(out, 0x77u);\n}\n\nstatic void test_push_many(void)\n{\n    ring_buffer_t rb;\n    rb_init(&rb);\n\n    uint8_t data[RB_CAPACITY] = {0x11, 0x22, 0x33, 0x44, 0x55};\n    size_t stored = rb_push_many(&rb, data, sizeof(data));\n    CHECK_EQ_U(stored, RB_CAPACITY);\n    CHECK_EQ_U(rb_count(&rb), RB_CAPACITY);\n\n    uint8_t out;\n    for (size_t i = 0; i < RB_CAPACITY; i++) {\n        CHECK(rb_pop(&rb, &out));\n        CHECK_EQ_U(out, data[i]);\n    }\n}\n\nstatic void test_empty_pop_untouched(void)\n{\n    ring_buffer_t rb;\n    rb_init(&rb);\n\n    uint8_t out = 0xFF;\n    CHECK(!rb_pop(&rb, &out));\n    CHECK_EQ_U(out, 0xFFu);\n}\n\nint main(void)\n{\n    test_init();\n    test_push_pop();\n    test_full_buffer();\n    test_wrap_around();\n    test_push_many();\n    test_empty_pop_untouched();\n    return OGE_REPORT();\n}\n",
+      "logs": {}
+    },
+    {
+      "task": "tst-saturating-arith",
+      "category": "testgen",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_pass_on_reference": true,
+        "checks": 26,
+        "line_coverage": 1.0,
+        "branch_coverage": 1.0,
+        "mutants": 5,
+        "mutants_killed": 4,
+        "mutation_score": 0.8
+      },
+      "latency_s": 94.305,
+      "prompt_tokens": 633,
+      "completion_tokens": 662,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n#include \"oge_test.h\"\n#include <limits.h>\n\nstatic void test_sat_add16(void)\n{\n    CHECK_EQ_I(sat_add16(0, 0), 0);\n    CHECK_EQ_I(sat_add16(1, 1), 2);\n    CHECK_EQ_I(sat_add16(INT16_MAX, 0), INT16_MAX);\n    CHECK_EQ_I(sat_add16(INT16_MAX, 1), INT16_MAX);\n    CHECK_EQ_I(sat_add16(INT16_MAX, INT16_MAX), INT16_MAX);\n    CHECK_EQ_I(sat_add16(INT16_MIN, 0), INT16_MIN);\n    CHECK_EQ_I(sat_add16(INT16_MIN, -1), INT16_MIN);\n    CHECK_EQ_I(sat_add16(INT16_MIN, INT16_MIN), INT16_MIN);\n    CHECK_EQ_I(sat_add16(32767, 1), INT16_MAX);\n    CHECK_EQ_I(sat_add16(-32768, -1), INT16_MIN);\n}\n\nstatic void test_sat_sub16(void)\n{\n    CHECK_EQ_I(sat_sub16(0, 0), 0);\n    CHECK_EQ_I(sat_sub16(1, 1), 0);\n    CHECK_EQ_I(sat_sub16(INT16_MAX, 0), INT16_MAX);\n    CHECK_EQ_I(sat_sub16(INT16_MAX, 1), INT16_MAX - 1);\n    CHECK_EQ_I(sat_sub16(INT16_MAX, INT16_MAX), 0);\n    CHECK_EQ_I(sat_sub16(INT16_MIN, 0), INT16_MIN);\n    CHECK_EQ_I(sat_sub16(INT16_MIN, -1), INT16_MIN + 1);\n    CHECK_EQ_I(sat_sub16(INT16_MIN, INT16_MIN), 0);\n    CHECK_EQ_I(sat_sub16(32767, -1), INT16_MAX);\n    CHECK_EQ_I(sat_sub16(-32768, 1), INT16_MIN);\n}\n\nstatic void test_sat_abs16(void)\n{\n    CHECK_EQ_I(sat_abs16(0), 0);\n    CHECK_EQ_I(sat_abs16(1), 1);\n    CHECK_EQ_I(sat_abs16(-1), 1);\n    CHECK_EQ_I(sat_abs16(INT16_MAX), INT16_MAX);\n    CHECK_EQ_I(sat_abs16(INT16_MIN), INT16_MAX);\n    CHECK_EQ_I(sat_abs16(-32768), INT16_MAX);\n}\n\nint main(void)\n{\n    test_sat_add16();\n    test_sat_sub16();\n    test_sat_abs16();\n    return OGE_REPORT();\n}\n",
+      "logs": {}
+    },
+    {
+      "task": "tst-tick-elapsed",
+      "category": "testgen",
+      "sample": 0,
+      "passed": false,
+      "metrics": {
+        "compiled": true,
+        "tests_pass_on_reference": false,
+        "checks": 26,
+        "line_coverage": 0.0,
+        "branch_coverage": 0.0,
+        "mutants": 4,
+        "mutants_killed": 0,
+        "mutation_score": 0.0
+      },
+      "latency_s": 106.189,
+      "prompt_tokens": 528,
+      "completion_tokens": 878,
+      "finish_reason": "stop",
+      "error": null,
+      "code": "#include \"task.h\"\n#include \"oge_test.h\"\n\nvoid test_tick_elapsed_no_timeout(void)\n{\n    CHECK(!tick_elapsed(0u, 0u, 1000u));\n    CHECK(!tick_elapsed(1u, 0u, 1000u));\n    CHECK(!tick_elapsed(999u, 0u, 1000u));\n    CHECK(tick_elapsed(1000u, 0u, 1000u));\n    CHECK(tick_elapsed(1001u, 0u, 1000u));\n}\n\nvoid test_tick_elapsed_wraparound(void)\n{\n    CHECK(!tick_elapsed(0xFFFFFFFFu, 0xFFFFFFFEu, 1u));\n    CHECK(tick_elapsed(0xFFFFFFFFu, 0xFFFFFFFEu, 2u));\n    CHECK(!tick_elapsed(0xFFFFFFFFu, 0xFFFFFFFEu, 0u));\n    CHECK(!tick_elapsed(0xFFFFFFFFu, 0xFFFFFFFEu, 0xFFFFFFFFu));\n    CHECK(tick_elapsed(0xFFFFFFFFu, 0xFFFFFFFEu, 0xFFFFFFFFu + 1u));\n}\n\nvoid test_tick_remaining_no_timeout(void)\n{\n    CHECK_EQ_U(tick_remaining(0u, 0u, 1000u), 1000u);\n    CHECK_EQ_U(tick_remaining(1u, 0u, 1000u), 999u);\n    CHECK_EQ_U(tick_remaining(999u, 0u, 1000u), 1u);\n    CHECK_EQ_U(tick_remaining(1000u, 0u, 1000u), 0u);\n    CHECK_EQ_U(tick_remaining(1001u, 0u, 1000u), 0u);\n}\n\nvoid test_tick_remaining_wraparound(void)\n{\n    CHECK_EQ_U(tick_remaining(0xFFFFFFFFu, 0xFFFFFFFEu, 1u), 0u);\n    CHECK_EQ_U(tick_remaining(0xFFFFFFFFu, 0xFFFFFFFEu, 2u), 0u);\n    CHECK_EQ_U(tick_remaining(0xFFFFFFFFu, 0xFFFFFFFEu, 0u), 0u);\n    CHECK_EQ_U(tick_remaining(0xFFFFFFFFu, 0xFFFFFFFEu, 0xFFFFFFFFu), 1u);\n    CHECK_EQ_U(tick_remaining(0xFFFFFFFFu, 0xFFFFFFFEu, 0xFFFFFFFFu + 1u), 0u);\n}\n\nvoid test_tick_remaining_zero_timeout(void)\n{\n    CHECK_EQ_U(tick_remaining(0u, 0u, 0u), 0u);\n    CHECK_EQ_U(tick_remaining(1u, 0u, 0u), 0u);\n    CHECK_EQ_U(tick_remaining(0xFFFFFFFFu, 0xFFFFFFFEu, 0u), 0u);\n}\n\nvoid test_tick_remaining_large_timeout(void)\n{\n    CHECK_EQ_U(tick_remaining(0u, 0u, 0x7FFFFFFFu), 0x7FFFFFFFu);\n    CHECK_EQ_U(tick_remaining(0x7FFFFFFFu, 0u, 0x7FFFFFFFu), 0u);\n    CHECK_EQ_U(tick_remaining(0x7FFFFFFEu, 0u, 0x7FFFFFFFu), 1u);\n}\n\nint main(void)\n{\n    test_tick_elapsed_no_timeout();\n    test_tick_elapsed_wraparound();\n    test_tick_remaining_no_timeout();\n    test_tick_remaining_wraparound();\n    test_tick_remaining_zero_timeout();\n    test_tick_remaining_large_timeout();\n    return OGE_REPORT();\n}\n",
+      "logs": {
+        "run": "/tmp/oge-eval-er21y2ux/cov/tests.c:15: CHECK failed: !tick_elapsed(0xFFFFFFFFu, 0xFFFFFFFEu, 1u)\n/tmp/oge-eval-er21y2ux/cov/tests.c:16: CHECK failed: tick_elapsed(0xFFFFFFFFu, 0xFFFFFFFEu, 2u)\n/tmp/oge-eval-er21y2ux/cov/tests.c:17: CHECK failed: !tick_elapsed(0xFFFFFFFFu, 0xFFFFFFFEu, 0u)\n/tmp/oge-eval-er21y2ux/cov/tests.c:34: tick_remaining(0xFFFFFFFFu, 0xFFFFFFFEu, 2u) == 0u failed: 0x1 != 0x0\n/tmp/oge-eval-er21y2ux/cov/tests.c:36: tick_remaining(0xFFFFFFFFu, 0xFFFFFFFEu, 0xFFFFFFFFu) == 1u failed: 0xfffffffe != 0x1\n"
+      }
+    }
+  ]
+}

@@ -17,14 +17,14 @@ Ingenuity Mars helicopter), Apache-2.0, ≈ 207 k lines of C++. Fetched at a pin
 
 | Layer | Component | Status |
 |---|---|---|
-| **Sizing** | `oge sizing` — GPU memory (weights + KV cache + linear-attention state), roofline throughput incl. MoE expert traffic, team capacity planning; every datasheet value carries its source, unknown values are refused, not guessed | ✅ calibrated on Kaggle runs (pending) |
-| **Serving** | llama.cpp (CPU / CUDA) and vLLM profiles in Docker Compose, API keys, localhost-bound ports; `oge bench` load generator (TTFT, TPOT, throughput percentiles) with code-assistant traffic profiles | ✅ stack · ⏳ 2×T4 measurements |
+| **Sizing** | `oge sizing` — GPU memory (weights + KV cache + linear-attention state), roofline throughput incl. MoE expert traffic, team capacity planning; every datasheet value carries its source, unknown values are refused, not guessed | ✅ architectures from official configs · ⏳ throughput calibration (run 3) |
+| **Serving** | llama.cpp (CPU / CUDA) and vLLM profiles in Docker Compose, API keys, localhost-bound ports; `oge bench` load generator (TTFT, TPOT, throughput percentiles) with code-assistant traffic profiles | ✅ stack · ⏳ 2×T4 sweeps (run 3) |
 | **Knowledge** | Tree-sitter ingestion of code, unit tests, requirement tables and design docs into a typed graph (in-memory or **Neo4j**); hybrid BM25 + dense + graph retrieval | ✅ |
 | **MCP** | Knowledge server (MCP SDK v2, stdio or streamable HTTP): `search`, `get_symbol`, `get_callers/callees`, `get_requirement`, `trace_requirement`, `coverage_gaps`, `module_overview` | ✅ |
 | **Assistants** | Continue, Aider and generic MCP client configs targeting the platform | ✅ |
 | **Air gap** | Compose overlay on an internal Docker network + smoke test that **fails if any outbound connection succeeds** | ✅ (CI) |
-| **Model evaluation** | `oge eval` — 27 purpose-written embedded C tasks (generation, unit-test generation, refactoring, documentation) scored by execution: strict compile, hidden tests, ASan/UBSan, gcov coverage, mutation testing, complexity, Doxygen completeness; the suite validates itself | ✅ suite · ⏳ model runs |
-| **Agent** | `oge agent` — LangGraph agent that closes F´ traceability gaps: retrieves context over MCP, writes a requirement-tagged unit test, builds and runs it, repairs from compiler and test output, commits on a review branch; the model only writes test code, everything else is deterministic and policy-checked | ✅ end to end on F´ (scripted model) · ⏳ model runs |
+| **Model evaluation** | `oge eval` — 27 purpose-written embedded C tasks (generation, unit-test generation, refactoring, documentation) scored by execution: strict compile, hidden tests, ASan/UBSan, gcov coverage, mutation testing, complexity, Doxygen completeness; the suite validates itself | ✅ 2 models measured |
+| **Agent** | `oge agent` — LangGraph agent that closes F´ traceability gaps: retrieves context over MCP, writes a requirement-tagged unit test, builds and runs it, repairs from compiler and test output, commits on a review branch; the model only writes test code, everything else is deterministic and policy-checked | ✅ v1 measured on 2 models · ⏳ v2 (run 3) |
 | **CI** | Jenkins LTS with the official MCP Server plugin (least-privilege service account, JCasC); the agent triggers the F´ unit-test pipeline and reads the verdict over MCP | ✅ (CI) |
 
 ## Results so far
@@ -57,11 +57,44 @@ base for every requirement. Mean over requirements, 95 % bootstrap CI.
 |---|---|---|---|---|
 | Graph only (requirement's module, call edges) | 0.249 [0.220, 0.278] | 0.291 | 0.073 | 0.550 |
 | BM25 over code (identifier-aware tokenizer) | 0.488 [0.427, 0.548] | 0.591 | 0.297 | 0.677 |
-| **Graph-constrained BM25 (hybrid)** | **0.569 [0.513, 0.626]** | **0.665** | **0.330** | **0.781** |
-| + dense (Qwen3-Embedding-0.6B), + LLM rerank | ⏳ `kaggle/01_benchmark` | | | |
+| Dense (Qwen3-Embedding-0.6B) | 0.479 [0.428, 0.531] | 0.586 | 0.261 | 0.713 |
+| Graph-constrained BM25 | 0.569 [0.513, 0.626] | 0.665 | 0.330 | 0.781 |
+| Graph-constrained dense | 0.573 [0.521, 0.619] | 0.680 | 0.303 | 0.817 |
+| **Graph-constrained fusion of BM25 and dense (RRF)** | **0.609 [0.553, 0.660]** | **0.713** | **0.350** | **0.821** |
+| + LLM rerank of the top 10 (Qwen3-Coder) | 0.584 [0.535, 0.633] | 0.670 | 0.297 | 0.822 |
 
-Neither signal alone is enough: the graph knows *where* to look (requirements are allocated to components),
-the text knows *which* test. Source: [`docs/results/traceability_lexical.json`](docs/results/traceability_lexical.json).
+No signal alone is enough: the graph knows *where* to look (requirements are allocated to components), the text
+knows *which* test, and lexical and dense retrieval fail on different requirements. Pointwise LLM reranking
+*lowered* precision at the top and costs 10 calls per requirement: not used by default. Sources:
+[`traceability_lexical.json`](docs/results/traceability_lexical.json),
+[`bench/run2-2026-10-28`](docs/results/bench/run2-2026-10-28/README.md).
+
+### Code models on embedded C (`oge eval`, 27 tasks scored by execution)
+
+| Model (Q4_K_M, llama.cpp, 2× T4) | Generate | Unit-test gen. | Refactor | Document | Tasks passed | Median latency |
+|---|---|---|---|---|---|---|
+| **Qwen3-Coder-30B-A3B** | **9 / 12** | 0 / 6 | 2 / 5 | **4 / 4** | **15 / 27** | **21 s** |
+| Devstral-Small-2-24B | 5 / 12 | 1 / 6 | 2 / 5 | 2 / 4 | 10 / 27 | 85 s |
+
+Qwen3-Coder passes more tasks (7 vs 2 discordant; exact McNemar p = 0.18 — a direction at this sample size) at a
+quarter of the latency. Every failure was re-scored from the stored outputs; the patterns matter more than the
+totals: **8 of 12 generated test programs fail on the correct implementation** because the model computed
+expected values by hand (checksums, saturation bounds) — the valid ones kill 16 of 19 seeded faults; bit-level
+conventions (COBS, Hamming(7,4), convolutional coding) defeat both models; refactorings always reduce complexity
+but 4 of 10 change behaviour. Generated code and tests need execution gates, not review alone.
+
+### Test-generation agent on F´ (28 requirement gaps)
+
+| Model | Verified (v1) | First answer compiles | Mutants killed by verified tests | Median time / requirement |
+|---|---|---|---|---|
+| Qwen3-Coder-30B-A3B | 11 / 28 | 52 % | 25 / 41 | 38 s |
+| Devstral-Small-2-24B | 8 / 28 (+1 declined as not testable) | 15 % | 21 / 32 | 113 s |
+
+Failure analysis of the 121 failed attempts (classified by `failure_causes`): **54 % came from one confusion the
+agent itself reinforced** — calling `doDispatch()` on passive components, helped by a did-you-mean hint that
+offered a method F´ v4 does not have — and 8 from a patcher bug with namespace-qualified definitions. Agent v2
+states the component kind and exact dispatch call, fixes the bug, keeps the block a repair answer leaves out and
+shows the source of failed F´ assertions. ⏳ v2 is measured in run 3, on the same 28 requirements.
 
 ### Traceability audit of F´ (automatic, from the graph)
 

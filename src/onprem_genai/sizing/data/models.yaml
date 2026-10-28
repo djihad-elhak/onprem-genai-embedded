@@ -8,12 +8,13 @@ models:
     family: Qwen
     hf_repo: Qwen/Qwen3.8-27B
     license: Apache-2.0
-    params_total: 27.0e9
-    params_active: 27.0e9
+    params_total: 27781427952.0
+    params_active: 27781427952.0
     n_layers: 64
     hidden_size: 5120
-    full_attn_layers: 16
+    vocab_size: 248320
     num_attention_heads: 24
+    full_attn_layers: 16
     kv_heads: 4
     head_dim: 256
     linear_attn_layers: 48
@@ -24,58 +25,100 @@ models:
     linear_conv_kernel: 4
     linear_state_bytes: 4
     max_context: 262144
+    artifacts: []
     sources:
-      architecture: "config.json of unsloth/Qwen3.8-27B-GGUF (mirrors Qwen/Qwen3.8-27B): 64 layers, every 4th full attention, 4 KV heads, head_dim 256, linear heads 16/48 x 128, conv 4, mamba_ssm_dtype float32"
-      params_total: "nominal 27B from model name; exact count pending GGUF metadata"
+      architecture: config.json of Qwen/Qwen3.8-27B
+      params_total: model.safetensors.index.json of Qwen/Qwen3.8-27B
   qwen3-coder-30b-a3b:
     display_name: Qwen3-Coder-30B-A3B-Instruct
     family: Qwen
     hf_repo: Qwen/Qwen3-Coder-30B-A3B-Instruct
     license: Apache-2.0
-    params_total: 30.5e9
-    params_active: 3.3e9
+    params_total: 30532122624.0
     n_layers: 48
-    full_attn_layers: 48
+    hidden_size: 2048
+    vocab_size: 151936
     num_attention_heads: 32
+    full_attn_layers: 48
     kv_heads: 4
-    head_dim: null
+    head_dim: 128
+    linear_attn_layers: 0
+    linear_k_heads: 0
+    linear_v_heads: 0
+    linear_k_dim: 0
+    linear_v_dim: 0
+    linear_conv_kernel: 0
+    linear_state_bytes: 4
     num_experts: 128
     experts_per_token: 8
+    moe_intermediate_size: 768
+    moe_layers: 48
     max_context: 262144
+    artifacts: []
     sources:
-      architecture: "huggingface.co/Qwen/qwen3-coder-30b-a3b-instruct model card: 30.5B total / 3.3B active, 48 layers, 32 Q heads / 4 KV heads, 128 experts / 8 active, 262,144 context"
+      architecture: config.json of Qwen/Qwen3-Coder-30B-A3B-Instruct
+      params_total: model.safetensors.index.json of Qwen/Qwen3-Coder-30B-A3B-Instruct
+      params_active: 'kept from the previous entry: huggingface.co/Qwen/qwen3-coder-30b-a3b-instruct model card:
+        30.5B total / 3.3B active, 48 layers, 32 Q heads / 4 KV heads, 128 experts / 8 active, 262,144 context'
+    params_active: 3.3e9
   devstral-small-2-24b:
     display_name: Devstral Small 2 (24B, 2512)
     family: Devstral (Mistral AI)
     hf_repo: mistralai/Devstral-Small-2-24B-Instruct-2512
     license: Apache-2.0
-    params_total: 24.0e9
-    params_active: 24.0e9
-    n_layers: null
-    full_attn_layers: null
-    kv_heads: null
-    head_dim: null
-    max_context: 262144
+    params_total: 24011361840.0
+    params_active: 24011361840.0
+    n_layers: 40
+    hidden_size: 5120
+    vocab_size: 131072
+    num_attention_heads: 32
+    full_attn_layers: 40
+    kv_heads: 8
+    head_dim: 128
+    linear_attn_layers: 0
+    linear_k_heads: 0
+    linear_v_heads: 0
+    linear_k_dim: 0
+    linear_v_dim: 0
+    linear_conv_kernel: 0
+    linear_state_bytes: 4
+    max_context: 393216
+    artifacts: []
     sources:
-      architecture: "mistral.ai/news/devstral-2-vibe-cli: 24B parameters, 256K context, Apache 2.0; layer/head counts pending config.json"
+      architecture: config.json of mistralai/Devstral-Small-2-24B-Instruct-2512
+      params_total: model.safetensors.index.json of mistralai/Devstral-Small-2-24B-Instruct-2512
   qwen3.6-35b-a3b:
     display_name: Qwen3.6-35B-A3B
     family: Qwen
     hf_repo: Qwen/Qwen3.6-35B-A3B
     license: Apache-2.0
-    params_total: 35.0e9
-    params_active: 3.0e9
+    params_total: 35951822704.0
     n_layers: 40
     hidden_size: 2048
+    vocab_size: 248320
+    num_attention_heads: 16
     full_attn_layers: 10
+    kv_heads: 2
+    head_dim: 256
     linear_attn_layers: 30
-    kv_heads: null
-    head_dim: null
+    linear_k_heads: 16
+    linear_v_heads: 32
+    linear_k_dim: 128
+    linear_v_dim: 128
+    linear_conv_kernel: 4
+    linear_state_bytes: 4
     num_experts: 256
     experts_per_token: 8
+    moe_intermediate_size: 512
+    moe_layers: 40
     max_context: 262144
+    artifacts: []
     sources:
-      architecture: "immers.cloud model page: 40 layers = 10 x (3 Gated DeltaNet + 1 Gated Attention), hidden 2048, 256 experts / 8 selected, 262,144 context; head counts pending config.json"
+      architecture: config.json of Qwen/Qwen3.6-35B-A3B
+      params_total: model.safetensors.index.json of Qwen/Qwen3.6-35B-A3B
+      params_active: 'kept from the previous entry: immers.cloud model page: 40 layers = 10 x (3 Gated DeltaNet
+        + 1 Gated Attention), hidden 2048, 256 experts / 8 selected, 262,144 context; head counts pending config.json'
+    params_active: 3.0e9
   deepseek-v4-flash:
     display_name: DeepSeek-V4-Flash
     family: DeepSeek
@@ -92,10 +135,16 @@ models:
     experts_per_token: 6
     max_context: 1048576
     artifacts:
-      - {format: native_fp4_fp8, bytes: 146.0e9, source: "verdent.ai DeepSeek V4 open-weights guide: deepseek-ai/DeepSeek-V4-Flash native FP4+FP8 build ~146 GB on disk"}
-      - {format: fp8, bytes: 284.0e9, source: "verdent.ai DeepSeek V4 open-weights guide: sgl-project/DeepSeek-V4-Flash-FP8 ~284 GB"}
+    - format: native_fp4_fp8
+      bytes: 146.0e9
+      source: 'verdent.ai DeepSeek V4 open-weights guide: deepseek-ai/DeepSeek-V4-Flash native FP4+FP8 build ~146
+        GB on disk'
+    - format: fp8
+      bytes: 284.0e9
+      source: 'verdent.ai DeepSeek V4 open-weights guide: sgl-project/DeepSeek-V4-Flash-FP8 ~284 GB'
     sources:
-      architecture: "DeepSeek-V4 technical report (arXiv 2606.19348): 43 layers, hidden 4096, CSA/HCA hybrid attention (not MLA), 1 shared + 256 routed experts, 6 active, 284B/13B; KV cache at 1M context = 7% of DeepSeek-V3.2"
+      architecture: 'DeepSeek-V4 technical report (arXiv 2606.19348): 43 layers, hidden 4096, CSA/HCA hybrid attention
+        (not MLA), 1 shared + 256 routed experts, 6 active, 284B/13B; KV cache at 1M context = 7% of DeepSeek-V3.2'
   deepseek-v4-pro:
     display_name: DeepSeek-V4-Pro
     family: DeepSeek
@@ -112,6 +161,9 @@ models:
     experts_per_token: 6
     max_context: 1048576
     artifacts:
-      - {format: native_fp4_fp8, bytes: 865.0e9, source: "verdent.ai DeepSeek V4 open-weights guide: deepseek-ai/DeepSeek-V4-Pro ~865 GB"}
+    - format: native_fp4_fp8
+      bytes: 865.0e9
+      source: 'verdent.ai DeepSeek V4 open-weights guide: deepseek-ai/DeepSeek-V4-Pro ~865 GB'
     sources:
-      architecture: "DeepSeek-V4 technical report (arXiv 2606.19348): 61 layers, hidden 7168, 1 shared + 384 routed experts, 6 active, 1.6T/49B; KV cache at 1M context = 10% of DeepSeek-V3.2"
+      architecture: 'DeepSeek-V4 technical report (arXiv 2606.19348): 61 layers, hidden 7168, 1 shared + 384 routed
+        experts, 6 active, 1.6T/49B; KV cache at 1M context = 10% of DeepSeek-V3.2'

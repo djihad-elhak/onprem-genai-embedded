@@ -55,8 +55,8 @@ from model output.
 | Traceability | `REQUIREMENT("<id>")` is required and inserted if missing; tagging any other requirement is rejected. |
 | Unsafe code | `system`, `popen`, `fork`, `exec*`, `exit`, `abort`, threads, inline assembly, preprocessor definitions, skipped or disabled tests are rejected before building. |
 | Weak tests | At least one assertion; the new test is run 3 times (F´ tests use random seeds) and must not break any existing test. |
-| Context | Deterministic and budgeted (32k characters, ≈ 9k tokens, so a 16k-token server slot holds the task, one previous answer, its diagnostics and the new answer): requirement, design-document excerpt (MCP `search`), FPP model, autocoded harness API (assertion macros, `invoke_to_*`, `sendCmd_*`), tester header, test main, related tests (MCP `trace_requirement`), implementation. Same context for every model. |
-| Repair | Up to 3 attempts; each repair prompt carries the task, the latest answer and its diagnostics only. Compiler errors are condensed with repo-relative paths; unknown identifiers get *did-you-mean* hints from the harness API and headers and their definitions over MCP (`get_symbol`); gtest failures and regressions are fed back verbatim. |
+| Context | Deterministic and budgeted (32k characters, ≈ 9k tokens, so a 16k-token server slot holds the task, one previous answer, its diagnostics and the new answer): requirement, the component's kind and exact dispatch rule (passive: none; active / queued: e.g. `this->m_impl.doDispatch()`), design-document excerpt (MCP `search`), FPP model, autocoded harness API (assertion macros, `invoke_to_*`, `sendCmd_*`), tester header, test main, related tests (MCP `trace_requirement`), implementation. Same context for every model. |
+| Repair | Up to 3 attempts; each repair prompt carries the task, the latest answer and its diagnostics only, and an answer may resend only the block it changes (the other is taken from the previous answer). Compiler errors are condensed with repo-relative paths; unknown identifiers get *did-you-mean* hints from the harness API and headers and their definitions over MCP (`get_symbol`); dispatch errors get the component's dispatch rule; gtest failures and regressions are fed back verbatim, F´ assertions with the asserted source line. |
 | Honest outcomes | `passed`, `not_testable` (the model may decline with a reason, e.g. verified by inspection), `suspected_defect` (the model claims the implementation violates the requirement — never committed, reported for review), `failed` (policy / build / test / regression). |
 | Review | One branch per run, one commit per requirement, author `oge-agent (<model>)`, message with the requirement text and an AI-use disclosure (as F´'s `AI_POLICY.md` asks of contributions). A review sheet lists every test for a human verdict. |
 | CI | After the batch, `JenkinsCi` triggers the `fprime-unit-tests` pipeline for the branch over the Jenkins MCP server and records the verdict and JUnit counts. |
@@ -104,6 +104,23 @@ plugin](https://plugins.jenkins.io/mcp-server/) (`mcp-server`), configured as co
 The client is tested against a fake of the plugin (same tool names, parameters and JSON envelope, taken from the
 plugin source); the CI job `jenkins-integration` runs the real stack: agent run with the scripted model, then the
 Jenkins verdict over MCP.
+
+## Results
+
+Benchmark run 2 (agent v1, 2× T4, Q4_K_M on llama.cpp, same 28 requirements and context for both models):
+
+| Model | Verified | First answer compiles | Mutants killed by verified tests | Median time / requirement |
+|---|---|---|---|---|
+| Qwen3-Coder-30B-A3B | 11 / 28 | 52 % | 25 / 41 | 38 s |
+| Devstral-Small-2-24B | 8 / 28 (+1 not testable) | 15 % | 21 / 32 | 113 s |
+
+`failure_causes` classifies every failed attempt (121 in total): 54 % were dispatch calls on passive components
+or on the wrong object — the v1 prompt stated the active-component rule without the component's kind, and the
+hints offered `dispatchAll`, which F´ v4 does not have — and 8 came from a patcher bug on namespace-qualified
+definitions. The rest are the models' own: invented enum values and include paths, wrong expected values,
+broken preconditions. Agent v2 addresses the first two groups only with general rules (DESIGN_DECISIONS D17)
+and is measured on the same targets in run 3 (⏳). Per-attempt records, generated tests as patches and the full
+analysis: [`results/bench/run2-2026-10-28`](results/bench/run2-2026-10-28/README.md).
 
 ## Limits
 

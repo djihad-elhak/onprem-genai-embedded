@@ -51,8 +51,8 @@ def test_qwen38_linear_state_hand_computed() -> None:
 
 
 def test_incomplete_spec_is_refused() -> None:
-    with pytest.raises(IncompleteSpecError, match="head_dim"):
-        kv_bytes_per_token(MODELS["qwen3-coder-30b-a3b"], KV["f16"])
+    with pytest.raises(IncompleteSpecError, match="full_attn_layers"):  # attention layout not modelled yet
+        kv_bytes_per_token(MODELS["deepseek-v4-flash"], KV["f16"])
 
 
 def test_measured_artifact_wins_over_estimate() -> None:
@@ -61,7 +61,8 @@ def test_measured_artifact_wins_over_estimate() -> None:
     assert b == 146e9
     assert "measured" in src
     est, src = weight_bytes(MODELS["qwen3.8-27b"], WF["q4_k_m"])
-    assert est == pytest.approx(27e9 * 4.8944 / 8)
+    assert est == pytest.approx(MODELS["qwen3.8-27b"].params_total * 4.8944 / 8)
+    assert MODELS["qwen3.8-27b"].params_total == 27781427952  # exact, from the safetensors index
     assert "estimate" in src
 
 
@@ -221,6 +222,9 @@ def test_hf_config_import_hybrid_standard_and_mla() -> None:
 def test_params_from_safetensors_index() -> None:
     assert params_from_safetensors_index({"metadata": {"total_size": 54e9}}, 2.0) == 27e9
     assert params_from_safetensors_index({}) is None
+    # FP8 checkpoint (Devstral Small 2): bytes / 2 would halve the count; total_parameters is exact
+    fp8 = {"metadata": {"total_size": 25792912480, "total_parameters": 24011361840}}
+    assert params_from_safetensors_index(fp8) == 24011361840
 
 
 def test_planner_scales_with_team_and_rejects_impossible() -> None:
@@ -321,9 +325,9 @@ def test_calibration_recovers_known_efficiency() -> None:
 def test_team_report_sizes_complete_specs_and_lists_unverified_ones() -> None:
     from onprem_genai.sizing.cli import team_report  # noqa: PLC0415
 
-    text = team_report(["qwen3.8-27b", "qwen3-coder-30b-a3b"], ["chat"], [25, 100], ["t4", "h100-nvl"])
+    text = team_report(["qwen3.8-27b", "deepseek-v4-flash"], ["chat"], [25, 100], ["t4", "h100-nvl"])
     lines = text.splitlines()
     assert lines[0] == "| model | scenario | engineers | t4 | h100-nvl |"
     rows = [ln for ln in lines if ln.startswith("| Qwen3.8-27B | chat |")]
     assert len(rows) == 2
-    assert "Not sized (unverified architecture fields): qwen3-coder-30b-a3b" in text
+    assert "Not sized (unverified architecture fields): deepseek-v4-flash" in text

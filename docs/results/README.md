@@ -9,7 +9,9 @@ F´ commit for all knowledge results: `558b7ef48edd5d25f3bdddcbbe7afddb9cc22d09`
 | `traceability_audit.json` | Tags citing undefined requirement IDs; tags citing another module's requirements (with file:line) | `oge knowledge ingest --audit-out …` |
 | `traceability_gaps.json` | Requirements specified as verified by test without an explicit test tag, with 3 suggested candidate tests each | `oge knowledge gaps --out …` |
 | `probe/` | 2× T4 compatibility matrix: load status, VRAM, TTFT, decode/prefill speed, 4× concurrency, C smoke test, root causes of failures — run 1 (llama.cpp build failed) and run 2 (complete) | `kaggle/00_probe_t4x2` |
-| `bench/` | Serving sweeps (3 profiles × concurrency), model configs for sizing, dense / hybrid / LLM-reranked traceability, `oge eval` reports, agent runs (results, summaries, generated tests as patches) — run 1 failed (GPU memory held by the embedding step, fixed), run 2 pending | `kaggle/01_benchmark` |
+| `bench/run1-2026-10-28.md` | Failed run: GPU memory held by the embedding step (cause and fix) | `kaggle/01_benchmark` |
+| `bench/run2-2026-10-28/` | **Final**: dense / hybrid / LLM-reranked traceability, `oge eval` reports for 2 models (with the generated code), official model configs for sizing. **Superseded**: serving sweeps (cache-served levels) and agent v1 (baseline of the failure analysis) | `kaggle/01_benchmark` at `a91bbdb` |
+| `bench/run3-…/` | ⏳ Serving sweeps on new prompts per level, agent v2 | `kaggle/01_benchmark` at `bf66c9d`, `STAGES=["serving", "agent"]` |
 
 Reproduce the CPU results:
 

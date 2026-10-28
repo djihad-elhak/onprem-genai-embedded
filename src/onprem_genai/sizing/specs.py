@@ -213,8 +213,12 @@ def spec_from_hf_config(
 
 
 def params_from_safetensors_index(index: dict[str, Any], dtype_bytes: float = 2.0) -> float | None:
-    """Parameter count from ``model.safetensors.index.json`` (``metadata.total_size`` is in bytes)."""
-    total = (index.get("metadata") or {}).get("total_size")
+    """Parameter count from ``model.safetensors.index.json``: ``metadata.total_parameters`` when the index has
+    it (exact, whatever the checkpoint dtype), else ``metadata.total_size`` (bytes) / ``dtype_bytes``."""
+    meta = index.get("metadata") or {}
+    if meta.get("total_parameters"):
+        return float(meta["total_parameters"])
+    total = meta.get("total_size")
     return float(total) / dtype_bytes if total else None
 
 

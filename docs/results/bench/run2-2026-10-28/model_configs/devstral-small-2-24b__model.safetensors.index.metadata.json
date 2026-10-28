@@ -1,0 +1,7 @@
+{
+ "metadata": {
+  "total_parameters": 24011361840,
+  "total_size": 25792912480
+ },
+ "_note": "weight_map omitted (only metadata is used); full file: model.safetensors.index.json of the source repo"
+}

@@ -313,11 +313,27 @@ def import_config(
         old = raw["models"].get(key, {})
         entry["artifacts"] = old.get("artifacts", []) or entry.get("artifacts", [])
         entry["sources"] = {**old.get("sources", {}), **entry.get("sources", {})}
+        if index:
+            entry["sources"]["params_total"] = f"model.safetensors.index.json of {hf_repo}"
         for k in ("family", "license"):
             if k in old:
                 entry.setdefault(k, old[k])
+        if display_name is None and "display_name" in old:
+            entry["display_name"] = old["display_name"]
+        # config.json does not state the active parameters of a MoE model: keep the documented value
+        if params_active is None and entry.get("params_active") is None and old.get("params_active"):
+            entry["params_active"] = old["params_active"]
+            previous = old.get("sources", {}).get("architecture", "")
+            entry["sources"].setdefault("params_active", f"kept from the previous entry: {previous}")
+        first = ("display_name", "family", "hf_repo", "license")
+        head = {k: entry[k] for k in first if k in entry}
+        entry = head | {k: v for k, v in entry.items() if k not in first}
         raw["models"][key] = entry
-        models_file.write_text(yaml.safe_dump(raw, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        text = models_file.read_text(encoding="utf-8")
+        header = "".join(ln for ln in text.splitlines(keepends=True)[:20] if ln.startswith("#"))
+        models_file.write_text(
+            header + yaml.safe_dump(raw, sort_keys=False, allow_unicode=True, width=110), encoding="utf-8"
+        )
         console.print(f"updated {key} in {models_file}")
     else:
         console.print(yaml.safe_dump({key: entry}, sort_keys=False, allow_unicode=True))

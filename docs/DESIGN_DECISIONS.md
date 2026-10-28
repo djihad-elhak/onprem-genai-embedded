@@ -112,6 +112,22 @@ the end.
 - **Why**: one Kaggle session (≈ 5 h) instead of two; the pair contrasts a fast MoE with a dense model of similar
   memory footprint. Qwen3.6-35B-A3B and Qwen3.8-27B remain in the probe and the sizing data.
 
+## D17 · Agent iterations are driven by classified failures and re-measured on the same targets
+- **Choice**: after each model run, every failed attempt gets a primary cause (`agent.runner.failure_causes`,
+  first matching rule over the build / policy / test diagnostics); the agent is changed only where a cause
+  points at the agent itself, and the new version runs on the same 28 requirements with the same models.
+- **Why**: in run 2, 54 % of failed attempts came from the agent's own context (a dispatch rule stated without
+  the component kind, a did-you-mean hint offering a method F´ v4 lacks) and 8 from a patcher bug. Tuning on
+  anecdotes would not have found that; tuning on the test set's answers would be overfitting, so v2 changes
+  general rules (component kind, block reuse, assertion sources), never per-requirement content.
+
+## D18 · Serving benchmark: every concurrency level on new prompts
+- **Choice**: each level of a sweep sends requests that no earlier level sent, starting at random lines of the
+  corpus; the warm-up uses a disjoint range. Only the agent profile's repository prefix is shared, by design.
+- **Why**: run 2 re-sent the same 8 prompts at 1, 2 and 4 streams, so the prefix / prompt caches answered
+  levels 2 and 4 (vLLM: time to first token 8.8 s → 0.26 s on 9.7k-token prompts). A capacity plan built on
+  cached throughput would under-buy hardware.
+
 ---
 
 ## Questions to expect (and where the answers are)

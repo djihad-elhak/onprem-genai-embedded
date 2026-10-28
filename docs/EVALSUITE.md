@@ -100,6 +100,18 @@ reviewed code change and the files are reproducible byte for byte.
 | `doc-ring-buffer` | document | driver buffering | Document a ring-buffer API | |
 | `doc-saturating-arith` | document | fixed-point DSP | Document saturating arithmetic helpers | |
 
+## Results (benchmark run 2, one sample per task)
+
+| Model (Q4_K_M, llama.cpp) | Generate | Unit-test gen. | Refactor | Document | Tasks passed | Median latency |
+|---|---|---|---|---|---|---|
+| Qwen3-Coder-30B-A3B | 9 / 12 | 0 / 6 (2 valid, 7/9 mutants) | 2 / 5 | 4 / 4 | 15 / 27 | 21 s |
+| Devstral-Small-2-24B | 5 / 12 | 1 / 6 (2 valid, 9/10 mutants) | 2 / 5 | 2 / 4 | 10 / 27 | 85 s |
+
+Failure patterns, checked by re-scoring the stored outputs: generated tests fail on the correct implementation
+because expected values are computed by hand (8 of 12); bit-level conventions (COBS, Hamming(7,4),
+convolutional coding) defeat both models; 4 of 10 refactorings change behaviour. Details and per-task outputs:
+[`results/bench/run2-2026-10-28`](results/bench/run2-2026-10-28/README.md).
+
 ## Limits
 
 * 27 tasks give wide confidence intervals: differences of a few points between models are noise; the report
