@@ -5,8 +5,8 @@ sized, benchmarked and air-gap verified, with a requirements-aware code knowledg
 over MCP.**
 
 [Français](README.fr.md) · [Architecture](docs/ARCHITECTURE.md) · [Design decisions](docs/DESIGN_DECISIONS.md) ·
-[Agent](docs/AGENT.md) · [Evaluation suite](docs/EVALSUITE.md) · [Results](docs/results/README.md) ·
-[Plan](docs/PLAN.md)
+[Agent](docs/AGENT.md) · [Evaluation suite](docs/EVALSUITE.md) · [Productivity & scale-up](docs/STRATEGY.md) ·
+[Results](docs/results/README.md) · [Plan](docs/PLAN.md)
 
 Target code base: **NASA F´ (F Prime) v4.4.1** — JPL's open-source flight-software framework (flown on the
 Ingenuity Mars helicopter), Apache-2.0, ≈ 207 k lines of C++. Fetched at a pinned commit, never vendored.

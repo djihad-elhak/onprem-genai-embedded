@@ -15,6 +15,7 @@ from onprem_genai.sizing.memory import estimate_memory, max_cached_tokens
 from onprem_genai.sizing.performance import Calibration, Parallelism, estimate_decode, estimate_prefill_tps
 from onprem_genai.sizing.planner import best_plan_per_gpu, load_scenarios
 from onprem_genai.sizing.specs import (
+    IncompleteSpecError,
     load_formats,
     load_gpus,
     load_json,
@@ -202,6 +203,84 @@ def plan(
     console.print(t)
     if json_out:
         json_out.write_text(json.dumps([p.as_dict() for p in plans], indent=2), encoding="utf-8")
+
+
+def team_report(
+    models: list[str],
+    scenarios: list[str],
+    team_sizes: list[int],
+    gpus: list[str] | None = None,
+    weights: str = "q4_k_m",
+    kv: str = "f16",
+    calib: Calibration | None = None,
+) -> str:
+    """Markdown: total GPUs per GPU type for each (model, scenario, team size); unknown specs are listed."""
+    all_specs, (wf, kf), all_sc = load_models(), load_formats(), load_scenarios()
+    gpu_table = load_gpus()
+    names = gpus or list(gpu_table)
+    head = "| model | scenario | engineers | " + " | ".join(names) + " |"
+    lines = [head, "|" + "---|" * (3 + len(names))]
+    pending: list[str] = []
+    for m in models:
+        spec = all_specs[m]
+        try:
+            rows = [
+                (
+                    sc,
+                    n,
+                    best_plan_per_gpu(
+                        spec,
+                        wf[weights],
+                        kf[kv],
+                        gpu_table,
+                        all_sc[sc],
+                        engineers=n,
+                        calib=calib or Calibration(),
+                    ),
+                )
+                for sc in scenarios
+                for n in team_sizes
+            ]
+        except IncompleteSpecError as exc:
+            pending.append(str(exc).split(" Import ")[0])
+            continue
+        for sc, n, plans in rows:
+            by_gpu = {p.gpu: p for p in plans}
+            cells = [
+                f"{p.total_gpus} ({p.gpus_per_replica}×{p.replicas})" if p and p.feasible else "–"
+                for p in (by_gpu.get(g) for g in names)
+            ]
+            lines.append(f"| {spec.display_name} | {sc} | {n} | " + " | ".join(cells) + " |")
+    notes = ["", "Cells: total GPUs (GPUs per replica × replicas); – = infeasible (memory or SLO)."]
+    if pending:
+        notes += ["", "Not sized (unverified architecture fields): " + "; ".join(sorted(set(pending)))]
+    return "\n".join(lines + notes) + "\n"
+
+
+@app.command("report")
+def report(
+    model: Annotated[list[str], typer.Option("--model", "-m")],
+    scenario: Annotated[list[str] | None, typer.Option("--scenario", "-s")] = None,
+    engineers: Annotated[list[int] | None, typer.Option("--engineers", "-n")] = None,
+    gpu: Annotated[list[str] | None, typer.Option("--gpu", "-g")] = None,
+    weights: str = "q4_k_m",
+    kv: str = "f16",
+    calibration: Path | None = None,
+    out: Path | None = None,
+) -> None:
+    """Team sizing table (markdown) across models, scenarios and team sizes."""
+    text = team_report(
+        model,
+        scenario or ["chat", "chat_agents", "full"],
+        engineers or [25, 100, 400],
+        gpu,
+        weights,
+        kv,
+        _calibration(calibration),
+    )
+    if out:
+        out.write_text(text, encoding="utf-8")
+    typer.echo(text)
 
 
 @app.command("import-config")

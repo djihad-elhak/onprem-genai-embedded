@@ -316,3 +316,14 @@ def test_calibration_recovers_known_efficiency() -> None:
     assert got.decode_bw_efficiency == pytest.approx(0.42)
     rows = leave_one_model_out(ms, specs, WF, KV["f16"], GPUS)
     assert all(abs(r["decode_error_pct"]) < 0.1 for r in rows)
+
+
+def test_team_report_sizes_complete_specs_and_lists_unverified_ones() -> None:
+    from onprem_genai.sizing.cli import team_report  # noqa: PLC0415
+
+    text = team_report(["qwen3.8-27b", "qwen3-coder-30b-a3b"], ["chat"], [25, 100], ["t4", "h100-nvl"])
+    lines = text.splitlines()
+    assert lines[0] == "| model | scenario | engineers | t4 | h100-nvl |"
+    rows = [ln for ln in lines if ln.startswith("| Qwen3.8-27B | chat |")]
+    assert len(rows) == 2
+    assert "Not sized (unverified architecture fields): qwen3-coder-30b-a3b" in text

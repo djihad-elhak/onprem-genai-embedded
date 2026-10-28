@@ -5,7 +5,8 @@ embarqué / aéronautique — dimensionnée, mesurée et vérifiée en mode déc
 connaissances code + exigences + tests exposé aux assistants via MCP.**
 
 [English](README.md) · [Architecture](docs/ARCHITECTURE.md) · [Décisions de conception](docs/DESIGN_DECISIONS.md) ·
-[Agent](docs/AGENT.md) · [Suite d'évaluation](docs/EVALSUITE.md) · [Résultats](docs/results/README.md)
+[Agent](docs/AGENT.md) · [Suite d'évaluation](docs/EVALSUITE.md) ·
+[Productivité et passage à l'échelle](docs/STRATEGY.fr.md) · [Résultats](docs/results/README.md)
 
 Base de code cible : **NASA F´ (F Prime) v4.4.1** — framework logiciel de vol open source du JPL (embarqué sur
 l'hélicoptère martien Ingenuity), Apache-2.0, ≈ 207 000 lignes de C++. Récupéré à un commit figé, jamais copié
