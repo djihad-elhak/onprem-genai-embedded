@@ -59,7 +59,9 @@ async def run_batch(
     out: Path,
     branch: str,
     progress: Callable[[dict[str, Any], int, int], None] | None = None,
+    deadline: float | None = None,
 ) -> list[dict[str, Any]]:
+    """Run the agent on each requirement; with ``deadline`` (time.monotonic), start no new one after it."""
     ws = deps.ws
     done: dict[str, dict[str, Any]] = {}
     if out.exists():
@@ -79,6 +81,8 @@ async def run_batch(
     graph = build_graph(deps)
     todo = [r for r in req_ids if r not in done]
     for req_id in todo:
+        if deadline is not None and time.monotonic() > deadline:
+            break
         t0 = time.perf_counter()
         try:
             state = await graph.ainvoke({"req_id": req_id}, {"recursion_limit": 100})

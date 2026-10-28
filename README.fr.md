@@ -40,7 +40,7 @@ classe **les 3 261 cas de test** de la base pour chaque exigence. Moyenne sur le
 | Graphe seul (module de l'exigence, appels) | 0,249 [0,220 ; 0,278] | 0,291 | 0,073 | 0,550 |
 | BM25 sur le code (tokenisation des identifiants) | 0,488 [0,427 ; 0,548] | 0,591 | 0,297 | 0,677 |
 | **BM25 contraint par le graphe (hybride)** | **0,569 [0,513 ; 0,626]** | **0,665** | **0,330** | **0,781** |
-| + dense (Qwen3-Embedding-0.6B), + reclassement LLM | ⏳ `kaggle/01_m1_benchmark` | | | |
+| + dense (Qwen3-Embedding-0.6B), + reclassement LLM | ⏳ `kaggle/01_benchmark` | | | |
 
 Aucun signal ne suffit seul : le graphe sait *où* chercher (les exigences sont allouées à des composants), le
 texte sait *quel* test. Source : [`docs/results/traceability_lexical.json`](docs/results/traceability_lexical.json).
@@ -84,7 +84,7 @@ docker compose -f deploy/compose.ci.yaml up -d --build                        # 
 ```
 
 Les mesures GPU s'exécutent en notebooks batch sur Kaggle (2× Tesla T4) : `kaggle/00_probe_t4x2` et
-`kaggle/01_m1_benchmark`.
+`kaggle/01_benchmark`.
 
 ## Ingénierie
 

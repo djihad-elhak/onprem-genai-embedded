@@ -1,7 +1,7 @@
 # Model architecture specs used by the sizing calculator.
 # Rule: only verified values. Unknown fields stay null and the calculator refuses to use them
 # (IncompleteSpecError). Specs are completed from the official config.json / GGUF metadata captured by
-# kaggle/01_m1_benchmark (`oge sizing import-config`), which overwrites this file's entries.
+# kaggle/01_benchmark (`oge sizing import-config`), which overwrites this file's entries.
 models:
   qwen3.8-27b:
     display_name: Qwen3.8-27B

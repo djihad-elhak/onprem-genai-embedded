@@ -40,7 +40,7 @@ base for every requirement. Mean over requirements, 95 % bootstrap CI.
 | Graph only (requirement's module, call edges) | 0.249 [0.220, 0.278] | 0.291 | 0.073 | 0.550 |
 | BM25 over code (identifier-aware tokenizer) | 0.488 [0.427, 0.548] | 0.591 | 0.297 | 0.677 |
 | **Graph-constrained BM25 (hybrid)** | **0.569 [0.513, 0.626]** | **0.665** | **0.330** | **0.781** |
-| + dense (Qwen3-Embedding-0.6B), + LLM rerank | ⏳ `kaggle/01_m1_benchmark` | | | |
+| + dense (Qwen3-Embedding-0.6B), + LLM rerank | ⏳ `kaggle/01_benchmark` | | | |
 
 Neither signal alone is enough: the graph knows *where* to look (requirements are allocated to components),
 the text knows *which* test. Source: [`docs/results/traceability_lexical.json`](docs/results/traceability_lexical.json).
@@ -98,7 +98,8 @@ uv run oge agent run --base-url http://localhost:8080 --label my-model \
 ```
 
 GPU benchmarks run as batch notebooks on Kaggle (2× Tesla T4): `kaggle/00_probe_t4x2` (what runs on Turing
-GPUs) and `kaggle/01_m1_benchmark` (serving sweeps, sizing calibration, dense/LLM traceability).
+GPUs) and `kaggle/01_benchmark` (serving sweeps, dense/LLM traceability, sizing inputs, model evaluation
+and agent runs, one model load per configuration).
 
 ## Architecture
 

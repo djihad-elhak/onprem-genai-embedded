@@ -34,7 +34,7 @@ the Model Context Protocol, and is sized from measurements rather than vendor cl
 | `agent` | LangGraph test-generation agent: MCP retrieval, policy-checked patching of F´ unit tests, build / run / coverage / mutants, git review branch, Jenkins CI over MCP ([AGENT.md](AGENT.md)) | `graph.py`, `patch.py`, `context.py`, `fprime.py`, `mutation.py`, `ci.py`, `runner.py` |
 | `platform` | Deployment verification: LLM, embeddings, MCP over HTTP, egress probe | `smoke.py` |
 | `deploy/` | Container image, Compose profiles, air-gap overlay, Jenkins add-on (`compose.ci.yaml`), client configs | `Dockerfile`, `compose.yaml`, `compose.offline.yaml`, `clients/` |
-| `kaggle/` | GPU batch notebooks (2× T4) producing every hardware measurement | `00_probe_t4x2`, `01_m1_benchmark` |
+| `kaggle/` | GPU batch notebooks (2× T4) producing every hardware measurement | `00_probe_t4x2`, `01_benchmark` |
 
 ## 3. Knowledge graph
 
