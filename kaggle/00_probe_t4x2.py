@@ -27,6 +27,10 @@
 #
 # Results are written incrementally after every measurement, so a crash or timeout never loses completed work.
 # Optional: add a Kaggle secret named `HF_TOKEN` to avoid Hugging Face rate limits (not required).
+#
+# **Changelog.** 0.2.0 — llama.cpp now builds on images that ship only the versioned CUDA driver library
+# (`libcuda.so.1`, no toolkit stub: CMake error *"CUDA::cuda_driver … target was not found"*, seen on the Kaggle
+# image of Oct 2026); failed loads now record the root-cause lines of the full log, not only its tail.
 
 # %%
 # ---------------------------------------------------------------- configuration
@@ -44,7 +48,7 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-PROBE_VERSION = "0.1.0"
+PROBE_VERSION = "0.2.0"
 SESSION_BUDGET_S = 10.5 * 3600  # Kaggle sessions stop at 12 h; keep a safety margin
 T_START = time.time()
 
@@ -239,6 +243,38 @@ def port_free(port: int) -> bool:
 def tail(path: Path, n: int = 60) -> str:
     try:
         return "\n".join(path.read_text(errors="replace").splitlines()[-n:])
+    except OSError:
+        return ""
+
+
+_ROOT_CAUSE = re.compile(
+    r"(?:\b\w*(?:Error|Exception)\b(?!\s*:?\s*$)|CMake Error|\berror:|out of memory|OOM|not supported|"
+    r"unsupported|requires? (?:compute capability|SM|GPU)|Cannot|cannot|Failed to|failed to|No such file)",
+)
+_NOISE = re.compile(r"^\s*(File \"|\^+$|~+$|Traceback|During handling|The above exception)|warnings\.warn")
+
+
+def root_cause(text: str, limit: int = 12) -> str:
+    """Distinctive error lines of a whole log (the tail of a vLLM log is only the API-server traceback)."""
+    out, keys = [], set()
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("CMake Error"):
+            stripped = " ".join(x.strip() for x in lines[i : i + 6] if x.strip())
+        elif not stripped or _NOISE.search(line) or not _ROOT_CAUSE.search(line):
+            continue
+        key = re.sub(r"\d+", "#", stripped)[:200]
+        if key not in keys:
+            keys.add(key)
+            out.append(stripped[:400])
+    specific = [ln for ln in out if "Engine core initialization failed" not in ln]
+    return "\n".join((specific or out)[-limit:])
+
+
+def root_cause_of(path: Path) -> str:
+    try:
+        return root_cause(path.read_text(errors="replace"))
     except OSError:
         return ""
 
@@ -568,27 +604,79 @@ def measure_server(
 LLAMA_DIR = WORK_DIR / "llama.cpp"
 LLAMA_SERVER = LLAMA_DIR / "build" / "bin" / "llama-server"
 
+# Some images ship only the versioned driver library (libcuda.so.1) and no toolkit stub, so CMake cannot create
+# the CUDA::cuda_driver target llama.cpp links for its VMM memory pool. Give CMake a linkable alias of the
+# installed driver; if there is none, build without VMM (legacy pool). Both choices are recorded.
+LIBCUDA_DIRS = [
+    "/usr/local/cuda/lib64/stubs",
+    "/usr/local/cuda/targets/x86_64-linux/lib/stubs",
+    "/usr/lib/x86_64-linux-gnu",
+    "/usr/lib64",
+    "/usr/local/nvidia/lib64",
+]
+
+
+def cuda_driver_cmake_args() -> list[str]:
+    for d in LIBCUDA_DIRS:
+        if (Path(d) / "libcuda.so").exists():
+            return [f"-DCMAKE_LIBRARY_PATH={d}"]
+    for d in LIBCUDA_DIRS:
+        versioned = Path(d) / "libcuda.so.1"
+        if versioned.exists():
+            link_dir = WORK_DIR / "cuda-link"
+            link_dir.mkdir(parents=True, exist_ok=True)
+            alias = link_dir / "libcuda.so"
+            if alias.is_symlink() or alias.exists():
+                alias.unlink()
+            alias.symlink_to(versioned)
+            return [f"-DCMAKE_LIBRARY_PATH={link_dir}"]
+    return ["-DGGML_CUDA_NO_VMM=ON"]
+
+
 if RUN_LLAMACPP:
     t0 = time.time()
     build_log = LOG_DIR / "llamacpp_build.log"
+    attempts_log = []
     try:
         if not LLAMA_SERVER.exists():
-            ref = f"--branch {LLAMACPP_REF}" if LLAMACPP_REF else ""
-            sh(f"git clone --depth 1 {ref} {LLAMACPP_GIT} {LLAMA_DIR}", check=True, timeout=600)
+            if not (LLAMA_DIR / ".git").exists():
+                ref = f"--branch {LLAMACPP_REF}" if LLAMACPP_REF else ""
+                sh(f"git clone --depth 1 {ref} {LLAMACPP_GIT} {LLAMA_DIR}", check=True, timeout=600)
             nproc = os.cpu_count() or 4
-            sh(
-                f"cd {LLAMA_DIR} && export PATH=/usr/local/cuda/bin:$PATH && "
-                f"cmake -S . -B build -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75 -DLLAMA_CURL=OFF "
-                f"-DCMAKE_BUILD_TYPE=Release && "
-                f"cmake --build build --config Release -j{nproc} --target llama-server",
-                log=build_log,
-                check=True,
-                timeout=5400,
+            base = (
+                "-DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75 -DLLAMA_CURL=OFF -DCMAKE_BUILD_TYPE=Release "
+                "-DCUDAToolkit_ROOT=/usr/local/cuda"
             )
+            first = cuda_driver_cmake_args()
+            no_vmm = ["-DGGML_CUDA_NO_VMM=ON"]
+            for extra in [first] if first == no_vmm else [first, no_vmm]:
+                shutil.rmtree(LLAMA_DIR / "build", ignore_errors=True)
+                cmd = (
+                    f"cd {LLAMA_DIR} && export PATH=/usr/local/cuda/bin:$PATH && "
+                    f"cmake -S . -B build {base} {' '.join(extra)} && "
+                    f"cmake --build build --config Release -j{nproc} --target llama-server"
+                )
+                attempt_log = LOG_DIR / f"llamacpp_build_{len(attempts_log)}.log"
+                proc = sh(cmd, log=attempt_log, timeout=5400)
+                attempts_log.append(
+                    {"cmake_extra": extra, "rc": proc.returncode, "root_cause": root_cause_of(attempt_log)}
+                )
+                if proc.returncode == 0 and LLAMA_SERVER.exists():
+                    break
+            shutil.copy(attempt_log, build_log)
+            if not LLAMA_SERVER.exists():
+                raise RuntimeError(attempts_log[-1]["root_cause"] or tail(build_log, 30))
         commit = sh(f"git -C {LLAMA_DIR} rev-parse HEAD").stdout.strip()
-        RESULTS["builds"]["llamacpp"] = {"ok": True, "commit": commit, "build_s": round(time.time() - t0)}
+        vmm = "-DGGML_CUDA_NO_VMM=ON" not in (attempts_log[-1]["cmake_extra"] if attempts_log else [])
+        RESULTS["builds"]["llamacpp"] = {
+            "ok": True,
+            "commit": commit,
+            "build_s": round(time.time() - t0),
+            "cuda_vmm": vmm,
+            "attempts": attempts_log,
+        }
     except Exception as e:
-        RESULTS["builds"]["llamacpp"] = {"ok": False, "error": str(e)[-2000:], "log_tail": tail(build_log)}
+        RESULTS["builds"]["llamacpp"] = {"ok": False, "error": str(e)[-2000:], "attempts": attempts_log}
         RUN_LLAMACPP = False
     save_results()
     print(RESULTS["builds"]["llamacpp"])
@@ -704,6 +792,7 @@ def run_llamacpp(cand: dict) -> None:
         launch["loaded"] = ok
         if not ok:
             launch["error"] = why
+            launch["root_cause"] = root_cause_of(log)
             launch["log_tail"] = tail(log, 40)
             srv.stop()
             run["launches"].append(launch)
@@ -862,6 +951,7 @@ def run_vllm(cand: dict) -> None:
             if not ok:
                 run["status"] = "load_failed"
                 run["error"] = why
+                run["root_cause"] = root_cause_of(log)
                 run["log_tail"] = tail(log, 60)
                 srv.stop()
                 save_results()
@@ -903,6 +993,15 @@ def _fmt(v, nd=1):
     return "—" if v is None else (f"{v:.{nd}f}" if isinstance(v, float) else str(v))
 
 
+def _build_summary(b: dict | None) -> str:
+    if not b:
+        return "not run"
+    if b.get("ok"):
+        keep = {k: v for k, v in b.items() if k not in ("attempts",)}
+        return str(keep)
+    return f"FAILED — {str(b.get('error', ''))[:600]}"
+
+
 def build_report() -> str:
     env = RESULTS["env"]
     lines = [
@@ -912,8 +1011,8 @@ def build_report() -> str:
         f"- GPUs: {env.get('gpus')}",
         f"- CUDA: {env.get('nvcc')} · Python {env.get('python')} · CPUs {env.get('cpu_count')} · "
         f"RAM {env.get('ram_total_gb')} GB",
-        f"- llama.cpp: {RESULTS['builds'].get('llamacpp')}",
-        f"- vLLM: {RESULTS['builds'].get('vllm')}",
+        f"- llama.cpp: {_build_summary(RESULTS['builds'].get('llamacpp'))}",
+        f"- vLLM: {_build_summary(RESULTS['builds'].get('vllm'))}",
         "",
         "## Results",
         "",
@@ -952,16 +1051,27 @@ def build_report() -> str:
                 f"| {_fmt(ss.get('decode_tps'))} | {_fmt(pf.get('prefill_tps'))} | {_fmt(cc.get('aggregate_tps'))} "
                 f"| {smoke} |"
             )
-    failures = [r for r in RESULTS["runs"] if r.get("status") not in ("done",)]
+    failures = []
+    for r in RESULTS["runs"]:
+        if r["engine"] == "vllm" and r.get("status") != "done":
+            cfg = ("eager" if r.get("enforce_eager") else "cuda-graphs") + f" · {r.get('repo')}"
+            failures.append((f"vllm · {r['model_key']} · {cfg}", r))
+        for la in r.get("launches", []):
+            if la.get("loaded") is False:
+                failures.append((f"llama.cpp · {r['model_key']} · {la.get('label')}", la))
+        if r["engine"] == "llama.cpp" and r.get("status") == "download_failed":
+            failures.append((f"llama.cpp · {r['model_key']} · download", r))
     if failures:
-        lines += ["", "## Failures (log tails)", ""]
-        for r in failures:
+        lines += ["", "## Failures", ""]
+        for title, r in failures:
             lines += [
-                f"### {r['engine']} · {r['model_key']} · {r.get('repo')}",
+                f"### {title}",
+                "",
+                f"- error: {str(r.get('error', ''))[:300]}",
+                "- root cause (error lines extracted from the full log):",
                 "",
                 "```",
-                str(r.get("error", ""))[:500],
-                (r.get("log_tail") or "")[-2500:],
+                (r.get("root_cause") or "(none found — see the log file)")[:3000],
                 "```",
                 "",
             ]

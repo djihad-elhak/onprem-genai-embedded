@@ -92,6 +92,32 @@ def tail(path: Path, n: int = 60) -> str:
         return ""
 
 
+_ROOT_CAUSE = re.compile(
+    r"(?:\b\w*(?:Error|Exception)\b(?!\s*:?\s*$)|CMake Error|\berror:|out of memory|OOM|not supported|"
+    r"unsupported|requires? (?:compute capability|SM|GPU)|Cannot|cannot|Failed to|failed to|No such file)",
+)
+_NOISE = re.compile(r"^\s*(File \"|\^+$|~+$|Traceback|During handling|The above exception)|warnings\.warn")
+
+
+def root_cause(text: str, limit: int = 12) -> str:
+    """The distinctive error lines of a long engine / build log (the tail is usually only the traceback)."""
+    out: list[str] = []
+    keys: set[str] = set()
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("CMake Error"):  # the explanation follows on indented lines
+            stripped = " ".join(x.strip() for x in lines[i : i + 6] if x.strip())
+        elif not stripped or _NOISE.search(line) or not _ROOT_CAUSE.search(line):
+            continue
+        key = re.sub(r"\d+", "#", stripped)[:200]
+        if key not in keys:
+            keys.add(key)
+            out.append(stripped[:400])
+    specific = [ln for ln in out if "Engine core initialization failed" not in ln]
+    return "\n".join((specific or out)[-limit:])
+
+
 # ------------------------------------------------------------------------------------------- server process
 @dataclass
 class ServerProcess:
@@ -231,35 +257,104 @@ def vllm_command(
     ]
 
 
+# Where a linkable CUDA driver library may live. Some images (e.g. Kaggle, CUDA 12.8 + driver 580, Oct 2026)
+# ship only the versioned ``libcuda.so.1`` and no toolkit stub, so CMake's FindCUDAToolkit cannot create the
+# ``CUDA::cuda_driver`` target that llama.cpp links for its virtual-memory (VMM) pool.
+LIBCUDA_DIRS = (
+    "/usr/local/cuda/lib64/stubs",
+    "/usr/local/cuda/targets/x86_64-linux/lib/stubs",
+    "/usr/lib/x86_64-linux-gnu",
+    "/usr/lib64",
+    "/usr/local/nvidia/lib64",
+)
+
+
+def cuda_driver_cmake_args(work_dir: Path, search: Sequence[str] = LIBCUDA_DIRS) -> list[str]:
+    """CMake args making ``CUDA::cuda_driver`` resolvable, or disabling VMM when no driver library exists."""
+    for d in search:
+        if (Path(d) / "libcuda.so").exists():
+            return [f"-DCMAKE_LIBRARY_PATH={d}"]
+    for d in search:
+        versioned = Path(d) / "libcuda.so.1"
+        if versioned.exists():  # link-time alias to the installed driver (the library loaded at run time)
+            link_dir = work_dir / "cuda-link"
+            link_dir.mkdir(parents=True, exist_ok=True)
+            alias = link_dir / "libcuda.so"
+            if alias.is_symlink() or alias.exists():
+                alias.unlink()
+            alias.symlink_to(versioned)
+            return [f"-DCMAKE_LIBRARY_PATH={link_dir}"]
+    return ["-DGGML_CUDA_NO_VMM=ON"]
+
+
 def build_llamacpp(
     work_dir: Path, cuda_arch: str = "75", ref: str | None = None, log: Path | None = None
 ) -> Path:
-    """Clone and build ``llama-server`` with CUDA for one architecture; returns the binary path."""
+    """Clone and build ``llama-server`` with CUDA for one architecture; returns the binary path.
+
+    If configuration still fails on the CUDA driver target, retries once with ``GGML_CUDA_NO_VMM=ON``
+    (legacy memory pool, no direct libcuda link).
+    """
     src = work_dir / "llama.cpp"
     server = src / "build" / "bin" / "llama-server"
     if server.exists():
         return server
-    branch = ["--branch", ref] if ref else []
-    subprocess.run(
-        ["git", "clone", "--depth", "1", *branch, "https://github.com/ggml-org/llama.cpp", str(src)],
-        check=True,
-    )
+    if not (src / ".git").exists():
+        branch = ["--branch", ref] if ref else []
+        subprocess.run(
+            ["git", "clone", "--depth", "1", *branch, "https://github.com/ggml-org/llama.cpp", str(src)],
+            check=True,
+        )
     env = {**os.environ, "PATH": f"/usr/local/cuda/bin:{os.environ.get('PATH', '')}"}
-    out = subprocess.run(
-        f"cmake -S . -B build -DGGML_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES={cuda_arch} -DLLAMA_CURL=OFF "
-        f"-DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release -j{os.cpu_count() or 4} "
-        "--target llama-server",
-        shell=True,
-        cwd=src,
-        env=env,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    base = [
+        "-DGGML_CUDA=ON",
+        f"-DCMAKE_CUDA_ARCHITECTURES={cuda_arch}",
+        "-DLLAMA_CURL=OFF",
+        "-DCMAKE_BUILD_TYPE=Release",
+    ]
+    if Path("/usr/local/cuda").exists():
+        base.append("-DCUDAToolkit_ROOT=/usr/local/cuda")
+    attempts = [cuda_driver_cmake_args(work_dir), ["-DGGML_CUDA_NO_VMM=ON"]]
+    logs = []
+    for extra in attempts:
+        shutil.rmtree(src / "build", ignore_errors=True)
+        conf = subprocess.run(
+            ["cmake", "-S", ".", "-B", "build", *base, *extra],
+            cwd=src,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        logs.append(f"$ cmake {' '.join(base + extra)}\n{conf.stdout}{conf.stderr}")
+        if conf.returncode != 0:
+            if "cuda_driver" in conf.stdout + conf.stderr and extra != attempts[-1]:
+                continue
+            break
+        out = subprocess.run(
+            [
+                "cmake",
+                "--build",
+                "build",
+                "--config",
+                "Release",
+                f"-j{os.cpu_count() or 4}",
+                "--target",
+                "llama-server",
+            ],
+            cwd=src,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        logs.append(out.stdout + out.stderr)
+        if out.returncode == 0:
+            break
     if log is not None:
-        log.write_text(out.stdout + out.stderr)
-    if out.returncode != 0:
-        raise RuntimeError(f"llama.cpp build failed:\n{(out.stdout + out.stderr)[-3000:]}")
+        log.write_text("\n".join(logs))
+    if not server.exists():
+        raise RuntimeError(f"llama.cpp build failed:\n{root_cause(chr(10).join(logs)) or logs[-1][-3000:]}")
     return server
 
 

@@ -8,10 +8,12 @@ import pytest
 
 from onprem_genai.bench.engines import (
     ServerProcess,
+    cuda_driver_cmake_args,
     llamacpp_command,
     parse_vllm_log,
     port_free,
     resolve_gguf_files,
+    root_cause,
     vllm_command,
 )
 
@@ -111,3 +113,42 @@ def test_server_process_reports_crash(tmp_path: Path) -> None:
     srv.stop(release_gpu=False)
     assert not ok
     assert "code 3" in why
+
+
+def test_cuda_driver_args_prefer_unversioned_then_alias_then_no_vmm(tmp_path: Path) -> None:
+    stubs, system, none = tmp_path / "stubs", tmp_path / "system", tmp_path / "none"
+    stubs.mkdir()
+    system.mkdir()
+    (system / "libcuda.so.1").write_text("driver")
+    work = tmp_path / "work"
+    # only the versioned driver library exists (Kaggle image, Oct 2026): link through an alias
+    args = cuda_driver_cmake_args(work, [str(stubs), str(system)])
+    assert args == [f"-DCMAKE_LIBRARY_PATH={work / 'cuda-link'}"]
+    assert (work / "cuda-link" / "libcuda.so").resolve() == (system / "libcuda.so.1").resolve()
+    # an unversioned library (toolkit stub) wins
+    (stubs / "libcuda.so").write_text("stub")
+    assert cuda_driver_cmake_args(work, [str(stubs), str(system)]) == [f"-DCMAKE_LIBRARY_PATH={stubs}"]
+    # nothing linkable: build without the VMM pool
+    assert cuda_driver_cmake_args(work, [str(none)]) == ["-DGGML_CUDA_NO_VMM=ON"]
+
+
+def test_root_cause_skips_tracebacks_and_keeps_cmake_context() -> None:
+    vllm_log = textwrap.dedent("""\
+        INFO 10-28 07:20:01 [loader.py:12] loading weights
+        (EngineCore_DP0 pid=512) ERROR 10-28 07:21:03 [core.py:700] EngineCore failed to start.
+        (EngineCore_DP0 pid=512) ERROR 10-28 07:21:03 [core.py:700] Traceback (most recent call last):
+          File "/x/core.py", line 691, in run_engine_core
+        (EngineCore_DP0 pid=512) ERROR 10-28 07:21:03 [core.py:700] ValueError: quantization awq unsupported on SM 75
+        (EngineCore_DP0 pid=513) ERROR 10-28 07:21:04 [core.py:700] ValueError: quantization awq unsupported on SM 75
+        RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+    """)
+    rc = root_cause(vllm_log)
+    assert "ValueError: quantization awq unsupported on SM 75" in rc
+    assert rc.count("ValueError") == 1  # deduplicated across worker processes
+    assert "Engine core initialization failed" not in rc and "File " not in rc
+    cmake_log = (
+        "-- Generating done (0.5s)\n"
+        "CMake Error at ggml/src/ggml-cuda/CMakeLists.txt:181 (target_link_libraries):\n"
+        '  Target "ggml-cuda" links to:\n\n    CUDA::cuda_driver\n\n  but the target was not found.\n'
+    )
+    assert "CUDA::cuda_driver but the target was not found" in root_cause(cmake_log)
