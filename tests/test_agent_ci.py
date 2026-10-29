@@ -79,13 +79,16 @@ def fake_jenkins(
     @server.tool()
     def getTestResults(jobFullName: str, buildNumber: int | None = None) -> str:  # noqa: N802, N803
         failed = outcome != "SUCCESS"
+        # nested like the real plugin's answer, which wraps the counts in the build's test-result action
         return envelope(
             {
                 "buildNumber": buildNumber,
-                "totalCount": 12,
-                "failCount": int(failed),
-                "skipCount": 0,
-                "passCount": 12 - int(failed),
+                "TestResultAction": {
+                    "totalCount": 12,
+                    "failCount": int(failed),
+                    "skipCount": 0,
+                    "passCount": 12 - int(failed),
+                },
                 "failedTests": [{"name": "Requirement.X"}] if failed else [],
             }
         )

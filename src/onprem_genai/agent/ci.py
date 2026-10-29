@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import json
 import time
 from dataclasses import asdict, dataclass, field
 from typing import Any
@@ -133,12 +134,15 @@ class JenkinsCi:
                 break
             await asyncio.sleep(self.poll_s)
         tests = await mcp.call("getTestResults", jobFullName=self.job, buildNumber=res.build_number)
-        if isinstance(tests, dict):
-            res.tests = {
-                k: tests[k]
+        if isinstance(tests, (dict, list)):
+            # the plugin nests the counts (e.g. under the build's test-result action) depending on its version
+            found = {
+                k: _find(tests, k)
                 for k in ("totalCount", "failCount", "skipCount", "passCount", "failedTests")
-                if k in tests
             }
+            res.tests = {k: v for k, v in found.items() if v is not None}
+            if "totalCount" not in res.tests:
+                res.tests["unparsed"] = json.dumps(tests)[:600]
         if not res.passed:
             log = await mcp.call("getBuildLog", jobFullName=self.job, buildNumber=res.build_number)
             lines = _find(log, "lines") if isinstance(log, dict) else log
