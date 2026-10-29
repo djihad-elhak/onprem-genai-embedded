@@ -160,7 +160,8 @@ jobs:
           --ci-url "$OGE_JENKINS_MCP_URL"
       - name: Check the Jenkins verdict (2 new tests on top of the existing ComStub suite)
         run: >-
-          uv run python -c "import json, sys; ci = json.load(open('artifacts/agent/ci.ci.json')); print(ci);
+          .github/scripts/run-logged.sh uv run python -c "import json, sys; ci = json.load(open('artifacts/agent/ci.ci.json'));
+          tail = ci.pop('log_tail', ''); print(json.dumps(ci, indent=1)); print(tail);
           sys.exit(0 if ci['result'] == 'SUCCESS' and ci['tests'].get('totalCount', 0) >= 12 else 1)"
       - name: Jenkins MCP contract test
         env:
