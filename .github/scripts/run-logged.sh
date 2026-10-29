@@ -7,10 +7,6 @@ log="$(mktemp)"
 "$@" 2>&1 | tee "${log}"
 status=${PIPESTATUS[0]}
 if [[ ${status} -ne 0 ]]; then
-  tail -n 40 "${log}" | STATUS="${status}" python3 -c '
-import os, sys
-text = sys.stdin.read().replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-status = os.environ["STATUS"]
-print(f"::error title=Last output lines (exit {status})::{text}")'
+  "$(dirname "$0")/annotate.sh" "Last output lines (exit ${status})" < "${log}"
 fi
 exit "${status}"
