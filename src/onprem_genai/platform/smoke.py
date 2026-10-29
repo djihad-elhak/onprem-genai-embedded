@@ -51,12 +51,16 @@ def check_chat(base_url: str, api_key: str | None = None, model: str = "default"
             "max_tokens": 32,
             "temperature": 0,
             "messages": [{"role": "user", "content": "Reply with the word READY."}],
+            # Reasoning models (Qwen3.5) would otherwise spend the 32 tokens thinking; ignored by others.
+            "chat_template_kwargs": {"enable_thinking": False},
         },
         timeout=300,
     )
     r.raise_for_status()
-    text = r.json()["choices"][0]["message"].get("content") or ""
-    return {"ok": bool(text.strip()), "reply": text[:80], "usage": r.json().get("usage")}
+    msg = r.json()["choices"][0]["message"]
+    # A server that streams its thoughts separately (llama.cpp --jinja) still proves it generates.
+    text = (msg.get("content") or "").strip() or (msg.get("reasoning_content") or "").strip()
+    return {"ok": bool(text), "reply": text[:80], "usage": r.json().get("usage")}
 
 
 def check_embeddings(base_url: str, api_key: str | None = None, model: str = "default") -> dict[str, Any]:

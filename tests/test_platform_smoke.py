@@ -126,3 +126,21 @@ def test_egress_check_semantics() -> None:
     assert check_egress(expect_blocked=False, timeout_s=0.5)["ok"] is True
     blocked = check_egress(expect_blocked=True, timeout_s=0.5)
     assert blocked["ok"] == (not blocked["reachable"])
+
+
+def test_chat_check_accepts_a_reasoning_only_reply(monkeypatch: pytest.MonkeyPatch) -> None:
+    import httpx  # noqa: PLC0415
+
+    from onprem_genai.platform import smoke  # noqa: PLC0415
+
+    sent: dict = {}
+
+    def fake_post(url: str, **kw: object) -> httpx.Response:
+        sent.update(kw["json"])  # type: ignore[arg-type]
+        body = {"choices": [{"message": {"content": "", "reasoning_content": "The user wants READY."}}]}
+        return httpx.Response(200, json=body, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(smoke.httpx, "post", fake_post)
+    res = smoke.check_chat("http://llm:8080")
+    assert res["ok"] is True
+    assert sent["chat_template_kwargs"] == {"enable_thinking": False}
