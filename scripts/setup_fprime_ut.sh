@@ -19,6 +19,7 @@ if [[ ! -x "${VENV}/bin/fprime-util" ]]; then
 fi
 
 if [[ ! -d "${FPRIME_DIR}/build-fprime-automatic-native-ut" ]]; then
-  (cd "${FPRIME_DIR}" && PATH="$(cd "${VENV}" && pwd)/bin:${PATH}" fprime-util generate --ut)
+  tools="$(cd "${VENV}" && pwd)/bin"   # absolute before changing directory
+  (cd "${FPRIME_DIR}" && PATH="${tools}:${PATH}" fprime-util generate --ut)
 fi
 echo "F´ unit-test build ready: ${FPRIME_DIR} (tools: ${VENV}/bin)"
