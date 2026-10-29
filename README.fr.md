@@ -22,6 +22,9 @@ dans le dépôt.
 
 ![Console d'ingénierie : traçabilité de F´](docs/assets/console-overview.png)
 
+**[Ouvrir la démo en ligne](https://djihad-elhak.github.io/onprem-genai-embedded/)** : une copie en lecture
+seule sur GitHub Pages, avec une vraie exécution de l'agent à rejouer pas à pas.
+
 **L'application web des ingénieurs sur site** ([guide](docs/CONSOLE.md)). Elle montre chaque exigence et ses
 preuves, cherche dans le code, lance l'agent de génération de tests en diffusant chaque étape en direct,
 recueille les verdicts de revue sur les tests générés et dimensionne les déploiements GPU. Elle n'a besoin
@@ -31,6 +34,10 @@ d'aucun accès à Internet : polices et scripts sont servis localement.
 uv run oge console serve --fprime third_party/fprime     # http://127.0.0.1:8770
 docker compose -f deploy/compose.yaml --profile cpu --profile console up -d   # avec les serveurs de modèles
 ```
+
+Sur un portable Windows avec Docker Desktop : `docker build -f deploy/Dockerfile --target console -t oge-console .`
+puis `docker run -d -p 127.0.0.1:8770:8770 -v oge-console-data:/var/lib/oge oge-console`
+([détails](docs/CONSOLE.md#on-a-windows-or-macos-laptop-docker-desktop)).
 
 | Exécution de l'agent en direct | File de revue | Preuves d'une exigence | Dimensionnement GPU |
 |---|---|---|---|

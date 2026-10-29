@@ -1,0 +1,50 @@
+name: pages
+
+# Publishes the read-only demo of the engineering console on GitHub Pages:
+# https://djihad-elhak.github.io/onprem-genai-embedded/
+# One-time setup in the repository: Settings > Pages > Build and deployment > Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: uv sync --extra console
+      - name: Fetch pinned F´ and build the knowledge graph
+        run: |
+          scripts/fetch_fprime.sh
+          uv run oge knowledge ingest third_party/fprime --out artifacts/fprime_graph.jsonl.gz
+      - name: Export the console demo (benchmark results and the recorded agent run in demo/console)
+        run: uv run oge console export-demo --fprime third_party/fprime --out _site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

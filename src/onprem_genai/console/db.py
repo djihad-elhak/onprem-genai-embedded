@@ -204,6 +204,45 @@ class ConsoleDb:
             (result_id, verdict, note, reviewer, time.time()),
         )
 
+    # -- recorded runs (the static demo replays a real run)
+    def export_run(self, run_id: int) -> dict[str, Any]:
+        """A finished run with its events and results, as plain JSON."""
+        run = self.run(run_id)
+        if run is None:
+            raise KeyError(f"no run {run_id}")
+        results = []
+        for r in self.results(run_id=run_id):
+            full = self.result(r["id"]) or {}
+            results.append({"model_label": r["model_label"], "record": full["record"]})
+        return {"run": run, "events": self.events(run_id), "results": results}
+
+    def import_run(self, data: dict[str, Any]) -> int:
+        """Store a run written by :meth:`export_run`; result ids in its events are remapped."""
+        run = data["run"]
+        run_id = self.create_run(run["model_kind"], run["model_label"], run["options"], run["req_ids"])
+        self.update_run(
+            run_id,
+            **{
+                k: run.get(k)
+                for k in ("created_at", "started_at", "finished_at", "status", "branch", "error")
+            },
+        )
+        ids = {
+            r["record"]["req_id"]: self.add_result(
+                r["record"], source="console", model_label=r["model_label"], run_id=run_id
+            )
+            for r in data["results"]
+        }
+        for ev in data["events"]:
+            payload = {k: v for k, v in ev.items() if k != "seq"}
+            if payload.get("type") == "result" and payload.get("req_id") in ids:
+                payload["result_id"] = ids[payload["req_id"]]
+            self._x(
+                "INSERT INTO events(run_id, seq, ts, payload) VALUES (?,?,?,?)",
+                (run_id, ev["seq"], payload.get("ts", 0.0), json.dumps(payload)),
+            )
+        return run_id
+
     def has_source(self, source: str, model_label: str) -> bool:
         return bool(
             self._q("SELECT 1 FROM results WHERE source=? AND model_label=? LIMIT 1", (source, model_label))

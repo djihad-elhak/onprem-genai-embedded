@@ -1,5 +1,5 @@
 // Overview: the traceability map of the whole code base, what needs a person, and the platform's health.
-import { html, useState, useApi, href, go, STATES, STATE_ORDER, showTip, hideTip, esc, fmtInt, ago, RunStatus, Loading, ErrorNote, ArrowLink } from "../lib.js";
+import { html, useState, useApi, href, go, STATES, STATE_ORDER, showTip, hideTip, esc, fmtInt, ago, RunStatus, Loading, ErrorNote, ArrowLink, DEMO } from "../lib.js";
 
 function Legend({ counts, active, toggle }) {
   return html`<div class="legend" role="group" aria-label="Show requirement states">
@@ -34,7 +34,7 @@ function Platform({ status }) {
   const rows = [
     [llm.configured ? "ok" : "warn", "Model server", llm.configured ? `${llm.label || llm.model} at ${llm.base_url}` : "Not set. Agent runs can still replay recorded answers.", href("settings")],
     ["ok", "Knowledge graph", `${fmtInt(g.requirements)} requirements, ${fmtInt(g.tests)} tests, ${fmtInt(g.functions)} functions`, null],
-    [ws.ready ? "ok" : "bad", "F´ workspace", ws.ready ? `Builds and runs unit tests. Runs start from ${ws.base_commit ? ws.base_commit.slice(0, 7) : "HEAD"}.` : ws.problems.join("; "), null],
+    [ws.ready ? "ok" : DEMO ? "warn" : "bad", "F´ workspace", ws.ready ? `Builds and runs unit tests. Runs start from ${ws.base_commit ? ws.base_commit.slice(0, 7) : "HEAD"}.` : ws.problems.join("; "), null],
     [status.replay.requirements ? "ok" : "warn", "Recorded answers", status.replay.requirements ? `${status.replay.requirements} requirements can be replayed without a model server` : "None loaded", null],
   ];
   return html`<div class="status-list">

@@ -1,5 +1,5 @@
 // Dialog that starts an agent run on chosen requirements, with the live model server or recorded answers.
-import { html, useRef, useState, api, go, toast, useDialog, Icon } from "./lib.js";
+import { html, useRef, useState, api, go, href, toast, useDialog, Icon, DEMO } from "./lib.js";
 
 function Stepper({ id, value, min, max, onChange, label }) {
   return html`<div class="stepper" role="group" aria-labelledby=${id}>
@@ -44,7 +44,10 @@ export function RunDialog({ reqs, status, onClose }) {
         compiler and test output, and commits each passing test on a review branch. Nothing reaches the main branch.</p>
     </div>
     <div class="modal-body">
-      ${!ready ? html`<div class="note bad"><b>Agent runs are not available on this server.</b>
+      ${DEMO ? html`<div class="note info"><b>This demo cannot start runs.</b>
+        <span>An agent run builds and tests C++ code in an F´ workspace, so it needs the console on your own site. The recorded run shows every step of a real one.</span>
+        <span><a href=${href("runs", 1, { play: 1 })} onClick=${onClose}>Replay the recorded run</a></span></div>` : null}
+      ${!ready && !DEMO ? html`<div class="note bad"><b>Agent runs are not available on this server.</b>
         <span>${(status && status.workspace.problems.join("; ")) || "The F´ workspace is not ready."}</span></div>` : null}
       <div class="field">
         <span class="usa-label">Requirements</span>

@@ -82,3 +82,45 @@ def serve(
     application = create_app(cfg)
     typer.echo(f"Engineering console: http://{host}:{port}")
     uvicorn.run(application, host=host, port=port, log_level="warning", proxy_headers=False)
+
+
+@app.command("export-demo")
+def export_demo_cmd(
+    out: Annotated[Path, typer.Option(help="Folder to write the static site to")] = Path(
+        "artifacts/console-demo"
+    ),
+    graph: Annotated[Path, typer.Option(help="Knowledge-graph snapshot")] = Path(
+        "artifacts/fprime_graph.jsonl.gz"
+    ),
+    fprime: Annotated[
+        Path | None, typer.Option(help="F´ checkout, used to tell which components the agent supports")
+    ] = None,
+    recorded: Annotated[
+        list[Path] | None, typer.Option("--recorded", help="Recorded run to include (repeatable)")
+    ] = None,
+) -> None:
+    """Write a read-only demo of the console as a static site (for GitHub Pages)."""
+    import tempfile  # noqa: PLC0415
+
+    from onprem_genai.console.app import ConsoleConfig  # noqa: PLC0415
+    from onprem_genai.console.demo import export_demo  # noqa: PLC0415
+
+    defaults = sorted(
+        RESULTS.glob("*__llamacpp.jsonl"), key=lambda p: (not p.name.startswith("qwen"), p.name)
+    )
+    runs = list(recorded or [p for p in [Path("demo/console/recorded-run.json")] if p.exists()])
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = ConsoleConfig(
+            graph=graph,
+            db=Path(tmp) / "console.db",
+            fprime=fprime,
+            artifacts=Path(tmp),
+            imports=[("Benchmark run 3", p) for p in defaults],
+            prereview=RESULTS / "ai-prereview.md",
+            replay=defaults,
+        )
+        typer.echo(f"Exporting the console demo to {out} …")
+        summary = export_demo(cfg, runs, out)
+    typer.echo(
+        f"{summary['files']} files, {summary['bytes'] / 1e6:.1f} MB of data, {summary['nodes']} symbols"
+    )

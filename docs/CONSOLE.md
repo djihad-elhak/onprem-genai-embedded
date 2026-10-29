@@ -4,6 +4,8 @@ sources:
   - tests/test_console.py
   - deploy/Dockerfile
   - deploy/compose.yaml
+  - demo/console/
+  - .github/workflows/pages.yml
 ---
 # Engineering console
 
@@ -52,6 +54,41 @@ The `console` image (`deploy/Dockerfile`, target `console`) adds a C++ toolchain
 for unit-test builds. The review branches live in the `console-fprime` volume and the database in
 `console-data`. Set the model server in Settings: inside the Compose network it is `http://llm:8080` with the
 `OGE_API_KEY` of `deploy/.env`.
+
+### On a Windows or macOS laptop (Docker Desktop)
+
+F´ unit tests build on Linux only, so on Windows the console runs in its container. Install
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) (it uses WSL 2 on Windows) and keep about
+10 GB free. In PowerShell, from the repository folder:
+
+```powershell
+docker build -f deploy/Dockerfile --target console -t oge-console .   # once: 10 to 20 minutes
+docker run -d --name oge-console -p 127.0.0.1:8770:8770 -v oge-console-data:/var/lib/oge oge-console
+```
+
+Open http://127.0.0.1:8770. Without a model server, agent runs use the recorded answers; the build, tests,
+commit and mutants run for real inside the container. To use a model server running on the same laptop, set
+`http://host.docker.internal:8080` in Settings. Stop with `docker stop oge-console`, start again with
+`docker start oge-console`; verdicts and runs stay in the `oge-console-data` volume.
+
+## Public demo (GitHub Pages)
+
+A read-only copy of the console is published at
+**https://djihad-elhak.github.io/onprem-genai-embedded/** by `.github/workflows/pages.yml`. It is built from the
+same code: `oge console export-demo` writes every answer of the API to files (requirements and their evidence,
+the 39 verified tests to review, symbols, example searches, a grid of sizing plans) next to the console's own
+pages, and the page switches to those files (`static/js/demo.js`). One real agent run, recorded with this
+console (`demo/console/recorded-run.json`), can be replayed step by step at its recorded pace. Review verdicts
+work and are kept in the visitor's browser.
+
+What a static site cannot do is said on the page instead of being faked: starting agent runs, settings,
+free-text search and arbitrary sizing assumptions need the console on a site. No model-server address or key
+of the exporting machine is written to the demo (tested).
+
+```bash
+uv run oge console export-demo --fprime third_party/fprime --out artifacts/console-demo
+python -m http.server -d artifacts/console-demo 8000      # preview at http://127.0.0.1:8000
+```
 
 ## How a run works
 

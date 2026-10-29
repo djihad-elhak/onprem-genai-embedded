@@ -1,6 +1,9 @@
 // GPU sizing: how many GPUs of each type a team needs, from the calibrated performance model.
 import { html, useEffect, useMemo, useRef, useState } from "../../vendor/htm-preact-standalone.mjs";
-import { useApi, api, Loading, ErrorNote, fmtInt } from "../lib.js";
+import { useApi, api, Loading, ErrorNote, fmtInt, DEMO } from "../lib.js";
+
+// Team sizes precomputed for the static demo (DEMO_ENGINEERS in console/demo.py, tested).
+const DEMO_ENGINEERS = [25, 50, 100, 200, 500, 1000];
 
 const WEIGHT_LABEL = { q4_k_m: "4-bit (Q4_K_M)", awq_int4_g128: "4-bit (AWQ)", gptq_int4_g128: "4-bit (GPTQ)", q5_k_m: "5-bit (Q5_K_M)", q6_k: "6-bit (Q6_K)", q8_0: "8-bit (Q8_0)", fp8: "FP8", f16: "FP16", bf16: "BF16" };
 const KV_LABEL = { f16: "FP16", bf16: "BF16", fp8: "FP8", q8_0: "8-bit", q4_0: "4-bit" };
@@ -8,7 +11,7 @@ const SCENARIO_LABEL = { chat: "IDE chat", chat_agents: "Chat and agents", full:
 const CLASS_LABEL = { chat: "Chat", agent_step: "Agent step", completion: "Completion" };
 
 function Num({ id, value, onChange, min, max, step = 1, label }) {
-  return html`<input id=${id} aria-label=${label} class="usa-input num" type="number" min=${min} max=${max} step=${step} value=${value}
+  return html`<input id=${id} aria-label=${label} disabled=${!!DEMO} class="usa-input num" type="number" min=${min} max=${max} step=${step} value=${value}
     onChange=${(e) => { const v = Number(e.target.value); if (!Number.isNaN(v)) onChange(Math.min(max, Math.max(min, v))); }} />`;
 }
 
@@ -87,6 +90,7 @@ export function Sizing() {
         measurements, and every assumption below can be changed.</p></div></div>
     <div class="sizing-layout">
       <section class="panel" aria-labelledby="sz-title"><div class="panel-head"><h2 id="sz-title">Assumptions</h2></div><div class="panel-body form">
+        ${DEMO ? html`<div class="note info">In this demo, plans are precomputed for the default workload and a few team sizes. The console on your site recomputes for any value.</div>` : null}
         <div class="field"><label class="usa-label" for="sz-model">Model</label>
           <select id="sz-model" class="usa-select" value=${form.model} onChange=${(e) => up({ model: e.target.value })}>
             ${opts.models.map((m) => html`<option value=${m.key}>${m.name}</option>`)}</select>
@@ -96,12 +100,14 @@ export function Sizing() {
             <select id="sz-w" class="usa-select" value=${form.weights} onChange=${(e) => up({ weights: e.target.value })}>
               ${opts.weights.map((w) => html`<option value=${w.key}>${WEIGHT_LABEL[w.key] || w.key}</option>`)}</select></div>
           <div class="field"><label class="usa-label" for="sz-kv">KV cache</label>
-            <select id="sz-kv" class="usa-select" value=${form.kv} onChange=${(e) => up({ kv: e.target.value })}>
+            <select id="sz-kv" class="usa-select" disabled=${!!DEMO} value=${form.kv} onChange=${(e) => up({ kv: e.target.value })}>
               ${opts.kv.map((k) => html`<option value=${k.key}>${KV_LABEL[k.key] || k.key}</option>`)}</select></div>
         </div>
         <div class="field"><label class="usa-label" for="sz-eng">Engineers in the team</label>
+          ${DEMO ? html`<select id="sz-eng" class="usa-select" value=${form.engineers} onChange=${(e) => up({ engineers: Number(e.target.value) })}>
+            ${DEMO_ENGINEERS.map((n) => html`<option value=${n} key=${n}>${fmtInt(n)}</option>`)}</select>` : html`
           <div class="row"><input class="usa-range grow" type="range" min="5" max="1000" step="5" value=${form.engineers} aria-label="Engineers" onInput=${(e) => up({ engineers: Number(e.target.value) })} />
-            <div style="width:6.5rem"><${Num} id="sz-eng" value=${form.engineers} min=${1} max=${100000} onChange=${(v) => up({ engineers: v })} /></div></div></div>
+            <div style="width:6.5rem"><${Num} id="sz-eng" value=${form.engineers} min=${1} max=${100000} onChange=${(v) => up({ engineers: v })} /></div></div>`}</div>
         <div class="field"><label class="usa-label" for="sz-sc">Way of working</label>
           <select id="sz-sc" class="usa-select" value=${form.scenario} onChange=${(e) => pickScenario(e.target.value)}>
             ${opts.scenarios.map((s) => html`<option value=${s.key}>${SCENARIO_LABEL[s.key] || s.key}</option>`)}</select>

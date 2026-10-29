@@ -1,6 +1,6 @@
 // Settings: the model server used by agent runs, the reviewer's name, and what the console is connected to.
 import { html, useEffect, useState } from "../../vendor/htm-preact-standalone.mjs";
-import { useApi, api, toast, Loading, ErrorNote, fmtInt } from "../lib.js";
+import { useApi, api, toast, Loading, ErrorNote, fmtInt, DEMO } from "../lib.js";
 
 export function Settings({ status }) {
   const [s, error, reload] = useApi("/settings");
@@ -38,6 +38,7 @@ export function Settings({ status }) {
   const ws = status && status.workspace, g = status && status.graph;
   return html`<div class="container page">
     <div class="page-head"><div class="stack"><span class="overline">Console</span><h1>Settings</h1><p class="lede">Where agent runs get their answers, and who signs review verdicts.</p></div></div>
+    ${DEMO ? html`<div class="note info"><b>Read-only in this demo.</b><span>On your site, this is where you point agent runs at your model server: llama.cpp, vLLM or any OpenAI-compatible gateway.</span></div>` : null}
     <div class="split">
       <form class="panel" onSubmit=${save} aria-labelledby="llm-title">
         <div class="panel-head"><h2 id="llm-title">Model server</h2><span class="muted">Any OpenAI-compatible server: llama.cpp, vLLM, or a gateway</span></div>
@@ -67,8 +68,8 @@ export function Settings({ status }) {
           ${test ? html`<div class=${`note ${test.pending ? "info" : test.ok ? "info" : "bad"}`} role="status">
             ${test.pending ? "Sending a test request…" : test.ok ? html`<b>The server answered in ${test.seconds} s.</b><span>Reply: <span class="mono">${test.reply}</span></span>` : html`<b>The test request failed.</b><span>${test.error}</span>`}
           </div>` : null}
-          <div class="row"><button class="btn act" type="submit" disabled=${busy}>Save</button>
-            <button class="btn" type="button" disabled=${busy || !form.base_url} onClick=${runTest}>Save and send a test request</button></div>
+          <div class="row"><button class="btn act" type="submit" disabled=${busy || !!DEMO}>Save</button>
+            <button class="btn" type="button" disabled=${busy || !form.base_url || !!DEMO} onClick=${runTest}>Save and send a test request</button></div>
         </div>
       </form>
       <div class="stack" style="gap:2rem;align-content:start">
@@ -78,7 +79,7 @@ export function Settings({ status }) {
             <div class="field"><label class="usa-label" for="st-rev">Your name</label>
               <input id="st-rev" class="usa-input" value=${form.reviewer} onInput=${(e) => up({ reviewer: e.target.value })} placeholder="Name shown on review verdicts" />
               <span class="usa-hint">Shared by everyone using this console. Each verdict keeps the name it was saved with.</span></div>
-            <div><button class="btn" type="submit" disabled=${busy}>Save</button></div>
+            <div><button class="btn" type="submit" disabled=${busy || !!DEMO}>Save</button></div>
           </div>
         </form>
         <section class="panel" aria-labelledby="sys-title">

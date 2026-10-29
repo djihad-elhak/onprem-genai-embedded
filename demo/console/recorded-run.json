@@ -1,0 +1,782 @@
+{
+ "run": {
+  "id": 1,
+  "created_at": 1793263650.6826818,
+  "started_at": 1793263650.6885042,
+  "finished_at": 1793263695.8250606,
+  "status": "done",
+  "model_kind": "replay",
+  "model_label": "Recorded answers of Devstral-Small-2-24B and Qwen3-Coder-30B-A3B",
+  "options": {
+   "attempts": 3,
+   "mutants": 4
+  },
+  "req_ids": [
+   "SVC-ROUTER-002",
+   "SVC-ROUTER-008",
+   "SVC-ROUTER-009"
+  ],
+  "branch": "oge-console/run-1",
+  "error": null
+ },
+ "events": [
+  {
+   "seq": 0,
+   "type": "run",
+   "status": "queued",
+   "ts": 1793263650.6858473
+  },
+  {
+   "seq": 1,
+   "type": "run",
+   "status": "running",
+   "ts": 1793263650.6891174
+  },
+  {
+   "seq": 2,
+   "type": "step",
+   "req_id": "SVC-ROUTER-002",
+   "node": "prepare",
+   "ok": true,
+   "line": "Svc/FprimeRouter: baseline unit tests build and pass, line coverage 95%",
+   "requirement": {
+    "text": "Svc::FprimeRouter shall route packets of type Fw::ComPacketType::FW_PACKET_COMMAND to the commandOut output port.",
+    "module": "Svc/FprimeRouter"
+   },
+   "coverage_before": 0.9492,
+   "ts": 1793263661.1570435
+  },
+  {
+   "seq": 3,
+   "type": "step",
+   "req_id": "SVC-ROUTER-002",
+   "node": "gather",
+   "ok": true,
+   "line": "4 MCP calls → 24,883 chars of context: Requirement, Design document excerpts, FPP model FprimeRouter.fpp, Test harness API, FprimeRouterTester.hpp, FprimeRouterTestMain.cpp",
+   "sections": [
+    "Requirement",
+    "Design document excerpts",
+    "FPP model FprimeRouter.fpp",
+    "Test harness API (autocoded)",
+    "FprimeRouterTester.hpp",
+    "FprimeRouterTestMain.cpp",
+    "Existing tests and helpers in FprimeRouterTester.cpp (most related first)",
+    "Implementation header FprimeRouter.hpp",
+    "Implementation FprimeRouter.cpp"
+   ],
+   "context_chars": 24883,
+   "dropped": [],
+   "ts": 1793263661.2086263
+  },
+  {
+   "seq": 4,
+   "type": "step",
+   "req_id": "SVC-ROUTER-002",
+   "node": "generate",
+   "ok": true,
+   "line": "attempt 1: model answered (21 lines)",
+   "attempt": 1,
+   "answer": "Looking at the existing code, I need to create a new test method since `testRouteComInterface` already exists. The requirement SVC-ROUTER-002 specifically states that command packets should be routed to commandOut, so I'll create a focused test method that verifies exactly this behavior.\n\n```cpp tester\nvoid Svc::FprimeRouterTester::testRouteCommandPacketToCommandOut() {\n    REQUIREMENT(\"SVC-ROUTER-002\");\n    this->clearHistory();\n    this->mockReceivePacketType(Fw::ComPacketType::FW_PACKET_COMMAND);\n    ASSERT_from_commandOut_SIZE(1);      // one command packet emitted\n    ASSERT_from_fileOut_SIZE(0);         // no file packet emitted\n    ASSERT_from_unknownDataOut_SIZE(0);  // no unknown data emitted\n    ASSERT_from_dataReturnOut_SIZE(1);   // data ownership should always be returned\n}\n```\n\n```cpp main\nTEST(FprimeRouter, RouteCommandPacketToCommandOut) {\n    COMMENT(\"SVC-ROUTER-002: Fw::ComPacketType::FW_PACKET_COMMAND packets shall be routed to commandOut\");\n    Svc::FprimeRouterTester tester;\n    tester.testRouteCommandPacketToCommandOut();\n}\n```",
+   "ts": 1793263661.2109604
+  },
+  {
+   "seq": 5,
+   "type": "step",
+   "req_id": "SVC-ROUTER-002",
+   "node": "check",
+   "ok": true,
+   "line": "policy OK: new test FprimeRouter.RouteCommandPacketToCommandOut, only test files touched",
+   "ts": 1793263661.2251253
+  },
+  {
+   "seq": 6,
+   "type": "step",
+   "req_id": "SVC-ROUTER-002",
+   "node": "build",
+   "ok": true,
+   "line": "fprime-util build --ut: compiled in 3.0 s",
+   "build_seconds": 3.02,
+   "ts": 1793263664.259122
+  },
+  {
+   "seq": 7,
+   "type": "step",
+   "req_id": "SVC-ROUTER-002",
+   "node": "test",
+   "ok": true,
+   "line": "new test passes 3 runs, full suite passes (11 tests); it alone covers 31% of the component",
+   "tests_total": 11,
+   "new_test_coverage": 0.3051,
+   "ts": 1793263664.348665
+  },
+  {
+   "seq": 8,
+   "type": "step",
+   "req_id": "SVC-ROUTER-002",
+   "node": "commit",
+   "ok": true,
+   "line": "committed a8c91b0c52 (review branch, AI-use disclosure in the message)",
+   "commit": "a8c91b0c52e8b09355dcdf50d07776e72bf97f24",
+   "diff": "diff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\nindex 85f1501..c8e82ba 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n@@ -59,6 +59,13 @@ TEST(FprimeRouter, TestUnknownDataOutContextTableFull) {\n     tester.testContextTableFull(Fw::ComPacketType::FW_PACKET_UNKNOWN);\n }\n \n+// Requirement SVC-ROUTER-002\n+TEST(FprimeRouter, RouteCommandPacketToCommandOut) {\n+    COMMENT(\"SVC-ROUTER-002: Fw::ComPacketType::FW_PACKET_COMMAND packets shall be routed to commandOut\");\n+    Svc::FprimeRouterTester tester;\n+    tester.testRouteCommandPacketToCommandOut();\n+}\n+\n int main(int argc, char** argv) {\n     ::testing::InitGoogleTest(&argc, argv);\n     return RUN_ALL_TESTS();\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\nindex a58b4ed..7751b4f 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n@@ -5,6 +5,7 @@\n // ======================================================================\n \n #include \"FprimeRouterTester.hpp\"\n+#include \"Fw/Test/UnitTest.hpp\"\n \n namespace Svc {\n \n@@ -198,4 +199,15 @@ void FprimeRouterTester::connectPortsExceptUnknownData() {\n     this->component.set_fileOut_OutputPort(0, this->get_from_fileOut(0));\n }\n \n+// Requirement SVC-ROUTER-002\n+void FprimeRouterTester::testRouteCommandPacketToCommandOut() {\n+    REQUIREMENT(\"SVC-ROUTER-002\");\n+    this->clearHistory();\n+    this->mockReceivePacketType(Fw::ComPacketType::FW_PACKET_COMMAND);\n+    ASSERT_from_commandOut_SIZE(1);      // one command packet emitted\n+    ASSERT_from_fileOut_SIZE(0);         // no file packet emitted\n+    ASSERT_from_unknownDataOut_SIZE(0);  // no unknown data emitted\n+    ASSERT_from_dataReturnOut_SIZE(1);   // data ownership should always be returned\n+}\n+\n }  // namespace Svc\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\nindex 5deb5e8..9073403 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n@@ -105,6 +105,10 @@ class FprimeRouterTester : public FprimeRouterGTestBase {\n \n     //! The component under test\n     FprimeRouter component;\n+\n+  public:\n+    //! Tests generated for requirement SVC-ROUTER-002\n+    void testRouteCommandPacketToCommandOut();\n };\n \n }  // namespace Svc",
+   "ts": 1793263664.5361536
+  },
+  {
+   "seq": 9,
+   "type": "step",
+   "req_id": "SVC-ROUTER-002",
+   "node": "evaluate",
+   "ok": true,
+   "line": "fault detection: 4/4 mutants of the code it runs killed (delete effect statement, rel <→<=, rel ==→!=)",
+   "mutation": {
+    "candidates": 4,
+    "sampled": 4,
+    "valid": 4,
+    "killed": 4,
+    "mutants": [
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 46,
+      "operator": "delete effect statement",
+      "original": "                this->commandOut_out(0, com, 0);",
+      "mutated": "                ;  // mutant: deleted",
+      "outcome": "killed"
+     },
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 43,
+      "operator": "rel ==→!=",
+      "original": "            if (status == Fw::FW_SERIALIZE_OK) {",
+      "mutated": "            if (status != Fw::FW_SERIALIZE_OK) {",
+      "outcome": "killed"
+     },
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 21,
+      "operator": "rel <→<=",
+      "original": "    for (FwSizeType i = 0; i < FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+      "mutated": "    for (FwSizeType i = 0; i <= FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+      "outcome": "killed"
+     },
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 52,
+      "operator": "delete effect statement",
+      "original": "            this->dataReturnOut_out(0, packetBuffer, context);",
+      "mutated": "            ;  // mutant: deleted",
+      "outcome": "killed"
+     }
+    ],
+    "score": 1.0
+   },
+   "ts": 1793263674.1277502
+  },
+  {
+   "seq": 10,
+   "type": "result",
+   "req_id": "SVC-ROUTER-002",
+   "status": "passed",
+   "reason": "",
+   "attempts": 1,
+   "wall_seconds": 23.31,
+   "result_id": 57,
+   "done": 1,
+   "total": 3,
+   "ts": 1793263674.1312926
+  },
+  {
+   "seq": 11,
+   "type": "step",
+   "req_id": "SVC-ROUTER-008",
+   "node": "prepare",
+   "ok": true,
+   "line": "Svc/FprimeRouter: baseline unit tests build and pass, line coverage 95%",
+   "requirement": {
+    "text": "Svc::FprimeRouter shall preserve the ComCfg::FrameContext received on dataIn and restore it on the corresponding dataReturnOut, including across the fileOut/unknownDataOut → fileBufferReturnIn round-trip",
+    "module": "Svc/FprimeRouter"
+   },
+   "coverage_before": 0.9492,
+   "ts": 1793263674.1349168
+  },
+  {
+   "seq": 12,
+   "type": "step",
+   "req_id": "SVC-ROUTER-008",
+   "node": "gather",
+   "ok": true,
+   "line": "8 MCP calls → 27,545 chars of context: Requirement, Design document excerpts, FPP model FprimeRouter.fpp, Test harness API, FprimeRouterTester.hpp, FprimeRouterTestMain.cpp",
+   "sections": [
+    "Requirement",
+    "Design document excerpts",
+    "FPP model FprimeRouter.fpp",
+    "Test harness API (autocoded)",
+    "FprimeRouterTester.hpp",
+    "FprimeRouterTestMain.cpp",
+    "Existing tests and helpers in FprimeRouterTester.cpp (most related first)",
+    "Implementation header FprimeRouter.hpp",
+    "Implementation FprimeRouter.cpp"
+   ],
+   "context_chars": 27545,
+   "dropped": [],
+   "ts": 1793263674.1869135
+  },
+  {
+   "seq": 13,
+   "type": "step",
+   "req_id": "SVC-ROUTER-008",
+   "node": "generate",
+   "ok": true,
+   "line": "attempt 1: model answered (54 lines)",
+   "attempt": 1,
+   "answer": "The requirement SVC-ROUTER-008 states that the FprimeRouter must preserve the ComCfg::FrameContext received on dataIn and restore it on the corresponding dataReturnOut, including across the fileOut/unknownDataOut → fileBufferReturnIn round-trip. This means we need to test that when a buffer is sent through fileOut or unknownDataOut, its context is properly stored and restored when it returns via fileBufferReturnIn.\n\nLooking at the existing tests, I can see there are already tests for:\n1. testFileContextRoundTrip() - tests fileOut → fileBufferReturnIn round-trip\n2. testMultiBufferContextRoundTrip() - tests multiple buffers with out-of-order returns\n3. testContextTableFull() - tests behavior when context table is full\n\nHowever, I need to create a focused test that specifically verifies the requirement that context is preserved across the fileOut/unknownDataOut → fileBufferReturnIn round-trip. The existing tests cover this but I'll write a new test that's more explicit about the requirement.\n\nI'll create a test that:\n1. Sends a packet of unknown type (which goes through unknownDataOut)\n2. Verifies the buffer is sent on unknownDataOut with context\n3. Returns the buffer via fileBufferReturnIn\n4. Verifies the context is restored on dataReturnOut\n\n```cpp tester\nvoid Svc::FprimeRouterTester::testFileContextRoundTripAcrossUnknownDataOut() {\n    REQUIREMENT(\"SVC-ROUTER-008\");\n    // Test that context is preserved across the unknownDataOut → fileBufferReturnIn round-trip\n    // This is a variation of testFileContextRoundTrip that uses unknownDataOut path\n    \n    // Create a buffer with a specific context\n    U8 data[sizeof(FwPacketDescriptorType)];\n    Fw::Buffer buffer(data, sizeof(data));\n    \n    ComCfg::FrameContext ctx;\n    ctx.set_apid(static_cast<ComCfg::Apid::T>(Fw::ComPacketType::FW_PACKET_UNKNOWN));\n    ctx.set_vcId(42); // Use a non-default VC ID to verify it's preserved\n    \n    // Send the buffer through dataIn - this should route to unknownDataOut\n    this->invoke_to_dataIn(0, buffer, ctx);\n    \n    // Verify the buffer was sent on unknownDataOut with the context\n    ASSERT_from_unknownDataOut_SIZE(1);\n    ASSERT_EQ(this->fromPortHistory_unknownDataOut->at(0).context.get_vcId(), 42);\n    \n    // Return the buffer via fileBufferReturnIn\n    Fw::Buffer returnedBuffer = this->fromPortHistory_unknownDataOut->at(0).data;\n    this->invoke_to_fileBufferReturnIn(0, returnedBuffer);\n    \n    // Verify the context was restored on dataReturnOut\n    ASSERT_from_dataReturnOut_SIZE(1);\n    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).context.get_vcId(), 42);\n    ASSERT_EVENTS_SIZE(0); // No degrade events\n}\n```\n\n```cpp main\nTEST(FprimeRouter, FileContextRoundTripAcrossUnknownDataOut) {\n    COMMENT(\"SVC-ROUTER-008: Context preserved across unknownDataOut → fileBufferReturnIn round-trip\");\n    Svc::FprimeRouterTester tester;\n    tester.testFileContextRoundTripAcrossUnknownDataOut();\n}\n```",
+   "ts": 1793263674.1890395
+  },
+  {
+   "seq": 14,
+   "type": "step",
+   "req_id": "SVC-ROUTER-008",
+   "node": "check",
+   "ok": true,
+   "line": "policy OK: new test FprimeRouter.FileContextRoundTripAcrossUnknownDataOut, only test files touched",
+   "ts": 1793263674.2027025
+  },
+  {
+   "seq": 15,
+   "type": "step",
+   "req_id": "SVC-ROUTER-008",
+   "node": "build",
+   "ok": true,
+   "line": "fprime-util build --ut: compiled in 3.4 s",
+   "build_seconds": 3.41,
+   "ts": 1793263677.6294255
+  },
+  {
+   "seq": 16,
+   "type": "step",
+   "req_id": "SVC-ROUTER-008",
+   "node": "test",
+   "ok": true,
+   "line": "new test passes 3 runs, full suite passes (12 tests); it alone covers 59% of the component",
+   "tests_total": 12,
+   "new_test_coverage": 0.5932,
+   "ts": 1793263677.7112672
+  },
+  {
+   "seq": 17,
+   "type": "step",
+   "req_id": "SVC-ROUTER-008",
+   "node": "commit",
+   "ok": true,
+   "line": "committed 72be2ea9db (review branch, AI-use disclosure in the message)",
+   "commit": "72be2ea9dbdd8084da0e1c22e5e967c739f7ed6e",
+   "diff": "diff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\nindex c8e82ba..9c1fc5e 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n@@ -66,6 +66,13 @@ TEST(FprimeRouter, RouteCommandPacketToCommandOut) {\n     tester.testRouteCommandPacketToCommandOut();\n }\n \n+// Requirement SVC-ROUTER-008\n+TEST(FprimeRouter, FileContextRoundTripAcrossUnknownDataOut) {\n+    COMMENT(\"SVC-ROUTER-008: Context preserved across unknownDataOut → fileBufferReturnIn round-trip\");\n+    Svc::FprimeRouterTester tester;\n+    tester.testFileContextRoundTripAcrossUnknownDataOut();\n+}\n+\n int main(int argc, char** argv) {\n     ::testing::InitGoogleTest(&argc, argv);\n     return RUN_ALL_TESTS();\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\nindex 7751b4f..132df2f 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n@@ -210,4 +210,35 @@ void FprimeRouterTester::testRouteCommandPacketToCommandOut() {\n     ASSERT_from_dataReturnOut_SIZE(1);   // data ownership should always be returned\n }\n \n+// Requirement SVC-ROUTER-008\n+void FprimeRouterTester::testFileContextRoundTripAcrossUnknownDataOut() {\n+    REQUIREMENT(\"SVC-ROUTER-008\");\n+    // Test that context is preserved across the unknownDataOut → fileBufferReturnIn round-trip\n+    // This is a variation of testFileContextRoundTrip that uses unknownDataOut path\n+    \n+    // Create a buffer with a specific context\n+    U8 data[sizeof(FwPacketDescriptorType)];\n+    Fw::Buffer buffer(data, sizeof(data));\n+    \n+    ComCfg::FrameContext ctx;\n+    ctx.set_apid(static_cast<ComCfg::Apid::T>(Fw::ComPacketType::FW_PACKET_UNKNOWN));\n+    ctx.set_vcId(42); // Use a non-default VC ID to verify it's preserved\n+    \n+    // Send the buffer through dataIn - this should route to unknownDataOut\n+    this->invoke_to_dataIn(0, buffer, ctx);\n+    \n+    // Verify the buffer was sent on unknownDataOut with the context\n+    ASSERT_from_unknownDataOut_SIZE(1);\n+    ASSERT_EQ(this->fromPortHistory_unknownDataOut->at(0).context.get_vcId(), 42);\n+    \n+    // Return the buffer via fileBufferReturnIn\n+    Fw::Buffer returnedBuffer = this->fromPortHistory_unknownDataOut->at(0).data;\n+    this->invoke_to_fileBufferReturnIn(0, returnedBuffer);\n+    \n+    // Verify the context was restored on dataReturnOut\n+    ASSERT_from_dataReturnOut_SIZE(1);\n+    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).context.get_vcId(), 42);\n+    ASSERT_EVENTS_SIZE(0); // No degrade events\n+}\n+\n }  // namespace Svc\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\nindex 9073403..31cac5c 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n@@ -109,6 +109,10 @@ class FprimeRouterTester : public FprimeRouterGTestBase {\n   public:\n     //! Tests generated for requirement SVC-ROUTER-002\n     void testRouteCommandPacketToCommandOut();\n+\n+  public:\n+    //! Tests generated for requirement SVC-ROUTER-008\n+    void testFileContextRoundTripAcrossUnknownDataOut();\n };\n \n }  // namespace Svc",
+   "ts": 1793263677.811767
+  },
+  {
+   "seq": 18,
+   "type": "step",
+   "req_id": "SVC-ROUTER-008",
+   "node": "evaluate",
+   "ok": true,
+   "line": "fault detection: 2/4 mutants of the code it runs killed (delete effect statement, logic &&→||, rel <→<=, status SUCCESS→FAILURE)",
+   "mutation": {
+    "candidates": 15,
+    "sampled": 4,
+    "valid": 4,
+    "killed": 2,
+    "mutants": [
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 121,
+      "operator": "status SUCCESS→FAILURE",
+      "original": "            return Fw::Success::SUCCESS;",
+      "mutated": "            return Fw::Success::FAILURE;",
+      "outcome": "killed"
+     },
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 130,
+      "operator": "rel <→<=",
+      "original": "    for (FwSizeType i = 0; i < FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+      "mutated": "    for (FwSizeType i = 0; i <= FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+      "outcome": "survived"
+     },
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 131,
+      "operator": "logic &&→||",
+      "original": "        if (this->m_bufferContextTable[i].state == Fw::Active::ACTIVE && this->m_bufferContextTable[i].key == key) {",
+      "mutated": "        if (this->m_bufferContextTable[i].state == Fw::Active::ACTIVE || this->m_bufferContextTable[i].key == key) {",
+      "outcome": "survived"
+     },
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 107,
+      "operator": "delete effect statement",
+      "original": "    this->dataReturnOut_out(0, fwBuffer, context);",
+      "mutated": "    ;  // mutant: deleted",
+      "outcome": "killed"
+     }
+    ],
+    "score": 0.5
+   },
+   "ts": 1793263684.7521496
+  },
+  {
+   "seq": 19,
+   "type": "result",
+   "req_id": "SVC-ROUTER-008",
+   "status": "passed",
+   "reason": "",
+   "attempts": 1,
+   "wall_seconds": 10.62,
+   "result_id": 58,
+   "done": 2,
+   "total": 3,
+   "ts": 1793263684.756164
+  },
+  {
+   "seq": 20,
+   "type": "step",
+   "req_id": "SVC-ROUTER-009",
+   "node": "prepare",
+   "ok": true,
+   "line": "Svc/FprimeRouter: baseline unit tests build and pass, line coverage 95%",
+   "requirement": {
+    "text": "Svc::FprimeRouter shall emit a warning event and return the buffer with an empty context when the buffer-to-context table is full on hand-off, or when a returned buffer is not found in the table",
+    "module": "Svc/FprimeRouter"
+   },
+   "coverage_before": 0.9492,
+   "ts": 1793263684.7600036
+  },
+  {
+   "seq": 21,
+   "type": "step",
+   "req_id": "SVC-ROUTER-009",
+   "node": "gather",
+   "ok": true,
+   "line": "12 MCP calls → 27,597 chars of context: Requirement, Design document excerpts, FPP model FprimeRouter.fpp, Test harness API, FprimeRouterTester.hpp, FprimeRouterTestMain.cpp",
+   "sections": [
+    "Requirement",
+    "Design document excerpts",
+    "FPP model FprimeRouter.fpp",
+    "Test harness API (autocoded)",
+    "FprimeRouterTester.hpp",
+    "FprimeRouterTestMain.cpp",
+    "Existing tests and helpers in FprimeRouterTester.cpp (most related first)",
+    "Implementation header FprimeRouter.hpp",
+    "Implementation FprimeRouter.cpp"
+   ],
+   "context_chars": 27597,
+   "dropped": [],
+   "ts": 1793263684.794601
+  },
+  {
+   "seq": 22,
+   "type": "step",
+   "req_id": "SVC-ROUTER-009",
+   "node": "generate",
+   "ok": true,
+   "line": "attempt 1: model answered (32 lines)",
+   "attempt": 1,
+   "answer": "### Reasoning\nThe requirement states that when the buffer-to-context table is full on hand-off (fileOut or unknownDataOut) or when a returned buffer is not found in the table, the router must emit a warning event and return the buffer with an empty context. The existing test `testContextTableFull` already verifies the table-full case for both fileOut and unknownDataOut paths. The missing piece is verifying that a returned buffer not found in the table emits the `BufferContextNotFound` event and returns with an empty context. We can reuse the existing helper `testBufferReturn` which already tests this scenario, but we should add it as a dedicated test case for SVC-ROUTER-009 to explicitly verify the requirement.\n\n### New Test Method\n```cpp tester\n#include \"Fw/Types/SuccessEnumAc.hpp\"\n\nvoid FprimeRouterTester::testBufferNotFoundInContextTable() {\n    REQUIREMENT(\"SVC-ROUTER-009\");\n    // A buffer that was never handed off (no saved context) still returns, but\n    // its context is empty and a BufferContextNotFound event is emitted.\n    U8 data[1];\n    Fw::Buffer buffer(data, sizeof(data));\n    this->clearHistory();\n    this->invoke_to_fileBufferReturnIn(0, buffer);\n    ASSERT_from_dataReturnOut_SIZE(1);  // buffer should be returned via dataReturnOut\n    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).data.getData(), data);\n    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).data.getSize(), sizeof(data));\n    ASSERT_EVENTS_BufferContextNotFound_SIZE(1);\n    ComCfg::FrameContext defaultCtx;\n    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).context.get_vcId(), defaultCtx.get_vcId());\n}\n```\n\n### New Test Case\n```cpp main\nTEST(FprimeRouter, TestBufferNotFoundInContextTable) {\n    COMMENT(\"A buffer returned without prior hand-off emits BufferContextNotFound and returns with empty context\");\n    Svc::FprimeRouterTester tester;\n    tester.testBufferNotFoundInContextTable();\n}\n```",
+   "ts": 1793263684.7968993
+  },
+  {
+   "seq": 23,
+   "type": "step",
+   "req_id": "SVC-ROUTER-009",
+   "node": "check",
+   "ok": true,
+   "line": "policy OK: new test FprimeRouter.TestBufferNotFoundInContextTable, only test files touched",
+   "ts": 1793263684.8096375
+  },
+  {
+   "seq": 24,
+   "type": "step",
+   "req_id": "SVC-ROUTER-009",
+   "node": "build",
+   "ok": true,
+   "line": "fprime-util build --ut: compiled in 3.5 s",
+   "build_seconds": 3.48,
+   "ts": 1793263688.3004417
+  },
+  {
+   "seq": 25,
+   "type": "step",
+   "req_id": "SVC-ROUTER-009",
+   "node": "test",
+   "ok": true,
+   "line": "new test passes 3 runs, full suite passes (13 tests); it alone covers 29% of the component",
+   "tests_total": 13,
+   "new_test_coverage": 0.2881,
+   "ts": 1793263688.3867655
+  },
+  {
+   "seq": 26,
+   "type": "step",
+   "req_id": "SVC-ROUTER-009",
+   "node": "commit",
+   "ok": true,
+   "line": "committed fddf2d064a (review branch, AI-use disclosure in the message)",
+   "commit": "fddf2d064a7d6f27764ce272f3688d8492ba491b",
+   "diff": "diff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\nindex 9c1fc5e..a26f6e8 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n@@ -73,6 +73,13 @@ TEST(FprimeRouter, FileContextRoundTripAcrossUnknownDataOut) {\n     tester.testFileContextRoundTripAcrossUnknownDataOut();\n }\n \n+// Requirement SVC-ROUTER-009\n+TEST(FprimeRouter, TestBufferNotFoundInContextTable) {\n+    COMMENT(\"A buffer returned without prior hand-off emits BufferContextNotFound and returns with empty context\");\n+    Svc::FprimeRouterTester tester;\n+    tester.testBufferNotFoundInContextTable();\n+}\n+\n int main(int argc, char** argv) {\n     ::testing::InitGoogleTest(&argc, argv);\n     return RUN_ALL_TESTS();\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\nindex 132df2f..4d307a4 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n@@ -6,6 +6,7 @@\n \n #include \"FprimeRouterTester.hpp\"\n #include \"Fw/Test/UnitTest.hpp\"\n+#include \"Fw/Types/SuccessEnumAc.hpp\"\n \n namespace Svc {\n \n@@ -241,4 +242,21 @@ void FprimeRouterTester::testFileContextRoundTripAcrossUnknownDataOut() {\n     ASSERT_EVENTS_SIZE(0); // No degrade events\n }\n \n+// Requirement SVC-ROUTER-009\n+void FprimeRouterTester::testBufferNotFoundInContextTable() {\n+    REQUIREMENT(\"SVC-ROUTER-009\");\n+    // A buffer that was never handed off (no saved context) still returns, but\n+    // its context is empty and a BufferContextNotFound event is emitted.\n+    U8 data[1];\n+    Fw::Buffer buffer(data, sizeof(data));\n+    this->clearHistory();\n+    this->invoke_to_fileBufferReturnIn(0, buffer);\n+    ASSERT_from_dataReturnOut_SIZE(1);  // buffer should be returned via dataReturnOut\n+    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).data.getData(), data);\n+    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).data.getSize(), sizeof(data));\n+    ASSERT_EVENTS_BufferContextNotFound_SIZE(1);\n+    ComCfg::FrameContext defaultCtx;\n+    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).context.get_vcId(), defaultCtx.get_vcId());\n+}\n+\n }  // namespace Svc\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\nindex 31cac5c..eff0112 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n@@ -113,6 +113,10 @@ class FprimeRouterTester : public FprimeRouterGTestBase {\n   public:\n     //! Tests generated for requirement SVC-ROUTER-008\n     void testFileContextRoundTripAcrossUnknownDataOut();\n+\n+  public:\n+    //! Tests generated for requirement SVC-ROUTER-009\n+    void testBufferNotFoundInContextTable();\n };\n \n }  // namespace Svc",
+   "ts": 1793263688.5008934
+  },
+  {
+   "seq": 27,
+   "type": "step",
+   "req_id": "SVC-ROUTER-009",
+   "node": "evaluate",
+   "ok": true,
+   "line": "fault detection: 3/4 mutants of the code it runs killed (delete effect statement, logic &&→||, rel <→<=, status FAILURE→SUCCESS)",
+   "mutation": {
+    "candidates": 10,
+    "sampled": 4,
+    "valid": 4,
+    "killed": 3,
+    "mutants": [
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 105,
+      "operator": "delete effect statement",
+      "original": "        this->log_WARNING_HI_BufferContextNotFound();",
+      "mutated": "        ;  // mutant: deleted",
+      "outcome": "killed"
+     },
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 131,
+      "operator": "logic &&→||",
+      "original": "        if (this->m_bufferContextTable[i].state == Fw::Active::ACTIVE && this->m_bufferContextTable[i].key == key) {",
+      "mutated": "        if (this->m_bufferContextTable[i].state == Fw::Active::ACTIVE || this->m_bufferContextTable[i].key == key) {",
+      "outcome": "survived"
+     },
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 21,
+      "operator": "rel <→<=",
+      "original": "    for (FwSizeType i = 0; i < FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+      "mutated": "    for (FwSizeType i = 0; i <= FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+      "outcome": "killed"
+     },
+     {
+      "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+      "line": 138,
+      "operator": "status FAILURE→SUCCESS",
+      "original": "    return Fw::Success::FAILURE;",
+      "mutated": "    return Fw::Success::SUCCESS;",
+      "outcome": "killed"
+     }
+    ],
+    "score": 0.75
+   },
+   "ts": 1793263695.8190408
+  },
+  {
+   "seq": 28,
+   "type": "result",
+   "req_id": "SVC-ROUTER-009",
+   "status": "passed",
+   "reason": "",
+   "attempts": 1,
+   "wall_seconds": 11.07,
+   "result_id": 59,
+   "done": 3,
+   "total": 3,
+   "ts": 1793263695.8235745
+  },
+  {
+   "seq": 29,
+   "type": "run",
+   "status": "done",
+   "ts": 1793263695.8305094
+  }
+ ],
+ "results": [
+  {
+   "model_label": "Devstral-Small-2-24B (recorded)",
+   "record": {
+    "req_id": "SVC-ROUTER-009",
+    "module": "Svc/FprimeRouter",
+    "status": "passed",
+    "reason": "",
+    "attempts": 1,
+    "commit": "fddf2d064a7d6f27764ce272f3688d8492ba491b",
+    "wall_seconds": 11.07,
+    "metrics": {
+     "llm_calls": 1,
+     "prompt_tokens": 6899,
+     "completion_tokens": 200,
+     "llm_seconds": 0.0,
+     "build_seconds": 3.48,
+     "truncated": 0,
+     "coverage_before": {
+      "line_coverage": 0.9492,
+      "branch_coverage": 0.6301,
+      "lines": 59
+     },
+     "context_chars": 27597,
+     "context_dropped": [],
+     "mcp_calls": 12,
+     "first_attempt_compiled": true,
+     "compiled": true,
+     "new_test_coverage": {
+      "line_coverage": 0.2881,
+      "branch_coverage": 0.2466,
+      "lines": 59
+     },
+     "coverage_after": {
+      "line_coverage": 0.9492,
+      "branch_coverage": 0.6301,
+      "lines": 59
+     },
+     "coverage_delta": 0.0,
+     "tests_total": 13,
+     "test_names": [
+      "FprimeRouter.TestBufferNotFoundInContextTable"
+     ],
+     "mutation": {
+      "candidates": 10,
+      "sampled": 4,
+      "valid": 4,
+      "killed": 3,
+      "mutants": [
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 105,
+        "operator": "delete effect statement",
+        "original": "        this->log_WARNING_HI_BufferContextNotFound();",
+        "mutated": "        ;  // mutant: deleted",
+        "outcome": "killed"
+       },
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 131,
+        "operator": "logic &&→||",
+        "original": "        if (this->m_bufferContextTable[i].state == Fw::Active::ACTIVE && this->m_bufferContextTable[i].key == key) {",
+        "mutated": "        if (this->m_bufferContextTable[i].state == Fw::Active::ACTIVE || this->m_bufferContextTable[i].key == key) {",
+        "outcome": "survived"
+       },
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 21,
+        "operator": "rel <→<=",
+        "original": "    for (FwSizeType i = 0; i < FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+        "mutated": "    for (FwSizeType i = 0; i <= FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+        "outcome": "killed"
+       },
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 138,
+        "operator": "status FAILURE→SUCCESS",
+        "original": "    return Fw::Success::FAILURE;",
+        "mutated": "    return Fw::Success::SUCCESS;",
+        "outcome": "killed"
+       }
+      ],
+      "score": 0.75
+     }
+    },
+    "history": [
+     {
+      "attempt": 1,
+      "stage": "passed",
+      "detail": "FprimeRouter.TestBufferNotFoundInContextTable"
+     }
+    ],
+    "diff": "diff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\nindex 9c1fc5e..a26f6e8 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n@@ -73,6 +73,13 @@ TEST(FprimeRouter, FileContextRoundTripAcrossUnknownDataOut) {\n     tester.testFileContextRoundTripAcrossUnknownDataOut();\n }\n \n+// Requirement SVC-ROUTER-009\n+TEST(FprimeRouter, TestBufferNotFoundInContextTable) {\n+    COMMENT(\"A buffer returned without prior hand-off emits BufferContextNotFound and returns with empty context\");\n+    Svc::FprimeRouterTester tester;\n+    tester.testBufferNotFoundInContextTable();\n+}\n+\n int main(int argc, char** argv) {\n     ::testing::InitGoogleTest(&argc, argv);\n     return RUN_ALL_TESTS();\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\nindex 132df2f..4d307a4 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n@@ -6,6 +6,7 @@\n \n #include \"FprimeRouterTester.hpp\"\n #include \"Fw/Test/UnitTest.hpp\"\n+#include \"Fw/Types/SuccessEnumAc.hpp\"\n \n namespace Svc {\n \n@@ -241,4 +242,21 @@ void FprimeRouterTester::testFileContextRoundTripAcrossUnknownDataOut() {\n     ASSERT_EVENTS_SIZE(0); // No degrade events\n }\n \n+// Requirement SVC-ROUTER-009\n+void FprimeRouterTester::testBufferNotFoundInContextTable() {\n+    REQUIREMENT(\"SVC-ROUTER-009\");\n+    // A buffer that was never handed off (no saved context) still returns, but\n+    // its context is empty and a BufferContextNotFound event is emitted.\n+    U8 data[1];\n+    Fw::Buffer buffer(data, sizeof(data));\n+    this->clearHistory();\n+    this->invoke_to_fileBufferReturnIn(0, buffer);\n+    ASSERT_from_dataReturnOut_SIZE(1);  // buffer should be returned via dataReturnOut\n+    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).data.getData(), data);\n+    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).data.getSize(), sizeof(data));\n+    ASSERT_EVENTS_BufferContextNotFound_SIZE(1);\n+    ComCfg::FrameContext defaultCtx;\n+    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).context.get_vcId(), defaultCtx.get_vcId());\n+}\n+\n }  // namespace Svc\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\nindex 31cac5c..eff0112 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n@@ -113,6 +113,10 @@ class FprimeRouterTester : public FprimeRouterGTestBase {\n   public:\n     //! Tests generated for requirement SVC-ROUTER-008\n     void testFileContextRoundTripAcrossUnknownDataOut();\n+\n+  public:\n+    //! Tests generated for requirement SVC-ROUTER-009\n+    void testBufferNotFoundInContextTable();\n };\n \n }  // namespace Svc",
+    "last_answer": "### Reasoning\nThe requirement states that when the buffer-to-context table is full on hand-off (fileOut or unknownDataOut) or when a returned buffer is not found in the table, the router must emit a warning event and return the buffer with an empty context. The existing test `testContextTableFull` already verifies the table-full case for both fileOut and unknownDataOut paths. The missing piece is verifying that a returned buffer not found in the table emits the `BufferContextNotFound` event and returns with an empty context. We can reuse the existing helper `testBufferReturn` which already tests this scenario, but we should add it as a dedicated test case for SVC-ROUTER-009 to explicitly verify the requirement.\n\n### New Test Method\n```cpp tester\n#include \"Fw/Types/SuccessEnumAc.hpp\"\n\nvoid FprimeRouterTester::testBufferNotFoundInContextTable() {\n    REQUIREMENT(\"SVC-ROUTER-009\");\n    // A buffer that was never handed off (no saved context) still returns, but\n    // its context is empty and a BufferContextNotFound event is emitted.\n    U8 data[1];\n    Fw::Buffer buffer(data, sizeof(data));\n    this->clearHistory();\n    this->invoke_to_fileBufferReturnIn(0, buffer);\n    ASSERT_from_dataReturnOut_SIZE(1);  // buffer should be returned via dataReturnOut\n    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).data.getData(), data);\n    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).data.getSize(), sizeof(data));\n    ASSERT_EVENTS_BufferContextNotFound_SIZE(1);\n    ComCfg::FrameContext defaultCtx;\n    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).context.get_vcId(), defaultCtx.get_vcId());\n}\n```\n\n### New Test Case\n```cpp main\nTEST(FprimeRouter, TestBufferNotFoundInContextTable) {\n    COMMENT(\"A buffer returned without prior hand-off emits BufferContextNotFound and returns with empty context\");\n    Svc::FprimeRouterTester tester;\n    tester.testBufferNotFoundInContextTable();\n}\n```"
+   }
+  },
+  {
+   "model_label": "Qwen3-Coder-30B-A3B (recorded)",
+   "record": {
+    "req_id": "SVC-ROUTER-008",
+    "module": "Svc/FprimeRouter",
+    "status": "passed",
+    "reason": "",
+    "attempts": 1,
+    "commit": "72be2ea9dbdd8084da0e1c22e5e967c739f7ed6e",
+    "wall_seconds": 10.62,
+    "metrics": {
+     "llm_calls": 1,
+     "prompt_tokens": 6886,
+     "completion_tokens": 200,
+     "llm_seconds": 0.0,
+     "build_seconds": 3.41,
+     "truncated": 0,
+     "coverage_before": {
+      "line_coverage": 0.9492,
+      "branch_coverage": 0.6301,
+      "lines": 59
+     },
+     "context_chars": 27545,
+     "context_dropped": [],
+     "mcp_calls": 8,
+     "first_attempt_compiled": true,
+     "compiled": true,
+     "new_test_coverage": {
+      "line_coverage": 0.5932,
+      "branch_coverage": 0.3151,
+      "lines": 59
+     },
+     "coverage_after": {
+      "line_coverage": 0.9492,
+      "branch_coverage": 0.6301,
+      "lines": 59
+     },
+     "coverage_delta": 0.0,
+     "tests_total": 12,
+     "test_names": [
+      "FprimeRouter.FileContextRoundTripAcrossUnknownDataOut"
+     ],
+     "mutation": {
+      "candidates": 15,
+      "sampled": 4,
+      "valid": 4,
+      "killed": 2,
+      "mutants": [
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 121,
+        "operator": "status SUCCESS→FAILURE",
+        "original": "            return Fw::Success::SUCCESS;",
+        "mutated": "            return Fw::Success::FAILURE;",
+        "outcome": "killed"
+       },
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 130,
+        "operator": "rel <→<=",
+        "original": "    for (FwSizeType i = 0; i < FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+        "mutated": "    for (FwSizeType i = 0; i <= FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+        "outcome": "survived"
+       },
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 131,
+        "operator": "logic &&→||",
+        "original": "        if (this->m_bufferContextTable[i].state == Fw::Active::ACTIVE && this->m_bufferContextTable[i].key == key) {",
+        "mutated": "        if (this->m_bufferContextTable[i].state == Fw::Active::ACTIVE || this->m_bufferContextTable[i].key == key) {",
+        "outcome": "survived"
+       },
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 107,
+        "operator": "delete effect statement",
+        "original": "    this->dataReturnOut_out(0, fwBuffer, context);",
+        "mutated": "    ;  // mutant: deleted",
+        "outcome": "killed"
+       }
+      ],
+      "score": 0.5
+     }
+    },
+    "history": [
+     {
+      "attempt": 1,
+      "stage": "passed",
+      "detail": "FprimeRouter.FileContextRoundTripAcrossUnknownDataOut"
+     }
+    ],
+    "diff": "diff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\nindex c8e82ba..9c1fc5e 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n@@ -66,6 +66,13 @@ TEST(FprimeRouter, RouteCommandPacketToCommandOut) {\n     tester.testRouteCommandPacketToCommandOut();\n }\n \n+// Requirement SVC-ROUTER-008\n+TEST(FprimeRouter, FileContextRoundTripAcrossUnknownDataOut) {\n+    COMMENT(\"SVC-ROUTER-008: Context preserved across unknownDataOut → fileBufferReturnIn round-trip\");\n+    Svc::FprimeRouterTester tester;\n+    tester.testFileContextRoundTripAcrossUnknownDataOut();\n+}\n+\n int main(int argc, char** argv) {\n     ::testing::InitGoogleTest(&argc, argv);\n     return RUN_ALL_TESTS();\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\nindex 7751b4f..132df2f 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n@@ -210,4 +210,35 @@ void FprimeRouterTester::testRouteCommandPacketToCommandOut() {\n     ASSERT_from_dataReturnOut_SIZE(1);   // data ownership should always be returned\n }\n \n+// Requirement SVC-ROUTER-008\n+void FprimeRouterTester::testFileContextRoundTripAcrossUnknownDataOut() {\n+    REQUIREMENT(\"SVC-ROUTER-008\");\n+    // Test that context is preserved across the unknownDataOut → fileBufferReturnIn round-trip\n+    // This is a variation of testFileContextRoundTrip that uses unknownDataOut path\n+    \n+    // Create a buffer with a specific context\n+    U8 data[sizeof(FwPacketDescriptorType)];\n+    Fw::Buffer buffer(data, sizeof(data));\n+    \n+    ComCfg::FrameContext ctx;\n+    ctx.set_apid(static_cast<ComCfg::Apid::T>(Fw::ComPacketType::FW_PACKET_UNKNOWN));\n+    ctx.set_vcId(42); // Use a non-default VC ID to verify it's preserved\n+    \n+    // Send the buffer through dataIn - this should route to unknownDataOut\n+    this->invoke_to_dataIn(0, buffer, ctx);\n+    \n+    // Verify the buffer was sent on unknownDataOut with the context\n+    ASSERT_from_unknownDataOut_SIZE(1);\n+    ASSERT_EQ(this->fromPortHistory_unknownDataOut->at(0).context.get_vcId(), 42);\n+    \n+    // Return the buffer via fileBufferReturnIn\n+    Fw::Buffer returnedBuffer = this->fromPortHistory_unknownDataOut->at(0).data;\n+    this->invoke_to_fileBufferReturnIn(0, returnedBuffer);\n+    \n+    // Verify the context was restored on dataReturnOut\n+    ASSERT_from_dataReturnOut_SIZE(1);\n+    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).context.get_vcId(), 42);\n+    ASSERT_EVENTS_SIZE(0); // No degrade events\n+}\n+\n }  // namespace Svc\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\nindex 9073403..31cac5c 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n@@ -109,6 +109,10 @@ class FprimeRouterTester : public FprimeRouterGTestBase {\n   public:\n     //! Tests generated for requirement SVC-ROUTER-002\n     void testRouteCommandPacketToCommandOut();\n+\n+  public:\n+    //! Tests generated for requirement SVC-ROUTER-008\n+    void testFileContextRoundTripAcrossUnknownDataOut();\n };\n \n }  // namespace Svc",
+    "last_answer": "The requirement SVC-ROUTER-008 states that the FprimeRouter must preserve the ComCfg::FrameContext received on dataIn and restore it on the corresponding dataReturnOut, including across the fileOut/unknownDataOut → fileBufferReturnIn round-trip. This means we need to test that when a buffer is sent through fileOut or unknownDataOut, its context is properly stored and restored when it returns via fileBufferReturnIn.\n\nLooking at the existing tests, I can see there are already tests for:\n1. testFileContextRoundTrip() - tests fileOut → fileBufferReturnIn round-trip\n2. testMultiBufferContextRoundTrip() - tests multiple buffers with out-of-order returns\n3. testContextTableFull() - tests behavior when context table is full\n\nHowever, I need to create a focused test that specifically verifies the requirement that context is preserved across the fileOut/unknownDataOut → fileBufferReturnIn round-trip. The existing tests cover this but I'll write a new test that's more explicit about the requirement.\n\nI'll create a test that:\n1. Sends a packet of unknown type (which goes through unknownDataOut)\n2. Verifies the buffer is sent on unknownDataOut with context\n3. Returns the buffer via fileBufferReturnIn\n4. Verifies the context is restored on dataReturnOut\n\n```cpp tester\nvoid Svc::FprimeRouterTester::testFileContextRoundTripAcrossUnknownDataOut() {\n    REQUIREMENT(\"SVC-ROUTER-008\");\n    // Test that context is preserved across the unknownDataOut → fileBufferReturnIn round-trip\n    // This is a variation of testFileContextRoundTrip that uses unknownDataOut path\n    \n    // Create a buffer with a specific context\n    U8 data[sizeof(FwPacketDescriptorType)];\n    Fw::Buffer buffer(data, sizeof(data));\n    \n    ComCfg::FrameContext ctx;\n    ctx.set_apid(static_cast<ComCfg::Apid::T>(Fw::ComPacketType::FW_PACKET_UNKNOWN));\n    ctx.set_vcId(42); // Use a non-default VC ID to verify it's preserved\n    \n    // Send the buffer through dataIn - this should route to unknownDataOut\n    this->invoke_to_dataIn(0, buffer, ctx);\n    \n    // Verify the buffer was sent on unknownDataOut with the context\n    ASSERT_from_unknownDataOut_SIZE(1);\n    ASSERT_EQ(this->fromPortHistory_unknownDataOut->at(0).context.get_vcId(), 42);\n    \n    // Return the buffer via fileBufferReturnIn\n    Fw::Buffer returnedBuffer = this->fromPortHistory_unknownDataOut->at(0).data;\n    this->invoke_to_fileBufferReturnIn(0, returnedBuffer);\n    \n    // Verify the context was restored on dataReturnOut\n    ASSERT_from_dataReturnOut_SIZE(1);\n    ASSERT_EQ(this->fromPortHistory_dataReturnOut->at(0).context.get_vcId(), 42);\n    ASSERT_EVENTS_SIZE(0); // No degrade events\n}\n```\n\n```cpp main\nTEST(FprimeRouter, FileContextRoundTripAcrossUnknownDataOut) {\n    COMMENT(\"SVC-ROUTER-008: Context preserved across unknownDataOut → fileBufferReturnIn round-trip\");\n    Svc::FprimeRouterTester tester;\n    tester.testFileContextRoundTripAcrossUnknownDataOut();\n}\n```"
+   }
+  },
+  {
+   "model_label": "Qwen3-Coder-30B-A3B (recorded)",
+   "record": {
+    "req_id": "SVC-ROUTER-002",
+    "module": "Svc/FprimeRouter",
+    "status": "passed",
+    "reason": "",
+    "attempts": 1,
+    "commit": "a8c91b0c52e8b09355dcdf50d07776e72bf97f24",
+    "wall_seconds": 23.31,
+    "metrics": {
+     "llm_calls": 1,
+     "prompt_tokens": 6220,
+     "completion_tokens": 200,
+     "llm_seconds": 0.0,
+     "build_seconds": 3.02,
+     "truncated": 0,
+     "coverage_before": {
+      "line_coverage": 0.9492,
+      "branch_coverage": 0.6301,
+      "lines": 59
+     },
+     "context_chars": 24883,
+     "context_dropped": [],
+     "mcp_calls": 4,
+     "first_attempt_compiled": true,
+     "compiled": true,
+     "new_test_coverage": {
+      "line_coverage": 0.3051,
+      "branch_coverage": 0.2329,
+      "lines": 59
+     },
+     "coverage_after": {
+      "line_coverage": 0.9492,
+      "branch_coverage": 0.6301,
+      "lines": 59
+     },
+     "coverage_delta": 0.0,
+     "tests_total": 11,
+     "test_names": [
+      "FprimeRouter.RouteCommandPacketToCommandOut"
+     ],
+     "mutation": {
+      "candidates": 4,
+      "sampled": 4,
+      "valid": 4,
+      "killed": 4,
+      "mutants": [
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 46,
+        "operator": "delete effect statement",
+        "original": "                this->commandOut_out(0, com, 0);",
+        "mutated": "                ;  // mutant: deleted",
+        "outcome": "killed"
+       },
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 43,
+        "operator": "rel ==→!=",
+        "original": "            if (status == Fw::FW_SERIALIZE_OK) {",
+        "mutated": "            if (status != Fw::FW_SERIALIZE_OK) {",
+        "outcome": "killed"
+       },
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 21,
+        "operator": "rel <→<=",
+        "original": "    for (FwSizeType i = 0; i < FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+        "mutated": "    for (FwSizeType i = 0; i <= FW_NUM_ARRAY_ELEMENTS(this->m_bufferContextTable); i++) {",
+        "outcome": "killed"
+       },
+       {
+        "file": "Svc/FprimeRouter/FprimeRouter.cpp",
+        "line": 52,
+        "operator": "delete effect statement",
+        "original": "            this->dataReturnOut_out(0, packetBuffer, context);",
+        "mutated": "            ;  // mutant: deleted",
+        "outcome": "killed"
+       }
+      ],
+      "score": 1.0
+     }
+    },
+    "history": [
+     {
+      "attempt": 1,
+      "stage": "passed",
+      "detail": "FprimeRouter.RouteCommandPacketToCommandOut"
+     }
+    ],
+    "diff": "diff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\nindex 85f1501..c8e82ba 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTestMain.cpp\n@@ -59,6 +59,13 @@ TEST(FprimeRouter, TestUnknownDataOutContextTableFull) {\n     tester.testContextTableFull(Fw::ComPacketType::FW_PACKET_UNKNOWN);\n }\n \n+// Requirement SVC-ROUTER-002\n+TEST(FprimeRouter, RouteCommandPacketToCommandOut) {\n+    COMMENT(\"SVC-ROUTER-002: Fw::ComPacketType::FW_PACKET_COMMAND packets shall be routed to commandOut\");\n+    Svc::FprimeRouterTester tester;\n+    tester.testRouteCommandPacketToCommandOut();\n+}\n+\n int main(int argc, char** argv) {\n     ::testing::InitGoogleTest(&argc, argv);\n     return RUN_ALL_TESTS();\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\nindex a58b4ed..7751b4f 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.cpp\n@@ -5,6 +5,7 @@\n // ======================================================================\n \n #include \"FprimeRouterTester.hpp\"\n+#include \"Fw/Test/UnitTest.hpp\"\n \n namespace Svc {\n \n@@ -198,4 +199,15 @@ void FprimeRouterTester::connectPortsExceptUnknownData() {\n     this->component.set_fileOut_OutputPort(0, this->get_from_fileOut(0));\n }\n \n+// Requirement SVC-ROUTER-002\n+void FprimeRouterTester::testRouteCommandPacketToCommandOut() {\n+    REQUIREMENT(\"SVC-ROUTER-002\");\n+    this->clearHistory();\n+    this->mockReceivePacketType(Fw::ComPacketType::FW_PACKET_COMMAND);\n+    ASSERT_from_commandOut_SIZE(1);      // one command packet emitted\n+    ASSERT_from_fileOut_SIZE(0);         // no file packet emitted\n+    ASSERT_from_unknownDataOut_SIZE(0);  // no unknown data emitted\n+    ASSERT_from_dataReturnOut_SIZE(1);   // data ownership should always be returned\n+}\n+\n }  // namespace Svc\ndiff --git a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\nindex 5deb5e8..9073403 100644\n--- a/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n+++ b/Svc/FprimeRouter/test/ut/FprimeRouterTester.hpp\n@@ -105,6 +105,10 @@ class FprimeRouterTester : public FprimeRouterGTestBase {\n \n     //! The component under test\n     FprimeRouter component;\n+\n+  public:\n+    //! Tests generated for requirement SVC-ROUTER-002\n+    void testRouteCommandPacketToCommandOut();\n };\n \n }  // namespace Svc",
+    "last_answer": "Looking at the existing code, I need to create a new test method since `testRouteComInterface` already exists. The requirement SVC-ROUTER-002 specifically states that command packets should be routed to commandOut, so I'll create a focused test method that verifies exactly this behavior.\n\n```cpp tester\nvoid Svc::FprimeRouterTester::testRouteCommandPacketToCommandOut() {\n    REQUIREMENT(\"SVC-ROUTER-002\");\n    this->clearHistory();\n    this->mockReceivePacketType(Fw::ComPacketType::FW_PACKET_COMMAND);\n    ASSERT_from_commandOut_SIZE(1);      // one command packet emitted\n    ASSERT_from_fileOut_SIZE(0);         // no file packet emitted\n    ASSERT_from_unknownDataOut_SIZE(0);  // no unknown data emitted\n    ASSERT_from_dataReturnOut_SIZE(1);   // data ownership should always be returned\n}\n```\n\n```cpp main\nTEST(FprimeRouter, RouteCommandPacketToCommandOut) {\n    COMMENT(\"SVC-ROUTER-002: Fw::ComPacketType::FW_PACKET_COMMAND packets shall be routed to commandOut\");\n    Svc::FprimeRouterTester tester;\n    tester.testRouteCommandPacketToCommandOut();\n}\n```"
+   }
+  }
+ ]
+}

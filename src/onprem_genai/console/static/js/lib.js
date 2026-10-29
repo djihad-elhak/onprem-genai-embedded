@@ -3,10 +3,18 @@ import { html, useEffect, useRef, useState, useCallback } from "../vendor/htm-pr
 
 export { html, useEffect, useRef, useState, useCallback };
 
+/** Set on the static demo (GitHub Pages): the folder holding the exported API answers. */
+export const DEMO = document.documentElement.dataset.ogeDemo || null;
+export const SNAPSHOT = document.documentElement.dataset.ogeSnapshot || "";
+
 /* ------------------------------------------------------------------ API */
 export class ApiError extends Error {}
 
 export async function api(path, { method = "GET", body } = {}) {
+  if (DEMO) {
+    const { demoApi } = await import("./demo.js");
+    return demoApi(path, { method, body });
+  }
   let res;
   try {
     res = await fetch(`/api${path}`, {
@@ -173,7 +181,7 @@ export function ResultTag({ status }) {
 
 /* ------------------------------------------------------------------ icons
    HDS icon sprite (CC0) for everything it has; two plain shapes it lacks are drawn here. */
-const HDS_SPRITE = "/static/vendor/hds/assets/img/hds-sprite.svg";
+const HDS_SPRITE = new URL("../vendor/hds/assets/img/hds-sprite.svg", import.meta.url).href;
 const HDS = {
   search: "search", settings: "settings", play: "play", check: "check", x: "close", download: "download",
   arrow: "arrow-line-right", external: "arrow-line-diagonal", moon: "moon", info: "info", filter: "filter",
@@ -241,7 +249,7 @@ export function Code({ title, text, kind = "cpp", wrap = false, actions = null }
   const body = kind === "diff" ? highlightDiff(text) : kind === "log" ? highlightLog(text) : kind === "plain" ? esc(text) : highlightCpp(text);
   return html`<div class="code">
     ${title !== undefined ? html`<div class="code-head"><span>${title}</span><span class="end">${actions}<${CopyButton} text=${text} /></span></div>` : null}
-    <pre class=${wrap ? "wrap" : ""} dangerouslySetInnerHTML=${{ __html: body }}></pre>
+    <pre class=${wrap ? "wrap" : ""} tabindex="0" aria-label=${title || "Code"} dangerouslySetInnerHTML=${{ __html: body }}></pre>
   </div>`;
 }
 

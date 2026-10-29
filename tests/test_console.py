@@ -235,3 +235,49 @@ def test_console_runs_the_agent_on_fprime(tmp_path: Path) -> None:
         subprocess.run(
             ["git", "-C", str(FPRIME), "branch", "-D", "oge-console/run-1"], check=False, capture_output=True
         )
+
+
+def test_static_demo_export(tmp_path: Path, mini_graph: Graph) -> None:
+    from onprem_genai.console.demo import DEMO_ENGINEERS, SEARCH_EXAMPLES, export_demo, node_file  # noqa: PLC0415
+
+    graph = tmp_path / "graph.jsonl.gz"
+    mini_graph.save(graph)
+    src = ConsoleDb(tmp_path / "src.db")
+    run = src.create_run("replay", "Recorded answers", {"attempts": 1, "mutants": 0}, ["FOO-004"])
+    rid = src.add_result(
+        _record("FOO-004"), source="console", model_label="Foo-Model-7B (recorded)", run_id=run
+    )
+    src.add_event(
+        run, 0, {"type": "step", "req_id": "FOO-004", "node": "prepare", "ok": True, "line": "x", "ts": 1.0}
+    )
+    src.add_event(
+        run, 1, {"type": "result", "req_id": "FOO-004", "status": "passed", "result_id": rid, "ts": 2.0}
+    )
+    src.update_run(run, status="done", started_at=1.0, finished_at=2.0)
+    recorded = tmp_path / "run.json"
+    recorded.write_text(json.dumps(src.export_run(run)))
+
+    out = tmp_path / "site"
+    cfg = ConsoleConfig(graph=graph, db=tmp_path / "demo.db", artifacts=tmp_path)
+    ConsoleDb(cfg.db).set_settings({"llm": {"base_url": "http://gpu-7:8080"}, "llm_api_key": "s3cret"})
+    summary = export_demo(cfg, [recorded], out, sizing=False)
+    data = out / "data"
+    assert summary["files"] > 10
+    assert 'data-oge-demo="data/"' in (out / "index.html").read_text()
+    assert (out / "static" / "js" / "demo.js").exists()
+    run_file = json.loads((data / "runs" / "1.json").read_text())
+    [result_event] = [e for e in run_file["events"] if e["type"] == "result"]
+    assert result_event["result_id"] == run_file["results"][0]["id"]  # remapped to the demo database
+    assert json.loads((data / "status.json").read_text())["workspace"]["ready"] is False
+    searches = json.loads((data / "search.json").read_text())
+    for hits in searches.values():
+        for h in hits:
+            assert (data / "nodes" / node_file(h["id"])).exists()
+    exported = "".join(p.read_text() for p in data.glob("*.json"))
+    assert "s3cret" not in exported
+    assert "gpu-7" not in exported  # the exporting site's model server stays private
+    # the front end must ask for exactly what was exported
+    js = (out / "static" / "js" / "pages" / "search.js").read_text()
+    assert all(f'"{q}"' in js for q in SEARCH_EXAMPLES)
+    sizing_js = (out / "static" / "js" / "pages" / "sizing.js").read_text()
+    assert f"const DEMO_ENGINEERS = [{', '.join(map(str, DEMO_ENGINEERS))}];" in sizing_js

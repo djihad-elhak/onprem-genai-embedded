@@ -21,6 +21,9 @@ Ingenuity Mars helicopter), Apache-2.0, ≈ 207 k lines of C++. Fetched at a pin
 
 ![Engineering console: traceability of F´](docs/assets/console-overview.png)
 
+**[Open the live demo](https://djihad-elhak.github.io/onprem-genai-embedded/)**: a read-only copy on GitHub
+Pages, with a real agent run you can replay step by step.
+
 **The web application engineers use on site** ([guide](docs/CONSOLE.md)). It shows every requirement and its
 evidence, searches the code, runs the test-generation agent with each step streamed live, collects review
 verdicts on generated tests, and sizes GPU deployments. It needs no internet access: fonts and scripts are
@@ -30,6 +33,10 @@ served locally.
 uv run oge console serve --fprime third_party/fprime     # http://127.0.0.1:8770
 docker compose -f deploy/compose.yaml --profile cpu --profile console up -d   # with the model servers
 ```
+
+On a Windows laptop with Docker Desktop: `docker build -f deploy/Dockerfile --target console -t oge-console .`
+then `docker run -d -p 127.0.0.1:8770:8770 -v oge-console-data:/var/lib/oge oge-console`
+([details](docs/CONSOLE.md#on-a-windows-or-macos-laptop-docker-desktop)).
 
 | Live agent run | Review queue | Requirement evidence | GPU sizing |
 |---|---|---|---|

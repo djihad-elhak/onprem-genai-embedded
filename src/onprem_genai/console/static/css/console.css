@@ -117,6 +117,13 @@ kbd { display: inline-block; min-width: 1.4em; padding: 0 0.35em; border: 1px so
 .light.live { background: #288bff; animation: blink 1.4s steps(2, jump-none) infinite; }
 @keyframes blink { 50% { opacity: 0.25; } }
 
+/* static demo banner */
+.demo-bar { background: #17171b; color: #e3e3e3; border-bottom: 1px solid #2e2e32; font-size: 0.875rem; line-height: 1.45; }
+.demo-bar .container { display: flex; gap: 0.5rem 1rem; align-items: center; flex-wrap: wrap; padding-top: 0.625rem; padding-bottom: 0.625rem; }
+.demo-bar .tag { background: var(--hds-color-international-orange, #ea6f24); color: #000; }
+.demo-bar a { color: #fff; text-decoration-color: #959599; font-family: var(--font-ui); font-weight: 600; }
+.demo-links { margin-left: auto; display: flex; gap: 1.25rem; white-space: nowrap; }
+
 /* ------------------------------------------------------------------ footer (Black palette) */
 .site-foot { background: #000; color: #b9b9bb; border-top: 1px solid #2e2e32; }
 .site-foot .container { display: grid; grid-template-columns: auto 1fr auto; gap: 2rem; align-items: start; padding-top: 2rem; padding-bottom: 2.25rem; }

@@ -1,6 +1,6 @@
 // Code search: hybrid search over code, tests, requirements and design documents, with a symbol view.
 import { html, useEffect, useState } from "../../vendor/htm-preact-standalone.mjs";
-import { useApi, go, href, Code, Loading, ErrorNote, Icon, ArrowLink } from "../lib.js";
+import { useApi, go, href, Code, Loading, ErrorNote, Icon, ArrowLink, DEMO } from "../lib.js";
 
 const KINDS = [
   ["", "Everything"],
@@ -55,13 +55,14 @@ export function Search({ route }) {
         <input id="q" type="search" value=${text} onInput=${(e) => setText(e.target.value)} placeholder="Describe a behaviour or type a name" autofocus /></div>
       <div class="seg" role="group" aria-label="Kind">${KINDS.map(([k, label]) => html`<button type="button" key=${k} aria-pressed=${kind === k} onClick=${() => set({ kind: k, node: "" })}>${label}</button>`)}</div>
     </form>
+    ${DEMO && q ? html`<div class="row"><span class="muted">The demo answers these searches:</span>${EXAMPLES.map((ex) => html`<button class="btn small" type="button" key=${ex} onClick=${() => go("search", null, { q: ex, kind })}>${ex}</button>`)}</div>` : null}
     ${!q ? html`<div class="empty"><h2>Try a question about the code</h2>
       <p>Results combine keyword and semantic matching, ranked within the component they belong to.</p>
       <div class="row">${EXAMPLES.map((ex) => html`<button class="btn small" type="button" key=${ex} onClick=${() => go("search", null, { q: ex })}>${ex}</button>`)}</div></div>` : html`
     <div class="search-layout">
       <section class="hits" aria-label="Results">
-        ${error ? html`<${ErrorNote} error=${error} onRetry=${reload} />` : null}
-        ${!hits ? html`<div class="panel-body"><${Loading} lines=${8} /></div>` : !hits.length ? html`<div class="empty"><h2>Nothing found</h2><p>Use other words, or search everything instead of one kind.</p></div>` :
+        ${error ? (DEMO ? html`<div class="note info">${error.message}</div>` : html`<${ErrorNote} error=${error} onRetry=${reload} />`) : null}
+        ${error ? null : !hits ? html`<div class="panel-body"><${Loading} lines=${8} /></div>` : !hits.length ? html`<div class="empty"><h2>Nothing found</h2><p>Use other words, or search everything instead of one kind.</p></div>` :
           hits.map((h) => html`<div class="hit" key=${h.id} role="button" tabindex="0" aria-current=${node === h.id}
             onClick=${() => set({ node: h.id })} onKeyDown=${(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), set({ node: h.id }))}>
             <div class="top"><span class="tag">${KIND_LABEL[h.kind] || h.kind}</span><span class="title">${h.title}</span></div>

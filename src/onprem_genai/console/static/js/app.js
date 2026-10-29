@@ -1,7 +1,7 @@
 // Application shell: black header with the main navigation, page surface in the HDS White or Dark palette,
 // black footer, routing and the global status poll.
 import { render } from "../vendor/htm-preact-standalone.mjs";
-import { html, useEffect, useState, useRoute, useApi, api, go, href, Icon, Toasts, useKey } from "./lib.js";
+import { html, useEffect, useState, useRoute, useApi, api, go, href, Icon, Toasts, useKey, DEMO, SNAPSHOT } from "./lib.js";
 import { Overview } from "./pages/overview.js";
 import { Requirements } from "./pages/requirements.js";
 import { Search } from "./pages/search.js";
@@ -53,7 +53,8 @@ function Header({ page, status, counts, theme, setTheme }) {
   useKey((e) => { if (e.key === "/") { e.preventDefault(); document.getElementById("omni")?.focus(); } }, []);
   const llm = status && status.llm;
   let model = html`<span class="light"></span><span class="label-text">Checking model server</span>`;
-  if (llm) {
+  if (DEMO) model = html`<span class="light ok"></span><span class="label-text">Recorded answers</span>`;
+  else if (llm) {
     model = llm.configured
       ? html`<span class="light ok"></span><span class="label-text">${llm.label || llm.model}</span>`
       : html`<span class="light warn"></span><span class="label-text">No model server</span>`;
@@ -88,6 +89,18 @@ function Header({ page, status, counts, theme, setTheme }) {
   </header>`;
 }
 
+const REPO = "https://github.com/djihad-elhak/onprem-genai-embedded";
+
+function DemoBar() {
+  return html`<section class="demo-bar" aria-label="About this demo">
+    <div class="container">
+      <span class="tag">Demo</span>
+      <span>Read-only snapshot${SNAPSHOT ? ` from ${SNAPSHOT}` : ""}. Starting runs, settings and free-text search need the console on your own site.</span>
+      <span class="demo-links"><a href=${href("runs", 1, { play: 1 })}>Replay the agent run</a><a href=${`${REPO}#engineering-console`} rel="noreferrer">Run it yourself</a></span>
+    </div>
+  </section>`;
+}
+
 function Footer({ status }) {
   const ws = status && status.workspace;
   return html`<footer class="site-foot">
@@ -95,7 +108,8 @@ function Footer({ status }) {
       <div class="wordmark"><${Mark} /><span class="wordmark-name">oge</span></div>
       <div class="stack">
         <p>On-premises generative AI for flight software. Every model, index and repository runs on this site.
-          ${ws ? html` F´ workspace ${ws.ready ? "ready" : "not available"}${ws.base_commit ? html`, runs start from <span class="mono">${ws.base_commit.slice(0, 7)}</span>` : ""}.` : null}</p>
+          ${DEMO && ws ? html` Static demo built from F´ at <span class="mono">${(ws.base_commit || "").slice(0, 7)}</span>.` : null}
+          ${ws && !DEMO ? html` F´ workspace ${ws.ready ? "ready" : "not available"}${ws.base_commit ? html`, runs start from <span class="mono">${ws.base_commit.slice(0, 7)}</span>` : ""}.` : null}</p>
         <p>Built with the <a href="https://github.com/nasa/hds-core" rel="noreferrer">Horizon Design System</a>, released into the public domain.
           oge is an independent project, not affiliated with or endorsed by NASA.</p>
       </div>
@@ -130,6 +144,7 @@ function App() {
   return html`<div class=${`app ${palette}`}>
     <a class="skip-link" href="#main" onClick=${(e) => { e.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to main content</a>
     <${Header} page=${route.page} status=${status} counts=${counts} theme=${theme} setTheme=${setTheme} />
+    ${DEMO ? html`<${DemoBar} />` : null}
     <main id="main" class="page-surface" tabindex="-1"><${Page} route=${route} status=${status} /></main>
     <${Footer} status=${status} />
     <${Toasts} />

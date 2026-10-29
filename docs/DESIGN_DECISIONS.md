@@ -149,6 +149,10 @@ the end.
   truth, and having no CDN, build step or extra service keeps the air-gap promise (D9). Replay of recorded
   answers is limited to self-contained ones: in the live test of this feature, a repair answer that resent
   only one block could not pass on its own.
+- **Public demo**: a static export of the console on GitHub Pages (`oge console export-demo`) with one
+  recorded run to replay, not a hosted server. Free hosts cannot build F´ (Render's free tier: 0.1 CPU,
+  512 MB; Hugging Face needs a paid plan for Docker apps), and a public server would compile and run
+  model-written code for anyone. What the static copy cannot do, it says, rather than faking it.
 
 ---
 

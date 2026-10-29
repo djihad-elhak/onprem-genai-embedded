@@ -1,6 +1,6 @@
 // Review: a queue of verified generated tests; an engineer judges each one against its requirement.
 import { html, useEffect, useMemo, useState } from "../../vendor/htm-preact-standalone.mjs";
-import { useApi, api, go, href, toast, Code, Loading, ErrorNote, ArrowLink, duration, short, useKey } from "../lib.js";
+import { useApi, api, go, href, toast, Code, Loading, ErrorNote, ArrowLink, duration, short, useKey, DEMO } from "../lib.js";
 import { MutantTable, History, Coverage } from "../parts.js";
 
 const VERDICTS = [
@@ -93,7 +93,7 @@ function Detail({ id, onSaved, reviewer }) {
         <div class="field"><label class="usa-label" for="note">Note for the team <span class="muted" style="font-weight:400">(optional)</span></label>
           <textarea id="note" class="usa-textarea" value=${note} onInput=${(e) => setNote(e.target.value)} placeholder="What is missing, or what convinced you"></textarea></div>
         <div class="row">
-          <span class="muted">${r.verdict ? `Saved${r.reviewer ? ` by ${r.reviewer}` : ""}.` : reviewer ? `Verdicts are signed ${reviewer}.` : html`Add your name in <a href="#/settings">Settings</a> to sign verdicts.`}</span>
+          <span class="muted">${r.verdict ? `Saved${r.reviewer ? ` by ${r.reviewer}` : ""}.` : DEMO ? "In this demo, verdicts are kept in your browser only." : reviewer ? `Verdicts are signed ${reviewer}.` : html`Add your name in <a href="#/settings">Settings</a> to sign verdicts.`}</span>
           <span class="grow"></span>
           ${r.verdict ? html`<button class="btn plain small" type="button" onClick=${() => save(null)}>Clear verdict</button>` : null}
           ${r.verdict ? html`<button class="btn small" type="button" disabled=${saving} onClick=${() => save(r.verdict)}>Save note</button>` : null}
@@ -125,7 +125,7 @@ export function Review({ route }) {
   return html`<div class="container page">
     <div class="page-head"><div class="stack"><span class="overline">Test generation</span><h1>Review generated tests</h1>
       <p class="lede">A generated test counts as evidence only once a person agrees it verifies its requirement. Use <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> for verdicts and <kbd>j</kbd> <kbd>k</kbd> to move through the queue.</p></div>
-      <div class="actions"><${ArrowLink} href="/api/reviews/export" download>Download the review sheet<//></div>
+      <div class="actions"><${ArrowLink} href=${DEMO ? `${DEMO}review-sheet.md` : "/api/reviews/export"} download="review-sheet.md">Download the review sheet<//></div>
     </div>
     <div class="review-layout">
       <section class="queue" aria-label="Review queue">

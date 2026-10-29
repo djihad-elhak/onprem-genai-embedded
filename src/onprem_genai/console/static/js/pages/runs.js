@@ -1,6 +1,6 @@
 // Agent runs: every run with its live step stream, per requirement.
 import { html, useEffect, useMemo, useRef, useState } from "../../vendor/htm-preact-standalone.mjs";
-import { useApi, api, go, href, toast, RunStatus, ResultTag, Loading, ErrorNote, Icon, ArrowLink, ago, duration } from "../lib.js";
+import { useApi, api, go, href, toast, RunStatus, ResultTag, Loading, ErrorNote, Icon, ArrowLink, ago, duration, DEMO } from "../lib.js";
 import { Timeline } from "../parts.js";
 
 const LIVE = new Set(["queued", "running", "stopping"]);
@@ -46,11 +46,29 @@ function useRunStream(id, run) {
   return [events, status];
 }
 
-function RunDetail({ id }) {
+/** Replays a finished run's stored events at their recorded pace (gaps capped), for the static demo. */
+function usePlayback(run, autoplay) {
+  const [i, setI] = useState(null);
+  useEffect(() => { if (autoplay && run) setI(0); }, [run && run.id]);
+  useEffect(() => {
+    if (i === null || !run) return undefined;
+    if (i >= run.events.length) { const t = setTimeout(() => setI(null), 800); return () => clearTimeout(t); }
+    const prev = run.events[i - 1], next = run.events[i];
+    const gap = prev ? Math.min(1.6, Math.max(0.3, (next.ts || 0) - (prev.ts || 0))) : 0.6;
+    const t = setTimeout(() => setI(i + 1), gap * 1000);
+    return () => clearTimeout(t);
+  }, [i, run]);
+  return [i === null ? null : run.events.slice(0, i), () => setI(0), () => setI(null)];
+}
+
+function RunDetail({ id, autoplay }) {
   const [run, error, reload] = useApi(`/runs/${id}`);
-  const [events, liveStatus] = useRunStream(id, run);
+  const [streamed, liveStatus] = useRunStream(id, run);
+  const [played, startPlay, stopPlay] = usePlayback(run, autoplay);
+  const playing = played !== null;
+  const events = playing ? played : streamed;
   const [open, setOpen] = useState({});
-  const status = liveStatus || (run && run.status);
+  const status = playing ? "running" : liveStatus || (run && run.status);
   useEffect(() => { if (run && LIVE.has(run.status) && liveStatus && !LIVE.has(liveStatus)) reload(); }, [liveStatus]);
   const groups = useMemo(() => {
     const by = {};
@@ -65,7 +83,8 @@ function RunDetail({ id }) {
   const verified = Object.values(results).filter((r) => r.status === "passed").length;
   const current = LIVE.has(status) ? run.req_ids.find((r) => !results[r] && groups[r]) : null;
   const runErr = [...events].reverse().find((e) => e.type === "run" && e.error);
-  const started = run.started_at, finished = run.finished_at;
+  const started = run.started_at, finished = playing ? null : run.finished_at;
+  const elapsed = playing ? (events.length ? events[events.length - 1].ts - (events[0].ts || 0) : 0) : (finished || Date.now() / 1000) - started;
   const stop = async () => {
     try { const r = await api(`/runs/${id}/stop`, { method: "POST" }); toast(r.status === "stopping" ? "The run stops after the current requirement." : "Run stopped."); }
     catch (e) { toast(e.message, { kind: "bad" }); }
@@ -78,14 +97,16 @@ function RunDetail({ id }) {
       </div>
       <div class="end">
         <${RunStatus} status=${status} />
-        ${LIVE.has(status) && status !== "stopping" ? html`<button class="btn small" type="button" onClick=${stop}><${Icon} name="stop" />${status === "queued" ? "Cancel" : "Stop after this requirement"}</button>` : null}
+        ${DEMO && !playing ? html`<button class="btn small act" type="button" onClick=${startPlay}><${Icon} name="play" />Replay this run</button>` : null}
+        ${DEMO && playing ? html`<button class="btn small" type="button" onClick=${stopPlay}>Skip to the end</button>` : null}
+        ${!DEMO && LIVE.has(status) && status !== "stopping" ? html`<button class="btn small" type="button" onClick=${stop}><${Icon} name="stop" />${status === "queued" ? "Cancel" : "Stop after this requirement"}</button>` : null}
       </div>
     </div>
     <div class="panel-body stack" style="gap:1rem">
       <div class="facts">
         <span><b>${done}</b> of <b>${run.req_ids.length}</b> finished</span>
         <span><b>${verified}</b> verified</span>
-        ${started ? html`<span>${finished ? "Took" : "Running for"} <b>${duration((finished || Date.now() / 1000) - started)}</b></span>` : null}
+        ${started ? html`<span>${finished ? "Took" : playing ? "Replaying, at" : "Running for"} <b>${duration(elapsed)}</b></span>` : null}
         ${run.branch ? html`<span class="row" style="gap:0.375rem"><${Icon} name="branch" size=${16} /><b>${run.branch}</b></span>` : null}
         <span>Attempts <b>${run.options.attempts}</b>, mutants <b>${run.options.mutants}</b></span>
       </div>
@@ -132,7 +153,7 @@ export function Runs({ route }) {
     </div>
     <div class="runs-layout">
       <section aria-label="Runs">${error && !runs ? html`<${ErrorNote} error=${error} onRetry=${reload} />` : runs ? html`<${RunList} runs=${runs} current=${id} />` : html`<${Loading} />`}</section>
-      ${id ? html`<${RunDetail} id=${id} key=${id} />` : runs && runs.length ? null : html`<div></div>`}
+      ${id ? html`<${RunDetail} id=${id} key=${id} autoplay=${DEMO && route.params.get("play") === "1"} />` : runs && runs.length ? null : html`<div></div>`}
     </div>
   </div>`;
 }
