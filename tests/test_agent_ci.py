@@ -6,6 +6,7 @@ The real plugin is exercised by the ``jenkins`` integration test in CI (docker c
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import os
 from pathlib import Path
@@ -112,7 +113,8 @@ def test_decode_result_variants() -> None:
 
 
 def test_basic_auth_header_and_transport() -> None:
-    assert basic_auth("oge-agent", "s3cret") == {"Authorization": "Basic b2dlLWFnZW50OnMzY3JldA=="}
+    expected = base64.b64encode(b"oge-agent:not-a-real-token").decode()
+    assert basic_auth("oge-agent", "not-a-real-token") == {"Authorization": f"Basic {expected}"}
     assert mcp_target("http://x/mcp") == "http://x/mcp"
     assert not isinstance(mcp_target("http://x/mcp", {"Authorization": "Basic a"}), str)
 

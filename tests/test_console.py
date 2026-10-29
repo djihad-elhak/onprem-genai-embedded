@@ -104,11 +104,11 @@ def test_review_verdicts_and_export(client: TestClient) -> None:
 
 def test_api_key_is_write_only_and_settings_are_validated(client: TestClient) -> None:
     r = client.put(
-        "/api/settings", json={"llm": {"base_url": "http://gpu:8080/v1/", "api_key": "s3cret"}}
+        "/api/settings", json={"llm": {"base_url": "http://gpu:8080/v1/", "api_key": "not-a-real-key"}}
     ).json()
     assert r["llm"]["base_url"] == "http://gpu:8080"
     assert r["llm"]["api_key_set"] is True
-    assert "s3cret" not in client.get("/api/settings").text
+    assert "not-a-real-key" not in client.get("/api/settings").text
     assert client.put("/api/settings", json={"llm": {"base_url": "ftp://x"}}).status_code == 400
     assert client.put("/api/settings", json={"llm": {"extra_body": "[1]"}}).status_code == 400
     r = client.put("/api/settings", json={"llm": {"clear_api_key": True}}).json()
@@ -259,7 +259,8 @@ def test_static_demo_export(tmp_path: Path, mini_graph: Graph) -> None:
 
     out = tmp_path / "site"
     cfg = ConsoleConfig(graph=graph, db=tmp_path / "demo.db", artifacts=tmp_path)
-    ConsoleDb(cfg.db).set_settings({"llm": {"base_url": "http://gpu-7:8080"}, "llm_api_key": "s3cret"})
+    private = {"llm": {"base_url": "http://gpu-7:8080"}, "llm_api_key": "not-a-real-key"}
+    ConsoleDb(cfg.db).set_settings(private)
     summary = export_demo(cfg, [recorded], out, sizing=False)
     data = out / "data"
     assert summary["files"] > 10
@@ -274,7 +275,7 @@ def test_static_demo_export(tmp_path: Path, mini_graph: Graph) -> None:
         for h in hits:
             assert (data / "nodes" / node_file(h["id"])).exists()
     exported = "".join(p.read_text() for p in data.glob("*.json"))
-    assert "s3cret" not in exported
+    assert "not-a-real-key" not in exported
     assert "gpu-7" not in exported  # the exporting site's model server stays private
     # the front end must ask for exactly what was exported
     js = (out / "static" / "js" / "pages" / "search.js").read_text()
