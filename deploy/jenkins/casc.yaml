@@ -27,9 +27,6 @@ jenkins:
               - "Overall/Read"
               - "Job/Read"
               - "Job/Build"
-  crumbIssuer:
-    standard:
-      excludeClientIPFromCrumb: false
 unclassified:
   location:
     url: "${JENKINS_URL:-http://localhost:8090/}"
